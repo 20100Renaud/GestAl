@@ -1,9 +1,7 @@
 import "dotenv/config";
 import bcrypt from "bcrypt";
 
-import { PrismaClient } from "../src/generated/prisma/client.js";
-import { UserRole } from "../src/generated/prisma/enums.js";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "@prisma/client";
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -22,18 +20,9 @@ if (typeof adminPasswordEnv !== "string" || adminPasswordEnv.length === 0) {
   throw new Error("ADMIN_PASSWORD is required");
 }
 
-const adminEmail: string = adminEmailEnv;
-const adminPassword: string = adminPasswordEnv;
+const normalizedAdminEmail = adminEmailEnv.toLowerCase().trim();
 
-const normalizedAdminEmail = adminEmail.toLowerCase().trim();
-
-const adapter = new PrismaPg({
-  connectionString,
-});
-
-const prisma = new PrismaClient({
-  adapter,
-});
+const prisma = new PrismaClient();
 
 async function main() {
   console.log("Seeding database...");
@@ -49,11 +38,11 @@ async function main() {
     return;
   }
 
-  const passwordHash = bcrypt.hashSync(adminPassword, 12);
+  const passwordHash = await bcrypt.hash(adminPasswordEnv, 12);
 
   const admin = await prisma.t_Users.create({
     data: {
-      Role_User: UserRole.ADMIN,
+      Role_User: "ADMIN",
       Nom_User: "Admin",
       Prenom_User: "System",
       Email_User: normalizedAdminEmail,
