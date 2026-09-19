@@ -18,6 +18,16 @@ export function authenticate(req, res, next) {
   try {
     const payload = jwt.verify(token, JWT_SECRET);
 
+    if (
+      typeof payload !== "object" ||
+      typeof payload.userId !== "string" ||
+      typeof payload.role !== "string"
+    ) {
+      return res.status(401).json({
+        error: "Invalid authentication token",
+      });
+    }
+    
     req.user = {
       userId: payload.userId,
       role: payload.role,
