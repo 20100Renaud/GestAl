@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  CLIENT
+  ADMIN
+}
+
+model T_Users {
+  ID_User            String   @id @default(uuid())
+  Role_User          UserRole @default(CLIENT)
+  Pratique           String?
+  Civilite_User      String?
+  Nom_User           String
+  Prenom_User        String
+  Email_User         String   @unique
+  Password_Hash_User String
+  Date_User          DateTime @default(now())
+  Adresse_User       String?
+  Ville_User         String?
+  CP_User            String?
+  Tel_User           String?
+
+  Proprietaires_User T_Proprietaires[]
+}
+
+model T_Proprietaires {
+  ID_Proprietaire       String   @id @default(uuid())
+  ID_User               String
+  Date_User             DateTime @default(now())
+  Raison_sociale        String?
+  Etablissement         String?
+  Civilite_Proprietaire String?
+  Nom_Proprietaire      String
+  Prenom_Proprietaire   String
+  Email_Proprietaire    String
+  Adresse_Proprietaire  String
+  Ville_Proprietaire    String
+  CP_Proprietaire       String
+  Tel_Proprietaire      String
+
+  User_Proprietaires   T_Users           @relation(fields: [ID_User], references: [ID_User])
+  Animaux_Proprietaire T_Animaux[]
+  Consultations_Lieu   T_Consultations[]
+}
+
+model T_Animaux {
+  ID_Animal             String   @id @default(uuid())
+  ID_Proprietaire       String
+  Nom_Animal            String
+  Genre_Animal          String
+  Race_Animal           String?
+  Date_Naissance_Animal DateTime
+  Memo_Animal           String?
+  Sexe_Animal           String
+
+  Proprietaire_Animal  T_Proprietaires   @relation(fields: [ID_Proprietaire], references: [ID_Proprietaire])
+  Consultations_Animal T_Consultations[]
+}
+
+model T_Consultations {
+  ID_Consultation          String   @id @default(uuid())
+  ID_Lieu                  String
+  ID_Animal                String
+  Date_Consultation        DateTime @default(now())
+  Quantite_Consultation    Decimal  @default(1)
+  Motif_Consultation       String
+  Description_Consultation String
+  Commentaire_Consultation String?
+
+  Animal_Consultation   T_Animaux       @relation(fields: [ID_Animal], references: [ID_Animal])
+  Lieu_Consultation     T_Proprietaires @relation(fields: [ID_Lieu], references: [ID_Proprietaire])
+  Zonage_Consultation   T_Zonages[]
+  Paiement_Consultation T_Paiements[]
+}
+
+model T_Zonages {
+  ID_Zonage          String  @id @default(uuid())
+  ID_Consultation    String
+  Nom_Zonage         String
+  Position_Zonage    String?
+  Orientation_Zonage String?
+  Commentaire_Zonage String?
+
+  Consultation_Zonage T_Consultations @relation(fields: [ID_Consultation], references: [ID_Consultation])
+}
+
+model T_Paiements {
+  ID_Paiement        String   @id @default(uuid())
+  ID_Consultation    String
+  ID_Tarif           String
+  ID_Deplacement     String
+  Date_Paiement      DateTime @default(now())
+  Montant_Paiement   Decimal  @default(0)
+  Remise_Paiement    Decimal  @default(0)
+  Moyen_Paiement     String?
+  Selection_Paiement Boolean  @default(false)
+
+  Consultation_Paiement T_Consultations @relation(fields: [ID_Consultation], references: [ID_Consultation])
+  Tarif_Paiements       T_Tarifs        @relation(fields: [ID_Tarif], references: [ID_Tarif])
+  Deplacement_Paiements T_Deplacements  @relation(fields: [ID_Deplacement], references: [ID_Deplacement])
+}
+
+model T_Tarifs {
+  ID_Tarif           String  @id @default(uuid())
+  Annee_Tarif        String
+  Denomination_Tarif String
+  Montant_Tarif      Decimal @default(0)
+
+  Paiement_Tarif T_Paiements[]
+}
+
+model T_Deplacements {
+  ID_Deplacement           String  @id @default(uuid())
+  Annee_Deplacement        String
+  Denomination_Deplacement String
+  Montant_Deplacement      Decimal @default(0)
+
+  Paiement_Deplacement T_Paiements[]
+}
