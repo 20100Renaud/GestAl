@@ -20,12 +20,20 @@ const navigation = [
     path: "/dashboard/consultations",
   },
   {
+    label: "Paiements",
+    path: "/dashboard/paiements",
+  },
+  {
     label: "Tarifs",
     path: "/dashboard/tarifs",
   },
   {
     label: "Déplacements",
     path: "/dashboard/deplacements",
+  },
+  {
+    label: "Zonage",
+    path: "/dashboard/zonages",
   },
 ];
 
