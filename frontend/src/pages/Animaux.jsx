@@ -1,5 +1,16 @@
 import { useEffect, useState } from "react";
-
+import Button from "../components/ui/Button.jsx";
+import Card from "../components/ui/Card.jsx";
+import PageHeader from "../components/ui/PageHeader.jsx";
+import Input from "../components/ui/Input.jsx";
+import Select from "../components/ui/Select.jsx";
+import Textarea from "../components/ui/Textarea.jsx";
+import Table, {
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from "../components/ui/Table.jsx";
 import {
   getAnimaux,
   createAnimal,
@@ -144,23 +155,16 @@ export default function Animaux() {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <div>
-          <h1>Animaux</h1>
-          <p>Gestion des animaux</p>
-        </div>
-      </div>
+      <PageHeader title="Animaux" />
 
-      {error && <div className="error-message">{error}</div>}
+      {error && <Alert variant="error">{error}</Alert>}
 
       <div className="content-grid">
-        <section className="card">
-          <h2>{editingId ? "Modifier l'animal" : "Nouvel animal"}</h2>
-
+        <Card title={editingId ? "Modifier l'animal" : "Nouvel animal"}>
           <form onSubmit={handleSubmit}>
             <label>
               Propriétaire
-              <select
+              <Select
                 name="ID_Proprietaire"
                 value={form.ID_Proprietaire}
                 onChange={handleChange}
@@ -177,12 +181,12 @@ export default function Animaux() {
                     {proprietaire.Nom_Proprietaire}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
 
             <label>
               Nom
-              <input
+              <Input
                 type="text"
                 name="Nom_Animal"
                 value={form.Nom_Animal}
@@ -193,7 +197,7 @@ export default function Animaux() {
 
             <label>
               Genre
-              <input
+              <Input
                 type="text"
                 name="Genre_Animal"
                 value={form.Genre_Animal}
@@ -204,7 +208,7 @@ export default function Animaux() {
 
             <label>
               Race
-              <input
+              <Input
                 type="text"
                 name="Race_Animal"
                 value={form.Race_Animal}
@@ -214,7 +218,7 @@ export default function Animaux() {
 
             <label>
               Date de naissance
-              <input
+              <Input
                 type="date"
                 name="Date_Naissance_Animal"
                 value={form.Date_Naissance_Animal}
@@ -225,7 +229,7 @@ export default function Animaux() {
 
             <label>
               Sexe
-              <select
+              <Select
                 name="Sexe_Animal"
                 value={form.Sexe_Animal}
                 onChange={handleChange}
@@ -234,84 +238,81 @@ export default function Animaux() {
                 <option value="">Sélectionner</option>
                 <option value="Mâle">Mâle</option>
                 <option value="Femelle">Femelle</option>
-              </select>
+              </Select>
             </label>
 
-            <label>
-              Notes
-              <textarea
-                name="Memo_Animal"
-                value={form.Memo_Animal}
-                onChange={handleChange}
-                rows="4"
-              />
-            </label>
+            <Textarea
+              label="Notes"
+              name="Memo_Animal"
+              value={form.Memo_Animal}
+              onChange={handleChange}
+              rows="4"
+            />
 
             <div className="form-actions">
-              <button type="submit" disabled={saving}>
+              <Button type="submit" disabled={saving}>
                 {saving
                   ? "Enregistrement..."
                   : editingId
                     ? "Modifier"
                     : "Créer"}
-              </button>
+              </Button>
 
               {editingId && (
-                <button type="button" onClick={resetForm}>
+                <Button type="button" variant="secondary" onClick={resetForm}>
                   Annuler
-                </button>
+                </Button>
               )}
             </div>
           </form>
-        </section>
+        </Card>
 
-        <section className="card">
-          <h2>Liste des animaux</h2>
-
+        <Card title="Liste des animaux">
           {animaux.length === 0 ? (
             <p>Aucun animal.</p>
           ) : (
             <div className="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Nom</th>
-                    <th>Genre</th>
-                    <th>Race</th>
-                    <th>Sexe</th>
-                    <th>Propriétaire</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableHeader>Nom</TableHeader>
+                    <TableHeader>Genre</TableHeader>
+                    <TableHeader>Race</TableHeader>
+                    <TableHeader>Sexe</TableHeader>
+                    <TableHeader>Propriétaire</TableHeader>
+                    <TableHeader>Actions</TableHeader>
+                  </TableRow>
+                </TableHead>
 
                 <tbody>
                   {animaux.map((animal) => (
-                    <tr key={animal.ID_Animal}>
-                      <td>{animal.Nom_Animal}</td>
-                      <td>{animal.Genre_Animal}</td>
-                      <td>{animal.Race_Animal || "—"}</td>
-                      <td>{animal.Sexe_Animal}</td>
-                      <td>{getProprietaireName(animal)}</td>
+                    <TableRow key={animal.ID_Animal}>
+                      <TableCell>{animal.Nom_Animal}</TableCell>
+                      <TableCell>{animal.Genre_Animal}</TableCell>
+                      <TableCell>{animal.Race_Animal || "-"}</TableCell>
+                      <TableCell>{animal.Sexe_Animal}</TableCell>
+                      <TableCell>{getProprietaireName(animal)}</TableCell>
 
-                      <td>
-                        <button type="button" onClick={() => startEdit(animal)}>
+                      <TableCell>
+                        <Button type="button" onClick={() => startEdit(animal)}>
                           Modifier
-                        </button>
+                        </Button>
 
-                        <button
+                        <Button
                           type="button"
+                          variant="danger"
                           onClick={() => handleDelete(animal.ID_Animal)}
                         >
                           Supprimer
-                        </button>
-                      </td>
-                    </tr>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
                   ))}
                 </tbody>
-              </table>
+              </Table>
             </div>
           )}
-        </section>
+        </Card>
       </div>
     </div>
   );

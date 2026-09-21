@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
-
+import Button from "../components/ui/Button.jsx";
+import Card from "../components/ui/Card.jsx";
+import PageHeader from "../components/ui/PageHeader.jsx";
+import Input from "../components/ui/Input.jsx";
+import Select from "../components/ui/Select.jsx";
+import Table, {
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from "../components/ui/Table.jsx";
 import {
   getPaiements,
   createPaiement,
@@ -161,23 +171,16 @@ export default function Paiements() {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <div>
-          <h1>Paiements</h1>
-          <p>Gestion des paiements</p>
-        </div>
-      </div>
+      <PageHeader title="Gestion des paiements" />
 
-      {error && <div className="error-message">{error}</div>}
+      {error && <Alert variant="error">{error}</Alert>}
 
       <div className="content-grid">
-        <section className="card">
-          <h2>{editingId ? "Modifier le paiement" : "Nouveau paiement"}</h2>
-
+        <Card title={editingId ? "Modifier le paiement" : "Nouveau paiement"}>
           <form onSubmit={handleSubmit}>
             <label>
               Consultation
-              <select
+              <Select
                 name="ID_Consultation"
                 value={form.ID_Consultation}
                 onChange={handleChange}
@@ -193,12 +196,12 @@ export default function Paiements() {
                     {getConsultationLabel(consultation)}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
 
             <label>
               Tarif
-              <select
+              <Select
                 name="ID_Tarif"
                 value={form.ID_Tarif}
                 onChange={handleChange}
@@ -211,12 +214,12 @@ export default function Paiements() {
                     {getTarifLabel(tarif)}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
 
             <label>
               Déplacement
-              <select
+              <Select
                 name="ID_Deplacement"
                 value={form.ID_Deplacement}
                 onChange={handleChange}
@@ -232,12 +235,12 @@ export default function Paiements() {
                     {getDeplacementLabel(deplacement)}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
 
             <label>
               Date
-              <input
+              <Input
                 type="date"
                 name="Date_Paiement"
                 value={form.Date_Paiement}
@@ -247,7 +250,7 @@ export default function Paiements() {
 
             <label>
               Montant
-              <input
+              <Input
                 type="number"
                 step="0.01"
                 min="0"
@@ -259,7 +262,7 @@ export default function Paiements() {
 
             <label>
               Remise
-              <input
+              <Input
                 type="number"
                 step="0.01"
                 min="0"
@@ -271,7 +274,7 @@ export default function Paiements() {
 
             <label>
               Moyen de paiement
-              <select
+              <Select
                 name="Moyen_Paiement"
                 value={form.Moyen_Paiement}
                 onChange={handleChange}
@@ -282,11 +285,11 @@ export default function Paiements() {
                 <option value="Chèque">Chèque</option>
                 <option value="Virement">Virement</option>
                 <option value="Autre">Autre</option>
-              </select>
+              </Select>
             </label>
 
             <label>
-              <input
+              <Input
                 type="checkbox"
                 name="Selection_Paiement"
                 checked={form.Selection_Paiement}
@@ -296,102 +299,101 @@ export default function Paiements() {
             </label>
 
             <div className="form-actions">
-              <button type="submit" disabled={saving}>
+              <Button type="submit" disabled={saving}>
                 {saving
                   ? "Enregistrement..."
                   : editingId
                     ? "Modifier"
                     : "Créer"}
-              </button>
+              </Button>
 
               {editingId && (
-                <button type="button" onClick={resetForm}>
+                <Button type="button" variant="secondary" onClick={resetForm}>
                   Annuler
-                </button>
+                </Button>
               )}
             </div>
           </form>
-        </section>
+        </Card>
 
-        <section className="card">
-          <h2>Liste des paiements</h2>
-
+        <Card title="Liste des paiements">
           {paiements.length === 0 ? (
             <p>Aucun paiement.</p>
           ) : (
             <div className="table-container">
               <table>
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Consultation</th>
-                    <th>Tarif</th>
-                    <th>Déplacement</th>
-                    <th>Montant</th>
-                    <th>Remise</th>
-                    <th>Moyen</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
+                <TableHead>
+                  <TableRow>
+                    <TableHeader>Date</TableHeader>
+                    <TableHeader>Consultation</TableHeader>
+                    <TableHeader>Tarif</TableHeader>
+                    <TableHeader>Déplacement</TableHeader>
+                    <TableHeader>Montant</TableHeader>
+                    <TableHeader>Remise</TableHeader>
+                    <TableHeader>Moyen</TableHeader>
+                    <TableHeader>Actions</TableHeader>
+                  </TableRow>
+                </TableHead>
 
                 <tbody>
                   {paiements.map((paiement) => (
-                    <tr key={paiement.ID_Paiement}>
-                      <td>
+                    <TableRow key={paiement.ID_Paiement}>
+                      <TableCell>
                         {paiement.Date_Paiement
                           ? new Date(paiement.Date_Paiement).toLocaleDateString(
                               "fr-FR",
                             )
                           : "—"}
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         {paiement.Consultation_Paiement
                           ? getConsultationLabel(paiement.Consultation_Paiement)
                           : "—"}
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         {paiement.Tarif_Paiements
                           ? paiement.Tarif_Paiements.Denomination_Tarif
                           : "—"}
-                      </td>
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         {paiement.Deplacement_Paiements
                           ? paiement.Deplacement_Paiements
                               .Denomination_Deplacement
                           : "—"}
-                      </td>
+                      </TableCell>
 
-                      <td>{paiement.Montant_Paiement} €</td>
+                      <TableCell>{paiement.Montant_Paiement} €</TableCell>
 
-                      <td>{paiement.Remise_Paiement} €</td>
+                      <TableCell>{paiement.Remise_Paiement} €</TableCell>
 
-                      <td>{paiement.Moyen_Paiement || "—"}</td>
+                      <TableCell>{paiement.Moyen_Paiement || "—"}</TableCell>
 
-                      <td>
-                        <button
+                      <TableCell>
+                        <Button
                           type="button"
                           onClick={() => startEdit(paiement)}
                         >
                           Modifier
-                        </button>
+                        </Button>
 
-                        <button
+                        <Button
                           type="button"
+                          variant="danger"
                           onClick={() => handleDelete(paiement.ID_Paiement)}
                         >
                           Supprimer
-                        </button>
-                      </td>
-                    </tr>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-        </section>
+        </Card>
       </div>
     </div>
   );

@@ -1,5 +1,16 @@
 import { useEffect, useState } from "react";
-
+import Button from "../components/ui/Button.jsx";
+import Card from "../components/ui/Card.jsx";
+import PageHeader from "../components/ui/PageHeader.jsx";
+import Input from "../components/ui/Input.jsx";
+import Select from "../components/ui/Select.jsx";
+import Textarea from "../components/ui/Textarea.jsx";
+import Table, {
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from "../components/ui/Table.jsx";
 import {
   getConsultations,
   createConsultation,
@@ -175,25 +186,19 @@ export default function Consultations() {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <div>
-          <h1>Consultations</h1>
-          <p>Gestion des consultations</p>
-        </div>
-      </div>
-
-      {error && <div className="error-message">{error}</div>}
+      <PageHeader title="Gestion des consultations" />
+      {error && <Alert variant="error">{error}</Alert>}
 
       <div className="content-grid">
-        <section className="card">
-          <h2>
-            {editingId ? "Modifier la consultation" : "Nouvelle consultation"}
-          </h2>
-
+        <Card
+          title={
+            editingId ? "Modifier la consultation" : "Nouvelle consultation"
+          }
+        >
           <form onSubmit={handleSubmit}>
             <label>
               Lieu
-              <select
+              <Select
                 name="ID_Lieu"
                 value={form.ID_Lieu}
                 onChange={handleChange}
@@ -210,12 +215,12 @@ export default function Consultations() {
                     {proprietaire.Nom_Proprietaire}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
 
             <label>
               Animal
-              <select
+              <Select
                 name="ID_Animal"
                 value={form.ID_Animal}
                 onChange={handleChange}
@@ -228,12 +233,12 @@ export default function Consultations() {
                     {animal.Nom_Animal}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
 
             <label>
               Date de consultation
-              <input
+              <Input
                 type="datetime-local"
                 name="Date_Consultation"
                 value={form.Date_Consultation}
@@ -244,7 +249,7 @@ export default function Consultations() {
 
             <label>
               Quantité
-              <input
+              <Input
                 type="number"
                 name="Quantite_Consultation"
                 value={form.Quantite_Consultation}
@@ -257,111 +262,110 @@ export default function Consultations() {
 
             <label>
               Motif
-              <input
+              <Input
                 type="text"
                 name="Motif_Consultation"
                 value={form.Motif_Consultation}
                 onChange={handleChange}
-                required
+                required={true}
               />
             </label>
 
-            <label>
-              Description
-              <textarea
-                name="Description_Consultation"
-                value={form.Description_Consultation}
-                onChange={handleChange}
-                rows="4"
-                required
-              />
-            </label>
+            <Textarea
+              label="Description"
+              name="Description_Consultation"
+              value={form.Description_Consultation}
+              onChange={handleChange}
+              rows="4"
+              required={true}
+            />
 
-            <label>
-              Commentaire
-              <textarea
-                name="Commentaire_Consultation"
-                value={form.Commentaire_Consultation}
-                onChange={handleChange}
-                rows="4"
-              />
-            </label>
+            <Textarea
+              label="Commentaire"
+              name="Commentaire_Consultation"
+              value={form.Commentaire_Consultation}
+              onChange={handleChange}
+              rows="4"
+            />
 
             <div className="form-actions">
-              <button type="submit" disabled={saving}>
+              <Button type="submit" disabled={saving}>
                 {saving
                   ? "Enregistrement..."
                   : editingId
                     ? "Modifier"
                     : "Créer"}
-              </button>
+              </Button>
 
               {editingId && (
-                <button type="button" onClick={resetForm}>
+                <Button type="button" variant="secondary" onClick={resetForm}>
                   Annuler
-                </button>
+                </Button>
               )}
             </div>
           </form>
-        </section>
+        </Card>
 
-        <section className="card">
-          <h2>Liste des consultations</h2>
-
+        <Card title="Liste des consultations">
           {consultations.length === 0 ? (
             <p>Aucune consultation.</p>
           ) : (
             <div className="table-container">
               <table>
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Animal</th>
-                    <th>Lieu</th>
-                    <th>Motif</th>
-                    <th>Quantité</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
+                <TableHead>
+                  <TableRow>
+                    <TableHeader>Date</TableHeader>
+                    <TableHeader>Animal</TableHeader>
+                    <TableHeader>Lieu</TableHeader>
+                    <TableHeader>Motif</TableHeader>
+                    <TableHeader>Quantité</TableHeader>
+                    <TableHeader>Actions</TableHeader>
+                  </TableRow>
+                </TableHead>
 
                 <tbody>
                   {consultations.map((consultation) => (
-                    <tr key={consultation.ID_Consultation}>
-                      <td>{formatDate(consultation.Date_Consultation)}</td>
+                    <TableRow key={consultation.ID_Consultation}>
+                      <TableCell>
+                        {formatDate(consultation.Date_Consultation)}
+                      </TableCell>
 
-                      <td>{getAnimalName(consultation)}</td>
+                      <TableCell>{getAnimalName(consultation)}</TableCell>
 
-                      <td>{getLieuName(consultation)}</td>
+                      <TableCell>{getLieuName(consultation)}</TableCell>
 
-                      <td>{consultation.Motif_Consultation}</td>
+                      <TableCell>{consultation.Motif_Consultation}</TableCell>
 
-                      <td>{String(consultation.Quantite_Consultation)}</td>
+                      <TableCell>
+                        {String(consultation.Quantite_Consultation)}
+                      </TableCell>
 
-                      <td>
-                        <button
+                      <TableCell>
+                        <Button
                           type="button"
                           onClick={() => startEdit(consultation)}
                           className="cursor-pointer"
                         >
                           Modifier
-                        </button>
+                        </Button>
 
-                        <button
+                        <Button
                           type="button"
+                          variant="danger"
                           onClick={() =>
                             handleDelete(consultation.ID_Consultation)
                           }
                         >
                           Supprimer
-                        </button>
-                      </td>
-                    </tr>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-        </section>
+        </Card>
       </div>
     </div>
   );

@@ -1,5 +1,16 @@
 import { useEffect, useState } from "react";
-
+import Button from "../components/ui/Button.jsx";
+import Card from "../components/ui/Card.jsx";
+import PageHeader from "../components/ui/PageHeader.jsx";
+import Input from "../components/ui/Input.jsx";
+import Select from "../components/ui/Select.jsx";
+import Textarea from "../components/ui/Textarea.jsx";
+import Table, {
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from "../components/ui/Table.jsx";
 import {
   getZonages,
   createZonage,
@@ -142,19 +153,12 @@ export default function Zonages() {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <div>
-          <h1>Zonages</h1>
-          <p>Gestion des zonages des consultations</p>
-        </div>
-      </div>
+      <PageHeader title="Gestion des zonages" />
 
-      {error && <div className="error-message">{error}</div>}
+      {error && <Alert variant="error">{error}</Alert>}
 
       <div className="content-grid">
-        <section className="card">
-          <h2>{editingId ? "Modifier le zonage" : "Nouveau zonage"}</h2>
-
+        <Card title={editingId ? "Modifier le zonage" : "Nouveau zonage"}>
           {consultations.length === 0 ? (
             <p>
               Vous devez créer une consultation avant de pouvoir créer un
@@ -164,7 +168,7 @@ export default function Zonages() {
             <form onSubmit={handleSubmit}>
               <label>
                 Consultation
-                <select
+                <Select
                   name="ID_Consultation"
                   value={form.ID_Consultation}
                   onChange={handleChange}
@@ -183,12 +187,12 @@ export default function Zonages() {
                       — {consultation.Motif_Consultation}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
 
               <label>
                 Nom
-                <input
+                <Input
                   type="text"
                   name="Nom_Zonage"
                   value={form.Nom_Zonage}
@@ -199,7 +203,7 @@ export default function Zonages() {
 
               <label>
                 Position
-                <input
+                <Input
                   type="text"
                   name="Position_Zonage"
                   value={form.Position_Zonage}
@@ -209,7 +213,7 @@ export default function Zonages() {
 
               <label>
                 Orientation
-                <input
+                <Input
                   type="text"
                   name="Orientation_Zonage"
                   value={form.Orientation_Zonage}
@@ -217,80 +221,77 @@ export default function Zonages() {
                 />
               </label>
 
-              <label>
-                Commentaire
-                <textarea
-                  name="Commentaire_Zonage"
-                  value={form.Commentaire_Zonage}
-                  onChange={handleChange}
-                  rows="4"
-                />
-              </label>
+              <Textarea
+                label="Commentaire"
+                name="Commentaire_Zonage"
+                value={form.Commentaire_Zonage}
+                onChange={handleChange}
+                rows="4"
+              />
 
               <div className="form-actions">
-                <button type="submit" disabled={saving}>
+                <Button type="submit" disabled={saving}>
                   {saving
                     ? "Enregistrement..."
                     : editingId
                       ? "Modifier"
                       : "Créer"}
-                </button>
+                </Button>
 
                 {editingId && (
-                  <button type="button" onClick={resetForm}>
+                  <Button type="button" variant="secondary" onClick={resetForm}>
                     Annuler
-                  </button>
+                  </Button>
                 )}
               </div>
             </form>
           )}
-        </section>
+        </Card>
 
-        <section className="card">
-          <h2>Liste des zonages</h2>
-
+        <Card title="Liste des zonages">
           {zonages.length === 0 ? (
             <p>Aucun zonage.</p>
           ) : (
             <div className="table-container">
               <table>
-                <thead>
-                  <tr>
-                    <th>Nom</th>
-                    <th>Position</th>
-                    <th>Orientation</th>
-                    <th>Consultation</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
+                <TableHead>
+                  <TableRow>
+                    <TableHeader>Nom</TableHeader>
+                    <TableHeader>Position</TableHeader>
+                    <TableHeader>Orientation</TableHeader>
+                    <TableHeader>Consultation</TableHeader>
+                    <TableHeader>Actions</TableHeader>
+                  </TableRow>
+                </TableHead>
 
                 <tbody>
                   {zonages.map((zonage) => (
-                    <tr key={zonage.ID_Zonage}>
-                      <td>{zonage.Nom_Zonage}</td>
-                      <td>{zonage.Position_Zonage || "—"}</td>
-                      <td>{zonage.Orientation_Zonage || "—"}</td>
-                      <td>{getConsultationLabel(zonage)}</td>
+                    <TableRow key={zonage.ID_Zonage}>
+                      <TableCell>{zonage.Nom_Zonage}</TableCell>
+                      <TableCell>{zonage.Position_Zonage || "—"}</TableCell>
+                      <TableCell>{zonage.Orientation_Zonage || "—"}</TableCell>
+                      <TableCell>{getConsultationLabel(zonage)}</TableCell>
 
-                      <td>
-                        <button type="button" onClick={() => startEdit(zonage)}>
+                      <TableCell>
+                        <Button type="button" onClick={() => startEdit(zonage)}>
                           Modifier
-                        </button>
+                        </Button>
 
-                        <button
+                        <Button
                           type="button"
+                          variant="danger"
                           onClick={() => handleDelete(zonage.ID_Zonage)}
                         >
                           Supprimer
-                        </button>
-                      </td>
-                    </tr>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-        </section>
+        </Card>
       </div>
     </div>
   );

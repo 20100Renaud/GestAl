@@ -5,13 +5,13 @@ import Topbar from "./Topbar.jsx";
 
 export default function DashboardLayout() {
   return (
-    <div className="dashboard-layout">
+    <div className="h-screen flex">
       <Sidebar />
 
-      <div className="dashboard-main">
+      <div className="flex-1 overflow-auto">
         <Topbar />
 
-        <main className="dashboard-content">
+        <main className="p-8">
           <Outlet />
         </main>
       </div>

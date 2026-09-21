@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
-
+import Button from "../components/ui/Button.jsx";
+import Card from "../components/ui/Card.jsx";
+import PageHeader from "../components/ui/PageHeader.jsx";
+import Input from "../components/ui/Input.jsx";
+import Table, {
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from "../components/ui/Table.jsx";
 import {
   getDeplacements,
   createDeplacement,
@@ -115,25 +124,18 @@ export default function Deplacements() {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <div>
-          <h1>Déplacements</h1>
-          <p>Gestion des frais de déplacement</p>
-        </div>
-      </div>
+      <PageHeader title="Déplacements" />
 
-      {error && <div className="error-message">{error}</div>}
+      {error && <Alert variant="error">{error}</Alert>}
 
       <div className="content-grid">
-        <section className="card">
-          <h2>
-            {editingId ? "Modifier le déplacement" : "Nouveau déplacement"}
-          </h2>
-
+        <Card
+          title={editingId ? "Modifier le déplacement" : "Nouveau déplacement"}
+        >
           <form onSubmit={handleSubmit}>
             <label>
               Année
-              <input
+              <Input
                 type="text"
                 name="Annee_Deplacement"
                 value={form.Annee_Deplacement}
@@ -144,7 +146,7 @@ export default function Deplacements() {
 
             <label>
               Désignation
-              <input
+              <Input
                 type="text"
                 name="Denomination_Deplacement"
                 value={form.Denomination_Deplacement}
@@ -155,7 +157,7 @@ export default function Deplacements() {
 
             <label>
               Montant
-              <input
+              <Input
                 type="number"
                 name="Montant_Deplacement"
                 value={form.Montant_Deplacement}
@@ -167,75 +169,76 @@ export default function Deplacements() {
             </label>
 
             <div className="form-actions">
-              <button type="submit" disabled={saving}>
+              <Button type="submit" disabled={saving}>
                 {saving
                   ? "Enregistrement..."
                   : editingId
                     ? "Modifier"
                     : "Créer"}
-              </button>
+              </Button>
 
               {editingId && (
-                <button type="button" onClick={resetForm}>
+                <Button type="button" variant="secondary" onClick={resetForm}>
                   Annuler
-                </button>
+                </Button>
               )}
             </div>
           </form>
-        </section>
+        </Card>
 
-        <section className="card">
-          <h2>Liste des déplacements</h2>
-
+        <Card title="Liste des déplacements">
           {deplacements.length === 0 ? (
             <p>Aucun déplacement.</p>
           ) : (
             <div className="table-container">
               <table>
-                <thead>
-                  <tr>
-                    <th>Année</th>
-                    <th>Désignation</th>
-                    <th>Montant</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
+                <TableHead>
+                  <TableRow>
+                    <TableHeader>Année</TableHeader>
+                    <TableHeader>Désignation</TableHeader>
+                    <TableHeader>Montant</TableHeader>
+                    <TableHeader>Actions</TableHeader>
+                  </TableRow>
+                </TableHead>
 
                 <tbody>
                   {deplacements.map((deplacement) => (
-                    <tr key={deplacement.ID_Deplacement}>
-                      <td>{deplacement.Annee_Deplacement}</td>
+                    <TableRow key={deplacement.ID_Deplacement}>
+                      <TableCell>{deplacement.Annee_Deplacement}</TableCell>
 
-                      <td>{deplacement.Denomination_Deplacement}</td>
+                      <TableCell>
+                        {deplacement.Denomination_Deplacement}
+                      </TableCell>
 
-                      <td>
+                      <TableCell>
                         {Number(deplacement.Montant_Deplacement).toFixed(2)} €
-                      </td>
+                      </TableCell>
 
-                      <td>
-                        <button
+                      <TableCell>
+                        <Button
                           type="button"
                           onClick={() => startEdit(deplacement)}
                         >
                           Modifier
-                        </button>
+                        </Button>
 
-                        <button
+                        <Button
                           type="button"
+                          variant="danger"
                           onClick={() =>
                             handleDelete(deplacement.ID_Deplacement)
                           }
                         >
                           Supprimer
-                        </button>
-                      </td>
-                    </tr>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-        </section>
+        </Card>
       </div>
     </div>
   );

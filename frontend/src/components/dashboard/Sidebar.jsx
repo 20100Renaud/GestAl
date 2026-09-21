@@ -1,5 +1,4 @@
-import { NavLink } from "react-router-dom";
-
+import NavLink from "../ui/NavLink.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 
 const navigation = [
@@ -49,28 +48,29 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-logo">
+    <aside className="w-[240px] min-h-full flex flex-col bg-blue-950 text-white  sticky top-0 h-screen">
+      <div className="p-5 border-b border-white/40 text-2xl">
         <h1>GestAL</h1>
       </div>
 
-      <nav className="sidebar-nav">
+      <nav className="flex flex-col p-4 gap-1">
         {navigation.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
             end={item.path === "/dashboard"}
-            className={({ isActive }) =>
-              isActive ? "nav-link active" : "nav-link"
-            }
           >
             {item.label}
           </NavLink>
         ))}
       </nav>
 
-      <div className="sidebar-footer">
-        <button type="button" onClick={handleLogout}>
+      <div className="mt-auto p-4 border-t border-white/10">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="w-full p-2.5 rounded-lg bg-gray-700 text-white cursor-pointer hover:bg-gray-600"
+        >
           Déconnexion
         </button>
       </div>

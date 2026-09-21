@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
-
+import Button from "../components/ui/Button.jsx";
+import Card from "../components/ui/Card.jsx";
+import PageHeader from "../components/ui/PageHeader.jsx";
+import Input from "../components/ui/Input.jsx";
+import Table, {
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from "../components/ui/Table.jsx";
 import {
   getTarifs,
   createTarif,
@@ -115,23 +124,16 @@ export default function Tarifs() {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <div>
-          <h1>Tarifs</h1>
-          <p>Gestion des tarifs</p>
-        </div>
-      </div>
+      <PageHeader title="Gestion des tarifs" />
 
-      {error && <div className="error-message">{error}</div>}
+      {error && <Alert variant="error">{error}</Alert>}
 
       <div className="content-grid">
-        <section className="card">
-          <h2>{editingId ? "Modifier le tarif" : "Nouveau tarif"}</h2>
-
+        <Card title={editingId ? "Modifier le tarif" : "Nouveau tarif"}>
           <form onSubmit={handleSubmit}>
             <label>
               Année
-              <input
+              <Input
                 type="text"
                 name="Annee_Tarif"
                 value={form.Annee_Tarif}
@@ -142,7 +144,7 @@ export default function Tarifs() {
 
             <label>
               Désignation
-              <input
+              <Input
                 type="text"
                 name="Denomination_Tarif"
                 value={form.Denomination_Tarif}
@@ -153,7 +155,7 @@ export default function Tarifs() {
 
             <label>
               Montant
-              <input
+              <Input
                 type="number"
                 name="Montant_Tarif"
                 value={form.Montant_Tarif}
@@ -165,66 +167,67 @@ export default function Tarifs() {
             </label>
 
             <div className="form-actions">
-              <button type="submit" disabled={saving}>
+              <Button type="submit" disabled={saving}>
                 {saving
                   ? "Enregistrement..."
                   : editingId
                     ? "Modifier"
                     : "Créer"}
-              </button>
+              </Button>
 
               {editingId && (
-                <button type="button" onClick={resetForm}>
+                <Button type="button" variant="secondary" onClick={resetForm}>
                   Annuler
-                </button>
+                </Button>
               )}
             </div>
           </form>
-        </section>
+        </Card>
 
-        <section className="card">
-          <h2>Liste des tarifs</h2>
-
+        <Card title="Liste des tarifs">
           {tarifs.length === 0 ? (
             <p>Aucun tarif.</p>
           ) : (
             <div className="table-container">
               <table>
-                <thead>
-                  <tr>
-                    <th>Année</th>
-                    <th>Désignation</th>
-                    <th>Montant</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
+                <TableHead>
+                  <TableRow>
+                    <TableHeader>Année</TableHeader>
+                    <TableHeader>Désignation</TableHeader>
+                    <TableHeader>Montant</TableHeader>
+                    <TableHeader>Actions</TableHeader>
+                  </TableRow>
+                </TableHead>
 
                 <tbody>
                   {tarifs.map((tarif) => (
-                    <tr key={tarif.ID_Tarif}>
-                      <td>{tarif.Annee_Tarif}</td>
-                      <td>{tarif.Denomination_Tarif}</td>
-                      <td>{Number(tarif.Montant_Tarif).toFixed(2)} €</td>
+                    <TableRow key={tarif.ID_Tarif}>
+                      <TableCell>{tarif.Annee_Tarif}</TableCell>
+                      <TableCell>{tarif.Denomination_Tarif}</TableCell>
+                      <TableCell>
+                        {Number(tarif.Montant_Tarif).toFixed(2)} €
+                      </TableCell>
 
-                      <td>
-                        <button type="button" onClick={() => startEdit(tarif)}>
+                      <TableCell>
+                        <Button type="button" onClick={() => startEdit(tarif)}>
                           Modifier
-                        </button>
+                        </Button>
 
-                        <button
+                        <Button
                           type="button"
+                          variant="danger"
                           onClick={() => handleDelete(tarif.ID_Tarif)}
                         >
                           Supprimer
-                        </button>
-                      </td>
-                    </tr>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-        </section>
+        </Card>
       </div>
     </div>
   );

@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
+import PageHeader from "../components/ui/PageHeader.jsx";
+import Button from "../components/ui/Button.jsx";
+import Input from "../components/ui/Input.jsx";
 
 export default function Login() {
   const { login } = useAuth();
@@ -26,12 +29,12 @@ export default function Login() {
 
   return (
     <main>
-      <h1>GestAL</h1>
+      <PageHeader title="GestAL" description="Connexion" />
 
       <form onSubmit={handleSubmit}>
         <div>
-          <label htmlFor="email">Email</label>
-          <input
+          <label htmlFor="email">E-mail</label>
+          <Input
             id="email"
             type="email"
             value={email}
@@ -42,8 +45,8 @@ export default function Login() {
         </div>
 
         <div>
-          <label htmlFor="password">Password</label>
-          <input
+          <label htmlFor="password">Mot de passe</label>
+          <Input
             id="password"
             type="password"
             value={password}
@@ -55,9 +58,9 @@ export default function Login() {
 
         {error && <p>{error}</p>}
 
-        <button type="submit" disabled={submitting}>
-          {submitting ? "Logging in..." : "Login"}
-        </button>
+        <Button type="submit" disabled={submitting}>
+          {submitting ? "Chargement..." : "Se connecter"}
+        </Button>
       </form>
     </main>
   );

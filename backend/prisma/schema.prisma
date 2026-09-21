@@ -34,8 +34,9 @@ model T_Proprietaires {
   ID_Proprietaire       String   @id @default(uuid())
   ID_User               String
   Date_User             DateTime @default(now())
-  Raison_sociale        String?
+  Raison_sociale        String   @default("Particulier")
   Etablissement         String?
+  Siret_Proprietaire    String?
   Civilite_Proprietaire String?
   Nom_Proprietaire      String
   Prenom_Proprietaire   String
@@ -83,9 +84,11 @@ model T_Consultations {
 model T_Zonages {
   ID_Zonage          String  @id @default(uuid())
   ID_Consultation    String
+  Pratique_Zonage    String
   Nom_Zonage         String
   Position_Zonage    String?
   Orientation_Zonage String?
+  Technique_Zonage   String?
   Commentaire_Zonage String?
 
   Consultation_Zonage T_Consultations @relation(fields: [ID_Consultation], references: [ID_Consultation])
@@ -97,10 +100,12 @@ model T_Paiements {
   ID_Tarif           String
   ID_Deplacement     String
   Date_Paiement      DateTime @default(now())
+  Date_Encaissement  DateTime?
   Montant_Paiement   Decimal  @default(0)
   Remise_Paiement    Decimal  @default(0)
   Moyen_Paiement     String?
-  Selection_Paiement Boolean  @default(false)
+  E_Reporting_Paiement Boolean  @default(false)
+  E_Facture_Paiement Boolean  @default(false)
 
   Consultation_Paiement T_Consultations @relation(fields: [ID_Consultation], references: [ID_Consultation])
   Tarif_Paiements       T_Tarifs        @relation(fields: [ID_Tarif], references: [ID_Tarif])
