@@ -14,10 +14,12 @@ import Tarifs from "./pages/Tarifs.jsx";
 import Deplacements from "./pages/Deplacements.jsx";
 import Zonages from "./pages/Zonages.jsx";
 
+
 export default function App() {
   const { isAuthenticated } = useAuth();
 
   return (
+
     <Routes>
       <Route
         path="/login"
@@ -53,5 +55,6 @@ export default function App() {
         }
       />
     </Routes>
+    
   );
 }

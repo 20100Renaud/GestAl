@@ -7,8 +7,7 @@ export default function Dashboard() {
   return (
     <div>
       <PageHeader
-        title="Dashboard"
-        description={`Bienvenue ${user?.firstName} ${user?.lastName}`}
+        title="Tableau de bord"
       />
 
       <DashboardCards>

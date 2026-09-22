@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Button from "../components/ui/Button.jsx";
-import Card from "../components/ui/Card.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import Input from "../components/ui/Input.jsx";
+import Alert from "../components/ui/Alert.jsx";
+import Modal from "../components/ui/Modal.jsx";
 import Table, {
+  Vide,
   TableHead,
   TableHeader,
   TableRow,
@@ -26,6 +28,9 @@ export default function Deplacements() {
   const [deplacements, setDeplacements] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
+
+  const [showForm, setShowForm] = useState(false);
+  const [search, setSearch] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -58,23 +63,53 @@ export default function Deplacements() {
     }));
   }
 
-  function resetForm() {
-    setForm(emptyForm);
+  function openCreateForm() {
     setEditingId(null);
+    setForm(emptyForm);
     setError("");
+    setShowForm(true);
   }
 
-  function startEdit(deplacement) {
+  function openEditForm(deplacement) {
     setEditingId(deplacement.ID_Deplacement);
 
     setForm({
-      Annee_Deplacement: deplacement.Annee_Deplacement,
-      Denomination_Deplacement: deplacement.Denomination_Deplacement,
-      Montant_Deplacement: String(deplacement.Montant_Deplacement),
+      Annee_Deplacement: deplacement.Annee_Deplacement ?? "",
+      Denomination_Deplacement: deplacement.Denomination_Deplacement ?? "",
+      Montant_Deplacement: String(deplacement.Montant_Deplacement ?? ""),
     });
 
     setError("");
+    setShowForm(true);
   }
+
+  function closeForm() {
+    if (saving) {
+      return;
+    }
+
+    setShowForm(false);
+    setEditingId(null);
+    setForm(emptyForm);
+  }
+
+  const filteredDeplacements = useMemo(() => {
+    const value = search.trim().toLowerCase();
+
+    if (!value) {
+      return deplacements;
+    }
+
+    return deplacements.filter((deplacement) => {
+      return [
+        deplacement.Annee_Deplacement,
+        deplacement.Denomination_Deplacement,
+        deplacement.Montant_Deplacement,
+      ]
+        .filter((field) => field !== null && field !== undefined)
+        .some((field) => String(field).toLowerCase().includes(value));
+    });
+  }, [deplacements, search]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -90,7 +125,7 @@ export default function Deplacements() {
       }
 
       await loadDeplacements();
-      resetForm();
+      closeForm();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -109,7 +144,7 @@ export default function Deplacements() {
       await deleteDeplacement(id);
 
       if (editingId === id) {
-        resetForm();
+        closeForm();
       }
 
       await loadDeplacements();
@@ -118,128 +153,127 @@ export default function Deplacements() {
     }
   }
 
-  if (loading) {
-    return <div>Chargement...</div>;
-  }
-
   return (
-    <div className="page">
-      <PageHeader title="Déplacements" />
-
+    <div className="w-full">
       {error && <Alert variant="error">{error}</Alert>}
 
-      <div className="content-grid">
-        <Card
-          title={editingId ? "Modifier le déplacement" : "Nouveau déplacement"}
-        >
-          <form onSubmit={handleSubmit}>
-            <label>
-              Année
-              <Input
-                type="text"
-                name="Annee_Deplacement"
-                value={form.Annee_Deplacement}
-                onChange={handleChange}
-                required
-              />
-            </label>
+      <PageHeader
+        title="Gestion des Déplacements"
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Rechercher un déplacement..."
+        createLabel="Nouveau déplacement"
+        onAction={openCreateForm}
+      />
 
-            <label>
-              Désignation
-              <Input
-                type="text"
-                name="Denomination_Deplacement"
-                value={form.Denomination_Deplacement}
-                onChange={handleChange}
-                required
-              />
-            </label>
+      {loading ? (
+        <p>Chargement...</p>
+      ) : filteredDeplacements.length === 0 ? (
+        <Vide search={search} />
+      ) : (
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableHeader>Année</TableHeader>
+              <TableHeader>Désignation</TableHeader>
+              <TableHeader>Montant</TableHeader>
+            </TableRow>
+          </TableHead>
 
-            <label>
-              Montant
-              <Input
-                type="number"
-                name="Montant_Deplacement"
-                value={form.Montant_Deplacement}
-                onChange={handleChange}
-                min="0"
-                step="0.01"
-                required
-              />
-            </label>
+          <tbody>
+            {filteredDeplacements.map((deplacement) => (
+              <TableRow
+                key={deplacement.ID_Deplacement}
+                onClick={() => openEditForm(deplacement)}
+              >
+                <TableCell>{deplacement.Annee_Deplacement}</TableCell>
 
-            <div className="form-actions">
+                <TableCell>{deplacement.Denomination_Deplacement}</TableCell>
+
+                <TableCell>
+                  {Number(deplacement.Montant_Deplacement).toFixed(2)} €
+                </TableCell>
+              </TableRow>
+            ))}
+          </tbody>
+        </Table>
+      )}
+
+      <Modal
+        open={showForm}
+        title={editingId ? "Modifier le déplacement" : "Ajouter un déplacement"}
+        onClose={closeForm}
+      >
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="grid grid-cols-1 gap-4">
+            <Input
+              id="Annee_Deplacement"
+              label="Année"
+              type="text"
+              name="Annee_Deplacement"
+              value={form.Annee_Deplacement}
+              onChange={handleChange}
+              required
+            />
+
+            <Input
+              id="Denomination_Deplacement"
+              label="Désignation"
+              type="text"
+              name="Denomination_Deplacement"
+              value={form.Denomination_Deplacement}
+              onChange={handleChange}
+              required
+            />
+
+            <Input
+              id="Montant_Deplacement"
+              label="Montant"
+              type="number"
+              name="Montant_Deplacement"
+              value={form.Montant_Deplacement}
+              onChange={handleChange}
+              min="0"
+              step="0.01"
+              required
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-3 mt-6">
+            <div>
+              {editingId && (
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => handleDelete(editingId)}
+                  disabled={saving}
+                >
+                  Supprimer
+                </Button>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                onClick={closeForm}
+                variant="secondary"
+                disabled={saving}
+              >
+                Annuler
+              </Button>
+
               <Button type="submit" disabled={saving}>
                 {saving
                   ? "Enregistrement..."
                   : editingId
                     ? "Modifier"
-                    : "Créer"}
+                    : "Ajouter"}
               </Button>
-
-              {editingId && (
-                <Button type="button" variant="secondary" onClick={resetForm}>
-                  Annuler
-                </Button>
-              )}
             </div>
-          </form>
-        </Card>
-
-        <Card title="Liste des déplacements">
-          {deplacements.length === 0 ? (
-            <p>Aucun déplacement.</p>
-          ) : (
-            <div className="table-container">
-              <table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeader>Année</TableHeader>
-                    <TableHeader>Désignation</TableHeader>
-                    <TableHeader>Montant</TableHeader>
-                    <TableHeader>Actions</TableHeader>
-                  </TableRow>
-                </TableHead>
-
-                <tbody>
-                  {deplacements.map((deplacement) => (
-                    <TableRow key={deplacement.ID_Deplacement}>
-                      <TableCell>{deplacement.Annee_Deplacement}</TableCell>
-
-                      <TableCell>
-                        {deplacement.Denomination_Deplacement}
-                      </TableCell>
-
-                      <TableCell>
-                        {Number(deplacement.Montant_Deplacement).toFixed(2)} €
-                      </TableCell>
-
-                      <TableCell>
-                        <Button
-                          type="button"
-                          onClick={() => startEdit(deplacement)}
-                        >
-                          Modifier
-                        </Button>
-
-                        <Button
-                          type="button"
-                          variant="danger"
-                          onClick={() =>
-                            handleDelete(deplacement.ID_Deplacement)
-                          }
-                        >
-                          Supprimer
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
-      </div>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

@@ -7,8 +7,8 @@ export default function NavLink({ to, end, children }) {
       end={end}
       className={({ isActive }) =>
         isActive
-          ? "px-3 py-3 rounded-lg text-gray-300 bg-blue-600 text-white"
-          : "px-3 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white"
+          ? "block w-full px-3 py-2 rounded-lg text-blue-300 bg-blue-600 text-white "
+          : "block w-full px-3 py-2 rounded-lg text-blue-300 hover:bg-blue-900 hover:text-white"
       }
     >
       {children}

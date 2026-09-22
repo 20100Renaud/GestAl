@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Button from "../components/ui/Button.jsx";
-import Card from "../components/ui/Card.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import Input from "../components/ui/Input.jsx";
 import Select from "../components/ui/Select.jsx";
 import Textarea from "../components/ui/Textarea.jsx";
+import Modal from "../components/ui/Modal.jsx";
+import Alert from "../components/ui/Alert.jsx";
+
 import Table, {
+  Vide,
   TableHead,
   TableHeader,
   TableRow,
@@ -36,6 +39,10 @@ export default function Animaux() {
 
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
+
+  const [showForm, setShowForm] = useState(false);
+
+  const [search, setSearch] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -73,29 +80,65 @@ export default function Animaux() {
     }));
   }
 
-  function resetForm() {
-    setForm(emptyForm);
+  function openCreateForm() {
     setEditingId(null);
+    setForm(emptyForm);
     setError("");
+    setShowForm(true);
   }
 
-  function startEdit(animal) {
+  function openEditForm(animal) {
     setEditingId(animal.ID_Animal);
 
     setForm({
-      ID_Proprietaire: animal.ID_Proprietaire,
-      Nom_Animal: animal.Nom_Animal,
-      Genre_Animal: animal.Genre_Animal,
-      Race_Animal: animal.Race_Animal || "",
-      Date_Naissance_Animal: animal.Date_Naissance_Animal
-        ? animal.Date_Naissance_Animal.slice(0, 10)
-        : "",
-      Memo_Animal: animal.Memo_Animal || "",
-      Sexe_Animal: animal.Sexe_Animal,
+      ID_Proprietaire: animal.ID_Proprietaire ?? "",
+      Nom_Animal: animal.Nom_Animal ?? "",
+      Genre_Animal: animal.Genre_Animal ?? "",
+      Race_Animal: animal.Race_Animal ?? "",
+      Date_Naissance_Animal: animal.Date_Naissance_Animal ?? "",
+      Sexe_Animal: animal.Sexe_Animal ?? "",
+      Memo_Animal: animal.Memo_Animal ?? "",
     });
 
     setError("");
+    setShowForm(true);
   }
+
+  function closeForm() {
+    if (saving) {
+      return;
+    }
+
+    setShowForm(false);
+    setEditingId(null);
+    setForm(emptyForm);
+  }
+
+  const filteredAnimaux = useMemo(() => {
+    const value = search.trim().toLowerCase();
+
+    if (!value) {
+      return animaux;
+    }
+
+    return animaux.filter((animal) => {
+      const proprietaire = animal.Proprietaire_Animal;
+
+      const proprietaireName = proprietaire
+        ? `${proprietaire.Prenom_Proprietaire} ${proprietaire.Nom_Proprietaire}`
+        : "";
+
+      return [
+        animal.Nom_Animal,
+        animal.Genre_Animal,
+        animal.Race_Animal,
+        animal.Sexe_Animal,
+        proprietaireName,
+      ]
+        .filter(Boolean)
+        .some((field) => String(field).toLowerCase().includes(value));
+    });
+  }, [animaux, search]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -111,7 +154,7 @@ export default function Animaux() {
       }
 
       await loadData();
-      resetForm();
+      closeForm();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -130,7 +173,7 @@ export default function Animaux() {
       await deleteAnimal(id);
 
       if (editingId === id) {
-        resetForm();
+        closeForm();
       }
 
       await loadData();
@@ -149,22 +192,73 @@ export default function Animaux() {
     return `${proprietaire.Prenom_Proprietaire} ${proprietaire.Nom_Proprietaire}`;
   }
 
-  if (loading) {
-    return <div>Chargement...</div>;
-  }
-
   return (
-    <div className="page">
-      <PageHeader title="Animaux" />
-
+    <div className="w-full">
       {error && <Alert variant="error">{error}</Alert>}
 
-      <div className="content-grid">
-        <Card title={editingId ? "Modifier l'animal" : "Nouvel animal"}>
-          <form onSubmit={handleSubmit}>
-            <label>
-              Propriétaire
+      <PageHeader
+        title="Gestion des Animaux"
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Rechercher un animal..."
+        createLabel="Nouvel animal"
+        onAction={openCreateForm}
+      />
+
+      {loading ? (
+        <p>Chargement...</p>
+      ) : filteredAnimaux.length === 0 ? (
+        <Vide search={search} />
+      ) : (
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableHeader>Nom</TableHeader>
+              <TableHeader>Genre</TableHeader>
+              <TableHeader>Race</TableHeader>
+              <TableHeader>Sexe</TableHeader>
+              <TableHeader>Propriétaire</TableHeader>
+            </TableRow>
+          </TableHead>
+
+          <tbody>
+            {filteredAnimaux.map((animal) => (
+              <TableRow
+                key={animal.ID_Animal}
+                onClick={() => openEditForm(animal)}
+              >
+                <TableCell>{animal.Nom_Animal}</TableCell>
+
+                <TableCell>{animal.Genre_Animal}</TableCell>
+
+                <TableCell>{animal.Race_Animal || "—"}</TableCell>
+
+                <TableCell>{animal.Sexe_Animal || "—"}</TableCell>
+
+                <TableCell>{getProprietaireName(animal)}</TableCell>
+              </TableRow>
+            ))}
+          </tbody>
+        </Table>
+      )}
+
+      <Modal
+        open={showForm}
+        title={editingId ? "Modifier l'animal" : "Ajouter un animal"}
+        onClose={closeForm}
+      >
+        {proprietaires.length === 0 ? (
+          <div className="p-6">
+            <p className="text-gray-600">
+              Vous devez créer un propriétaire avant de pouvoir créer un animal.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="p-6">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Select
+                id="Proprietaire"
+                label="Propriétaire"
                 name="ID_Proprietaire"
                 value={form.ID_Proprietaire}
                 onChange={handleChange}
@@ -182,54 +276,49 @@ export default function Animaux() {
                   </option>
                 ))}
               </Select>
-            </label>
 
-            <label>
-              Nom
               <Input
+                id="Nom_Animal"
+                label="Nom"
                 type="text"
                 name="Nom_Animal"
                 value={form.Nom_Animal}
                 onChange={handleChange}
                 required
               />
-            </label>
 
-            <label>
-              Genre
               <Input
+                id="Genre_Animal"
+                label="Genre"
                 type="text"
                 name="Genre_Animal"
                 value={form.Genre_Animal}
                 onChange={handleChange}
                 required
               />
-            </label>
 
-            <label>
-              Race
               <Input
+                id="Race_Animal"
+                label="Race"
                 type="text"
                 name="Race_Animal"
                 value={form.Race_Animal}
                 onChange={handleChange}
               />
-            </label>
 
-            <label>
-              Date de naissance
               <Input
+                id="Date_Naissance_Animal"
+                label="Date de naissance"
                 type="date"
                 name="Date_Naissance_Animal"
                 value={form.Date_Naissance_Animal}
                 onChange={handleChange}
                 required
               />
-            </label>
 
-            <label>
-              Sexe
               <Select
+                id="Sexe_Animal"
+                label="Sexe"
                 name="Sexe_Animal"
                 value={form.Sexe_Animal}
                 onChange={handleChange}
@@ -239,81 +328,55 @@ export default function Animaux() {
                 <option value="Mâle">Mâle</option>
                 <option value="Femelle">Femelle</option>
               </Select>
-            </label>
 
-            <Textarea
-              label="Notes"
-              name="Memo_Animal"
-              value={form.Memo_Animal}
-              onChange={handleChange}
-              rows="4"
-            />
+              <div className="md:col-span-2">
+                <Textarea
+                  label="Notes"
+                  name="Memo_Animal"
+                  value={form.Memo_Animal}
+                  onChange={handleChange}
+                  rows="4"
+                />
+              </div>
+            </div>
 
-            <div className="form-actions">
-              <Button type="submit" disabled={saving}>
-                {saving
-                  ? "Enregistrement..."
-                  : editingId
-                    ? "Modifier"
-                    : "Créer"}
-              </Button>
+            {/* Modal Btns */}
+            <div className="flex items-center justify-between gap-3 mt-6">
+              <div>
+                {editingId && (
+                  <Button
+                    type="button"
+                    variant="danger"
+                    onClick={() => handleDelete(editingId)}
+                    disabled={saving}
+                  >
+                    Supprimer
+                  </Button>
+                )}
+              </div>
 
-              {editingId && (
-                <Button type="button" variant="secondary" onClick={resetForm}>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  onClick={closeForm}
+                  variant="secondary"
+                  disabled={saving}
+                >
                   Annuler
                 </Button>
-              )}
+
+                <Button type="submit" disabled={saving}>
+                  {saving
+                    ? "Enregistrement..."
+                    : editingId
+                      ? "Modifier"
+                      : "Ajouter"}
+                </Button>
+              </div>
             </div>
           </form>
-        </Card>
-
-        <Card title="Liste des animaux">
-          {animaux.length === 0 ? (
-            <p>Aucun animal.</p>
-          ) : (
-            <div className="table-container">
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeader>Nom</TableHeader>
-                    <TableHeader>Genre</TableHeader>
-                    <TableHeader>Race</TableHeader>
-                    <TableHeader>Sexe</TableHeader>
-                    <TableHeader>Propriétaire</TableHeader>
-                    <TableHeader>Actions</TableHeader>
-                  </TableRow>
-                </TableHead>
-
-                <tbody>
-                  {animaux.map((animal) => (
-                    <TableRow key={animal.ID_Animal}>
-                      <TableCell>{animal.Nom_Animal}</TableCell>
-                      <TableCell>{animal.Genre_Animal}</TableCell>
-                      <TableCell>{animal.Race_Animal || "-"}</TableCell>
-                      <TableCell>{animal.Sexe_Animal}</TableCell>
-                      <TableCell>{getProprietaireName(animal)}</TableCell>
-
-                      <TableCell>
-                        <Button type="button" onClick={() => startEdit(animal)}>
-                          Modifier
-                        </Button>
-
-                        <Button
-                          type="button"
-                          variant="danger"
-                          onClick={() => handleDelete(animal.ID_Animal)}
-                        >
-                          Supprimer
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </tbody>
-              </Table>
-            </div>
-          )}
-        </Card>
-      </div>
+        )}
+      </Modal>
     </div>
   );
 }

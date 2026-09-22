@@ -1,17 +1,10 @@
 export default function Card({ title, children, className = "" }) {
   return (
     <section
-      className={[
-        "rounded-lg",
-        "border border-gray-200",
-        "bg-white",
-        "p-6 my-6",
-        "shadow-sm",
-        className,
-      ].join(" ")}
+      className={``}
     >
       {title && (
-        <h2 className="mb-5 text-lg font-semibold text-gray-900">{title}</h2>
+        <h2 className="m-5 font-semibold text-blue-900">{title}</h2>
       )}
 
       {children}
@@ -26,11 +19,13 @@ export function CardDashboard({
   className = "",
 }) {
   return (
-    <div className={`p-6 bg-white border border-gray-200 rounded-lg ${className}`}>
-      <span className="block text-gray-500 text-sm">{title}</span>
-      <strong className="block mt-3 text-2xl">{value}</strong>
+    <div
+      className={`p-6 bg-white border border-blue-200 rounded-lg ${className}`}
+    >
+      <span className="block text-blue-900 text-sm">{title}</span>
+      <strong className="block mt-3 text-2xl text-blue-900">{value}</strong>
       {subtitle && (
-        <span className="block text-gray-400 text-xs mt-1">{subtitle}</span>
+        <span className="block text-blue-400 text-xs mt-1">{subtitle}</span>
       )}
     </div>
   );

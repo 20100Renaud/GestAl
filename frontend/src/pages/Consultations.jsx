@@ -1,16 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
 import Button from "../components/ui/Button.jsx";
-import Card from "../components/ui/Card.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import Input from "../components/ui/Input.jsx";
 import Select from "../components/ui/Select.jsx";
 import Textarea from "../components/ui/Textarea.jsx";
+import Alert from "../components/ui/Alert.jsx";
+import Modal from "../components/ui/Modal.jsx";
+
 import Table, {
+  Vide,
   TableHead,
   TableHeader,
   TableRow,
   TableCell,
 } from "../components/ui/Table.jsx";
+
 import {
   getConsultations,
   createConsultation,
@@ -38,6 +43,10 @@ export default function Consultations() {
 
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
+
+  const [showForm, setShowForm] = useState(false);
+
+  const [search, setSearch] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -78,18 +87,19 @@ export default function Consultations() {
     }));
   }
 
-  function resetForm() {
-    setForm(emptyForm);
+  function openCreateForm() {
     setEditingId(null);
+    setForm(emptyForm);
     setError("");
+    setShowForm(true);
   }
 
-  function startEdit(consultation) {
+  function openEditForm(consultation) {
     setEditingId(consultation.ID_Consultation);
 
     setForm({
-      ID_Lieu: consultation.ID_Lieu,
-      ID_Animal: consultation.ID_Animal,
+      ID_Lieu: consultation.ID_Lieu ?? "",
+      ID_Animal: consultation.ID_Animal ?? "",
       Date_Consultation: consultation.Date_Consultation
         ? consultation.Date_Consultation.slice(0, 16)
         : "",
@@ -100,48 +110,17 @@ export default function Consultations() {
     });
 
     setError("");
+    setShowForm(true);
   }
 
-  async function handleSubmit(event) {
-    event.preventDefault();
-
-    try {
-      setSaving(true);
-      setError("");
-
-      if (editingId) {
-        await updateConsultation(editingId, form);
-      } else {
-        await createConsultation(form);
-      }
-
-      await loadData();
-      resetForm();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleDelete(id) {
-    if (!window.confirm("Supprimer cette consultation ?")) {
+  function closeForm() {
+    if (saving) {
       return;
     }
 
-    try {
-      setError("");
-
-      await deleteConsultation(id);
-
-      if (editingId === id) {
-        resetForm();
-      }
-
-      await loadData();
-    } catch (err) {
-      setError(err.message);
-    }
+    setShowForm(false);
+    setEditingId(null);
+    setForm(emptyForm);
   }
 
   function getAnimalName(consultation) {
@@ -180,25 +159,148 @@ export default function Consultations() {
     return new Date(date).toLocaleString("fr-FR");
   }
 
-  if (loading) {
-    return <div>Chargement...</div>;
+  const filteredConsultations = useMemo(() => {
+    const value = search.trim().toLowerCase();
+
+    if (!value) {
+      return consultations;
+    }
+
+    return consultations.filter((consultation) => {
+      const animalName = getAnimalName(consultation);
+      const lieuName = getLieuName(consultation);
+      const date = formatDate(consultation.Date_Consultation);
+
+      return [
+        animalName,
+        lieuName,
+        consultation.Motif_Consultation,
+        consultation.Description_Consultation,
+        consultation.Commentaire_Consultation,
+        consultation.Quantite_Consultation,
+        date,
+      ]
+        .filter(Boolean)
+        .some((field) => String(field).toLowerCase().includes(value));
+    });
+  }, [consultations, animaux, proprietaires, search]);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+
+    try {
+      setSaving(true);
+      setError("");
+
+      if (editingId) {
+        await updateConsultation(editingId, form);
+      } else {
+        await createConsultation(form);
+      }
+
+      await loadData();
+      closeForm();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(id) {
+    if (!window.confirm("Supprimer cette consultation ?")) {
+      return;
+    }
+
+    try {
+      setError("");
+
+      await deleteConsultation(id);
+
+      if (editingId === id) {
+        closeForm();
+      }
+
+      await loadData();
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   return (
-    <div className="page">
-      <PageHeader title="Gestion des consultations" />
+    <div className="w-full">
       {error && <Alert variant="error">{error}</Alert>}
 
-      <div className="content-grid">
-        <Card
-          title={
-            editingId ? "Modifier la consultation" : "Nouvelle consultation"
-          }
-        >
-          <form onSubmit={handleSubmit}>
-            <label>
-              Lieu
+      <PageHeader
+        title="Gestion des Consultations"
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Rechercher une consultation..."
+        createLabel="Nouvelle consultation"
+        onAction={openCreateForm}
+      />
+
+      {loading ? (
+        <p>Chargement...</p>
+      ) : filteredConsultations.length === 0 ? (
+        <Vide search={search} />
+      ) : (
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableHeader>Date</TableHeader>
+              <TableHeader>Animal</TableHeader>
+              <TableHeader>Lieu</TableHeader>
+              <TableHeader>Motif</TableHeader>
+              <TableHeader>Quantité</TableHeader>
+            </TableRow>
+          </TableHead>
+
+          <tbody>
+            {filteredConsultations.map((consultation) => (
+              <TableRow
+                key={consultation.ID_Consultation}
+                onClick={() => openEditForm(consultation)}
+              >
+                <TableCell>
+                  {formatDate(consultation.Date_Consultation)}
+                </TableCell>
+
+                <TableCell>{getAnimalName(consultation)}</TableCell>
+
+                <TableCell>{getLieuName(consultation)}</TableCell>
+
+                <TableCell>{consultation.Motif_Consultation || "—"}</TableCell>
+
+                <TableCell>
+                  {String(consultation.Quantite_Consultation ?? "—")}
+                </TableCell>
+              </TableRow>
+            ))}
+          </tbody>
+        </Table>
+      )}
+
+      <Modal
+        open={showForm}
+        title={
+          editingId ? "Modifier la consultation" : "Ajouter une consultation"
+        }
+        onClose={closeForm}
+      >
+        {animaux.length === 0 || proprietaires.length === 0 ? (
+          <div className="p-6">
+            <p className="text-gray-600">
+              Vous devez créer au moins un propriétaire et un animal avant de
+              pouvoir créer une consultation.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="p-6">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Select
+                id="Lieu"
+                label="Lieu de consultation"
                 name="ID_Lieu"
                 value={form.ID_Lieu}
                 onChange={handleChange}
@@ -216,11 +318,10 @@ export default function Consultations() {
                   </option>
                 ))}
               </Select>
-            </label>
 
-            <label>
-              Animal
               <Select
+                id="Animal"
+                label="Animal"
                 name="ID_Animal"
                 value={form.ID_Animal}
                 onChange={handleChange}
@@ -234,22 +335,20 @@ export default function Consultations() {
                   </option>
                 ))}
               </Select>
-            </label>
 
-            <label>
-              Date de consultation
               <Input
+                id="Date_Consultation"
+                label="Date de consultation"
                 type="datetime-local"
                 name="Date_Consultation"
                 value={form.Date_Consultation}
                 onChange={handleChange}
                 required
               />
-            </label>
 
-            <label>
-              Quantité
               <Input
+                id="Quantite_Consultation"
+                label="Quantité"
                 type="number"
                 name="Quantite_Consultation"
                 value={form.Quantite_Consultation}
@@ -258,115 +357,76 @@ export default function Consultations() {
                 step="1"
                 required
               />
-            </label>
 
-            <label>
-              Motif
               <Input
+                id="Motif_Consultation"
+                label="Motif"
                 type="text"
                 name="Motif_Consultation"
                 value={form.Motif_Consultation}
                 onChange={handleChange}
-                required={true}
+                required
               />
-            </label>
 
-            <Textarea
-              label="Description"
-              name="Description_Consultation"
-              value={form.Description_Consultation}
-              onChange={handleChange}
-              rows="4"
-              required={true}
-            />
+              <div className="md:col-span-2">
+                <Textarea
+                  label="Description"
+                  name="Description_Consultation"
+                  value={form.Description_Consultation}
+                  onChange={handleChange}
+                  rows="4"
+                  required
+                />
+              </div>
 
-            <Textarea
-              label="Commentaire"
-              name="Commentaire_Consultation"
-              value={form.Commentaire_Consultation}
-              onChange={handleChange}
-              rows="4"
-            />
+              <div className="md:col-span-2">
+                <Textarea
+                  label="Commentaire personnel"
+                  name="Commentaire_Consultation"
+                  value={form.Commentaire_Consultation}
+                  onChange={handleChange}
+                  rows="4"
+                />
+              </div>
+            </div>
 
-            <div className="form-actions">
-              <Button type="submit" disabled={saving}>
-                {saving
-                  ? "Enregistrement..."
-                  : editingId
-                    ? "Modifier"
-                    : "Créer"}
-              </Button>
+            {/* Modal Btns */}
+            <div className="flex items-center justify-between gap-3 mt-6">
+              <div>
+                {editingId && (
+                  <Button
+                    type="button"
+                    variant="danger"
+                    onClick={() => handleDelete(editingId)}
+                    disabled={saving}
+                  >
+                    Supprimer
+                  </Button>
+                )}
+              </div>
 
-              {editingId && (
-                <Button type="button" variant="secondary" onClick={resetForm}>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  onClick={closeForm}
+                  variant="secondary"
+                  disabled={saving}
+                >
                   Annuler
                 </Button>
-              )}
+
+                <Button type="submit" disabled={saving}>
+                  {saving
+                    ? "Enregistrement..."
+                    : editingId
+                      ? "Modifier"
+                      : "Ajouter"}
+                </Button>
+              </div>
             </div>
           </form>
-        </Card>
-
-        <Card title="Liste des consultations">
-          {consultations.length === 0 ? (
-            <p>Aucune consultation.</p>
-          ) : (
-            <div className="table-container">
-              <table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeader>Date</TableHeader>
-                    <TableHeader>Animal</TableHeader>
-                    <TableHeader>Lieu</TableHeader>
-                    <TableHeader>Motif</TableHeader>
-                    <TableHeader>Quantité</TableHeader>
-                    <TableHeader>Actions</TableHeader>
-                  </TableRow>
-                </TableHead>
-
-                <tbody>
-                  {consultations.map((consultation) => (
-                    <TableRow key={consultation.ID_Consultation}>
-                      <TableCell>
-                        {formatDate(consultation.Date_Consultation)}
-                      </TableCell>
-
-                      <TableCell>{getAnimalName(consultation)}</TableCell>
-
-                      <TableCell>{getLieuName(consultation)}</TableCell>
-
-                      <TableCell>{consultation.Motif_Consultation}</TableCell>
-
-                      <TableCell>
-                        {String(consultation.Quantite_Consultation)}
-                      </TableCell>
-
-                      <TableCell>
-                        <Button
-                          type="button"
-                          onClick={() => startEdit(consultation)}
-                          className="cursor-pointer"
-                        >
-                          Modifier
-                        </Button>
-
-                        <Button
-                          type="button"
-                          variant="danger"
-                          onClick={() =>
-                            handleDelete(consultation.ID_Consultation)
-                          }
-                        >
-                          Supprimer
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
-      </div>
+        )}
+      </Modal>
     </div>
   );
 }

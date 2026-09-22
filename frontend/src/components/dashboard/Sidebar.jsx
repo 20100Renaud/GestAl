@@ -3,8 +3,13 @@ import { useAuth } from "../../context/AuthContext.jsx";
 
 const navigation = [
   {
-    label: "Dashboard",
+    label: "Tableau de bord",
     path: "/dashboard",
+    separator: true,
+  },
+  {
+    label: "Consultations",
+    path: "/dashboard/consultations",
   },
   {
     label: "Propriétaires",
@@ -15,12 +20,9 @@ const navigation = [
     path: "/dashboard/animaux",
   },
   {
-    label: "Consultations",
-    path: "/dashboard/consultations",
-  },
-  {
     label: "Paiements",
     path: "/dashboard/paiements",
+    separator: true,
   },
   {
     label: "Tarifs",
@@ -48,20 +50,25 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="w-[240px] min-h-full flex flex-col bg-blue-950 text-white  sticky top-0 h-screen">
+    <aside className="w-[240px] min-h-full flex flex-col bg-blue-950 text-white sticky top-0 h-screen">
       <div className="p-5 border-b border-white/40 text-2xl">
         <h1>GestAL</h1>
       </div>
 
-      <nav className="flex flex-col p-4 gap-1">
-        {navigation.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            end={item.path === "/dashboard"}
-          >
-            {item.label}
-          </NavLink>
+      <nav className="flex flex-col p-4">
+        {navigation.map((item, index) => (
+          <div key={item.path}>
+            <NavLink
+              key={item.path}
+              to={item.path}
+              end={item.path === "/dashboard"}
+            >
+              {item.label}
+            </NavLink>
+            {item.separator && index < navigation.length - 1 && (
+              <div className="border-b border-white/40 my-6" />
+            )}
+          </div>
         ))}
       </nav>
 

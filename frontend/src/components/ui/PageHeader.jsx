@@ -1,15 +1,46 @@
-export default function PageHeader({ title, description, action }) {
-  return (
-    <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between w-full">
-      <div>
-        <h1 className="m-0 text-2xl font-semibold text-gray-900">{title}</h1>
+import { useEffect } from "react";
+import { usePageTitle } from "../../context/PageTitleContext";
+import { Search } from "lucide-react";
+import Input from "./Input";
+import Button from "./Button";
 
-        {description && (
-          <p className="mt-1.5 text-sm text-gray-500">{description}</p>
+export default function PageHeader({
+  title,
+  search,
+  onSearchChange,
+  searchPlaceholder = "Rechercher...",
+  createLabel,
+  onAction,
+}) {
+  const { setTitle } = usePageTitle();
+
+  useEffect(() => {
+    setTitle(title || "");
+  }, [title, setTitle]);
+
+  return (
+    <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between w-full">
+      <div className="relative w-full max-w-[420px]">
+        {onSearchChange && (
+          <>
+            <Input
+              type="search"
+              placeholder={searchPlaceholder}
+              value={search}
+              onChange={(event) => onSearchChange(event.target.value)}
+            />
+
+            <Search
+              size={20}
+              className="absolute right-8 top-1/2 -translate-y-1/2 text-blue-700"
+            />
+          </>
         )}
       </div>
 
-      {action && <div>{action}</div>}
+      {onAction && (
+        <Button onClick={onAction}>+ {createLabel || "Nouveau"}</Button>
+      )}
     </div>
   );
 }

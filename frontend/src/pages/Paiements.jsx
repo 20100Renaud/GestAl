@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Button from "../components/ui/Button.jsx";
-import Card from "../components/ui/Card.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import Input from "../components/ui/Input.jsx";
 import Select from "../components/ui/Select.jsx";
+import Alert from "../components/ui/Alert.jsx";
+import Modal from "../components/ui/Modal.jsx";
 import Table, {
+  Vide,
   TableHead,
   TableHeader,
   TableRow,
@@ -40,6 +42,10 @@ export default function Paiements() {
 
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
+
+  const [showForm, setShowForm] = useState(false);
+
+  const [search, setSearch] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -82,19 +88,20 @@ export default function Paiements() {
     }));
   }
 
-  function resetForm() {
-    setForm(emptyForm);
+  function openCreateForm() {
     setEditingId(null);
+    setForm(emptyForm);
     setError("");
+    setShowForm(true);
   }
 
-  function startEdit(paiement) {
+  function openEditForm(paiement) {
     setEditingId(paiement.ID_Paiement);
 
     setForm({
-      ID_Consultation: paiement.ID_Consultation,
-      ID_Tarif: paiement.ID_Tarif,
-      ID_Deplacement: paiement.ID_Deplacement,
+      ID_Consultation: paiement.ID_Consultation ?? "",
+      ID_Tarif: paiement.ID_Tarif ?? "",
+      ID_Deplacement: paiement.ID_Deplacement ?? "",
       Date_Paiement: paiement.Date_Paiement
         ? paiement.Date_Paiement.slice(0, 10)
         : "",
@@ -105,48 +112,17 @@ export default function Paiements() {
     });
 
     setError("");
+    setShowForm(true);
   }
 
-  async function handleSubmit(event) {
-    event.preventDefault();
-
-    try {
-      setSaving(true);
-      setError("");
-
-      if (editingId) {
-        await updatePaiement(editingId, form);
-      } else {
-        await createPaiement(form);
-      }
-
-      await loadData();
-      resetForm();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleDelete(id) {
-    if (!window.confirm("Supprimer ce paiement ?")) {
+  function closeForm() {
+    if (saving) {
       return;
     }
 
-    try {
-      setError("");
-
-      await deletePaiement(id);
-
-      if (editingId === id) {
-        resetForm();
-      }
-
-      await loadData();
-    } catch (err) {
-      setError(err.message);
-    }
+    setShowForm(false);
+    setEditingId(null);
+    setForm(emptyForm);
   }
 
   function getConsultationLabel(consultation) {
@@ -165,236 +141,308 @@ export default function Paiements() {
     return `${deplacement.Annee_Deplacement} — ${deplacement.Denomination_Deplacement} (${deplacement.Montant_Deplacement} €)`;
   }
 
-  if (loading) {
-    return <div>Chargement...</div>;
+  const filteredPaiements = useMemo(() => {
+    const value = search.trim().toLowerCase();
+
+    if (!value) {
+      return paiements;
+    }
+
+    return paiements.filter((paiement) => {
+      const consultation = paiement.Consultation_Paiement;
+      const tarif = paiement.Tarif_Paiements;
+      const deplacement = paiement.Deplacement_Paiements;
+
+      const fields = [
+        paiement.Date_Paiement
+          ? new Date(paiement.Date_Paiement).toLocaleDateString("fr-FR")
+          : "",
+        consultation ? getConsultationLabel(consultation) : "",
+        tarif?.Denomination_Tarif,
+        deplacement?.Denomination_Deplacement,
+        paiement.Montant_Paiement,
+        paiement.Remise_Paiement,
+        paiement.Moyen_Paiement,
+      ];
+
+      return fields
+        .filter((field) => field !== null && field !== undefined)
+        .some((field) => String(field).toLowerCase().includes(value));
+    });
+  }, [paiements, search]);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+
+    try {
+      setSaving(true);
+      setError("");
+
+      if (editingId) {
+        await updatePaiement(editingId, form);
+      } else {
+        await createPaiement(form);
+      }
+
+      await loadData();
+      closeForm();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(id) {
+    if (!window.confirm("Supprimer ce paiement ?")) {
+      return;
+    }
+
+    try {
+      setError("");
+
+      await deletePaiement(id);
+
+      if (editingId === id) {
+        closeForm();
+      }
+
+      await loadData();
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   return (
-    <div className="page">
-      <PageHeader title="Gestion des paiements" />
-
+    <div className="w-full">
       {error && <Alert variant="error">{error}</Alert>}
 
-      <div className="content-grid">
-        <Card title={editingId ? "Modifier le paiement" : "Nouveau paiement"}>
-          <form onSubmit={handleSubmit}>
-            <label>
-              Consultation
-              <Select
-                name="ID_Consultation"
-                value={form.ID_Consultation}
-                onChange={handleChange}
-                required
+      <PageHeader
+        title="Gestion des Paiements"
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Rechercher un paiement..."
+        createLabel="Nouveau paiement"
+        onAction={openCreateForm}
+      />
+
+      {loading ? (
+        <p>Chargement...</p>
+      ) : filteredPaiements.length === 0 ? (
+        <Vide search={search} />
+      ) : (
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableHeader>Date</TableHeader>
+              <TableHeader>Consultation</TableHeader>
+              <TableHeader>Tarif</TableHeader>
+              <TableHeader>Déplacement</TableHeader>
+              <TableHeader>Montant</TableHeader>
+              <TableHeader>Remise</TableHeader>
+              <TableHeader>Moyen</TableHeader>
+            </TableRow>
+          </TableHead>
+
+          <tbody>
+            {filteredPaiements.map((paiement) => (
+              <TableRow
+                key={paiement.ID_Paiement}
+                onClick={() => openEditForm(paiement)}
               >
-                <option value="">Sélectionner une consultation</option>
+                <TableCell>
+                  {paiement.Date_Paiement
+                    ? new Date(paiement.Date_Paiement).toLocaleDateString(
+                        "fr-FR",
+                      )
+                    : "—"}
+                </TableCell>
 
-                {consultations.map((consultation) => (
-                  <option
-                    key={consultation.ID_Consultation}
-                    value={consultation.ID_Consultation}
-                  >
-                    {getConsultationLabel(consultation)}
-                  </option>
-                ))}
-              </Select>
-            </label>
+                <TableCell>
+                  {paiement.Consultation_Paiement
+                    ? getConsultationLabel(paiement.Consultation_Paiement)
+                    : "—"}
+                </TableCell>
 
-            <label>
-              Tarif
-              <Select
-                name="ID_Tarif"
-                value={form.ID_Tarif}
-                onChange={handleChange}
-                required
+                <TableCell>
+                  {paiement.Tarif_Paiements
+                    ? paiement.Tarif_Paiements.Denomination_Tarif
+                    : "—"}
+                </TableCell>
+
+                <TableCell>
+                  {paiement.Deplacement_Paiements
+                    ? paiement.Deplacement_Paiements.Denomination_Deplacement
+                    : "—"}
+                </TableCell>
+
+                <TableCell>{paiement.Montant_Paiement ?? "—"} €</TableCell>
+
+                <TableCell>{paiement.Remise_Paiement ?? "0"} €</TableCell>
+
+                <TableCell>{paiement.Moyen_Paiement || "—"}</TableCell>
+              </TableRow>
+            ))}
+          </tbody>
+        </Table>
+      )}
+
+      <Modal
+        open={showForm}
+        title={editingId ? "Modifier le paiement" : "Ajouter un paiement"}
+        onClose={closeForm}
+      >
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Select
+              id="Consultation"
+              label="Consultation"
+              name="ID_Consultation"
+              value={form.ID_Consultation}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Sélectionner une consultation</option>
+
+              {consultations.map((consultation) => (
+                <option
+                  key={consultation.ID_Consultation}
+                  value={consultation.ID_Consultation}
+                >
+                  {getConsultationLabel(consultation)}
+                </option>
+              ))}
+            </Select>
+
+            <Select
+              id="Tarif"
+              label="Tarif"
+              name="ID_Tarif"
+              value={form.ID_Tarif}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Sélectionner un tarif</option>
+
+              {tarifs.map((tarif) => (
+                <option key={tarif.ID_Tarif} value={tarif.ID_Tarif}>
+                  {getTarifLabel(tarif)}
+                </option>
+              ))}
+            </Select>
+
+            <Select
+              id="Deplacement"
+              label="Déplacement"
+              name="ID_Deplacement"
+              value={form.ID_Deplacement}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Sélectionner un déplacement</option>
+
+              {deplacements.map((deplacement) => (
+                <option
+                  key={deplacement.ID_Deplacement}
+                  value={deplacement.ID_Deplacement}
+                >
+                  {getDeplacementLabel(deplacement)}
+                </option>
+              ))}
+            </Select>
+
+            <Input
+              id="Date_Paiement"
+              label="Date"
+              type="date"
+              name="Date_Paiement"
+              value={form.Date_Paiement}
+              onChange={handleChange}
+            />
+
+            <Input
+              id="Montant_Paiement"
+              label="Montant"
+              type="number"
+              step="0.01"
+              min="0"
+              name="Montant_Paiement"
+              value={form.Montant_Paiement}
+              onChange={handleChange}
+            />
+
+            <Input
+              id="Remise_Paiement"
+              label="Remise"
+              type="number"
+              step="0.01"
+              min="0"
+              name="Remise_Paiement"
+              value={form.Remise_Paiement}
+              onChange={handleChange}
+            />
+
+            <Select
+              id="Moyen_Paiement"
+              label="Moyen de paiement"
+              name="Moyen_Paiement"
+              value={form.Moyen_Paiement}
+              onChange={handleChange}
+            >
+              <option value="">Sélectionner</option>
+              <option value="Carte">Carte</option>
+              <option value="Espèces">Espèces</option>
+              <option value="Chèque">Chèque</option>
+              <option value="Virement">Virement</option>
+              <option value="Autre">Autre</option>
+            </Select>
+
+            <Input
+              id="Selection"
+              label="Selection"
+              type="checkbox"
+              name="Selection_Paiement"
+              checked={form.Selection_Paiement}
+              onChange={handleChange}
+            />
+          </div>
+
+          {/* Modal Btns */}
+          <div className="flex items-center justify-between gap-3 mt-6">
+            <div>
+              {editingId && (
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => handleDelete(editingId)}
+                  disabled={saving}
+                >
+                  Supprimer
+                </Button>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                onClick={closeForm}
+                variant="secondary"
+                disabled={saving}
               >
-                <option value="">Sélectionner un tarif</option>
+                Annuler
+              </Button>
 
-                {tarifs.map((tarif) => (
-                  <option key={tarif.ID_Tarif} value={tarif.ID_Tarif}>
-                    {getTarifLabel(tarif)}
-                  </option>
-                ))}
-              </Select>
-            </label>
-
-            <label>
-              Déplacement
-              <Select
-                name="ID_Deplacement"
-                value={form.ID_Deplacement}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Sélectionner un déplacement</option>
-
-                {deplacements.map((deplacement) => (
-                  <option
-                    key={deplacement.ID_Deplacement}
-                    value={deplacement.ID_Deplacement}
-                  >
-                    {getDeplacementLabel(deplacement)}
-                  </option>
-                ))}
-              </Select>
-            </label>
-
-            <label>
-              Date
-              <Input
-                type="date"
-                name="Date_Paiement"
-                value={form.Date_Paiement}
-                onChange={handleChange}
-              />
-            </label>
-
-            <label>
-              Montant
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                name="Montant_Paiement"
-                value={form.Montant_Paiement}
-                onChange={handleChange}
-              />
-            </label>
-
-            <label>
-              Remise
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                name="Remise_Paiement"
-                value={form.Remise_Paiement}
-                onChange={handleChange}
-              />
-            </label>
-
-            <label>
-              Moyen de paiement
-              <Select
-                name="Moyen_Paiement"
-                value={form.Moyen_Paiement}
-                onChange={handleChange}
-              >
-                <option value="">Sélectionner</option>
-                <option value="Carte">Carte</option>
-                <option value="Espèces">Espèces</option>
-                <option value="Chèque">Chèque</option>
-                <option value="Virement">Virement</option>
-                <option value="Autre">Autre</option>
-              </Select>
-            </label>
-
-            <label>
-              <Input
-                type="checkbox"
-                name="Selection_Paiement"
-                checked={form.Selection_Paiement}
-                onChange={handleChange}
-              />
-              Sélectionné
-            </label>
-
-            <div className="form-actions">
               <Button type="submit" disabled={saving}>
                 {saving
                   ? "Enregistrement..."
                   : editingId
                     ? "Modifier"
-                    : "Créer"}
+                    : "Ajouter"}
               </Button>
-
-              {editingId && (
-                <Button type="button" variant="secondary" onClick={resetForm}>
-                  Annuler
-                </Button>
-              )}
             </div>
-          </form>
-        </Card>
-
-        <Card title="Liste des paiements">
-          {paiements.length === 0 ? (
-            <p>Aucun paiement.</p>
-          ) : (
-            <div className="table-container">
-              <table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeader>Date</TableHeader>
-                    <TableHeader>Consultation</TableHeader>
-                    <TableHeader>Tarif</TableHeader>
-                    <TableHeader>Déplacement</TableHeader>
-                    <TableHeader>Montant</TableHeader>
-                    <TableHeader>Remise</TableHeader>
-                    <TableHeader>Moyen</TableHeader>
-                    <TableHeader>Actions</TableHeader>
-                  </TableRow>
-                </TableHead>
-
-                <tbody>
-                  {paiements.map((paiement) => (
-                    <TableRow key={paiement.ID_Paiement}>
-                      <TableCell>
-                        {paiement.Date_Paiement
-                          ? new Date(paiement.Date_Paiement).toLocaleDateString(
-                              "fr-FR",
-                            )
-                          : "—"}
-                      </TableCell>
-
-                      <TableCell>
-                        {paiement.Consultation_Paiement
-                          ? getConsultationLabel(paiement.Consultation_Paiement)
-                          : "—"}
-                      </TableCell>
-
-                      <TableCell>
-                        {paiement.Tarif_Paiements
-                          ? paiement.Tarif_Paiements.Denomination_Tarif
-                          : "—"}
-                      </TableCell>
-
-                      <TableCell>
-                        {paiement.Deplacement_Paiements
-                          ? paiement.Deplacement_Paiements
-                              .Denomination_Deplacement
-                          : "—"}
-                      </TableCell>
-
-                      <TableCell>{paiement.Montant_Paiement} €</TableCell>
-
-                      <TableCell>{paiement.Remise_Paiement} €</TableCell>
-
-                      <TableCell>{paiement.Moyen_Paiement || "—"}</TableCell>
-
-                      <TableCell>
-                        <Button
-                          type="button"
-                          onClick={() => startEdit(paiement)}
-                        >
-                          Modifier
-                        </Button>
-
-                        <Button
-                          type="button"
-                          variant="danger"
-                          onClick={() => handleDelete(paiement.ID_Paiement)}
-                        >
-                          Supprimer
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
-      </div>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
