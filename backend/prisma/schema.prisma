@@ -46,9 +46,13 @@ model T_Proprietaires {
   CP_Proprietaire       String
   Tel_Proprietaire      String
 
-  User_Proprietaires   T_Users           @relation(fields: [ID_User], references: [ID_User])
+  User_Proprietaires T_Users @relation(fields: [ID_User], references: [ID_User], onDelete: Cascade)
+
   Animaux_Proprietaire T_Animaux[]
-  Consultations_Lieu   T_Consultations[]
+
+  Prestations_Proprietaire T_Prestations[] @relation("Proprietaire_Prestations")
+
+  Prestations_Lieu T_Prestations[] @relation("Lieu_Prestations")
 }
 
 model T_Animaux {
@@ -61,71 +65,108 @@ model T_Animaux {
   Memo_Animal           String?
   Sexe_Animal           String
 
-  Proprietaire_Animal  T_Proprietaires   @relation(fields: [ID_Proprietaire], references: [ID_Proprietaire])
+  Proprietaire_Animal T_Proprietaires @relation(fields: [ID_Proprietaire], references: [ID_Proprietaire], onDelete: Cascade)
+
   Consultations_Animal T_Consultations[]
 }
 
+model T_Prestations {
+  ID_Prestation   String @id @default(uuid())
+  ID_Proprietaire String
+  ID_Lieu         String
+  ID_Deplacement  String
+
+  Date_Prestation DateTime @default(now())
+
+  Remise_Prestation  Decimal @default(0)
+  Montant_Prestation Decimal @default(0)
+
+  Proprietaire_Prestation T_Proprietaires @relation("Proprietaire_Prestations", fields: [ID_Proprietaire], references: [ID_Proprietaire], onDelete: Restrict)
+
+  Lieu_Prestation T_Proprietaires @relation("Lieu_Prestations", fields: [ID_Lieu], references: [ID_Proprietaire], onDelete: Restrict)
+
+  Deplacement_Prestation T_Deplacements @relation(fields: [ID_Deplacement], references: [ID_Deplacement], onDelete: Restrict)
+
+  Consultations_Prestation T_Consultations[]
+
+  Paiements_Prestation T_Paiements[]
+}
+
 model T_Consultations {
-  ID_Consultation          String   @id @default(uuid())
-  ID_Lieu                  String
-  ID_Animal                String
-  Date_Consultation        DateTime @default(now())
-  Quantite_Consultation    Decimal  @default(1)
+  ID_Consultation String @id @default(uuid())
+  ID_Prestation   String
+  ID_Animal       String
+  ID_Tarif        String
+
+  Quantite_Consultation    Decimal @default(1)
   Motif_Consultation       String
   Description_Consultation String
   Commentaire_Consultation String?
 
-  Animal_Consultation   T_Animaux       @relation(fields: [ID_Animal], references: [ID_Animal])
-  Lieu_Consultation     T_Proprietaires @relation(fields: [ID_Lieu], references: [ID_Proprietaire])
-  Zonage_Consultation   T_Zonages[]
-  Paiement_Consultation T_Paiements[]
+  Prestation_Consultation T_Prestations @relation(fields: [ID_Prestation], references: [ID_Prestation], onDelete: Cascade)
+
+  Animal_Consultation T_Animaux @relation(fields: [ID_Animal], references: [ID_Animal], onDelete: Cascade)
+
+  Tarif_Consultation T_Tarifs @relation(fields: [ID_Tarif], references: [ID_Tarif], onDelete: Restrict)
+
+  Zonages_Consultation T_Consultation_Zonages[]
 }
 
 model T_Zonages {
   ID_Zonage          String  @id @default(uuid())
-  ID_Consultation    String
   Pratique_Zonage    String
   Nom_Zonage         String
   Position_Zonage    String?
   Orientation_Zonage String?
   Technique_Zonage   String?
+
+  Consultations_Zonage T_Consultation_Zonages[]
+}
+
+model T_Consultation_Zonages {
+  ID_Consultation_Zonage String @id @default(uuid())
+  ID_Consultation        String
+  ID_Zonage              String
+
   Commentaire_Zonage String?
 
-  Consultation_Zonage T_Consultations @relation(fields: [ID_Consultation], references: [ID_Consultation])
+  Consultation T_Consultations @relation(fields: [ID_Consultation], references: [ID_Consultation], onDelete: Cascade)
+
+  Zonage T_Zonages @relation(fields: [ID_Zonage], references: [ID_Zonage], onDelete: Restrict)
+
+  @@unique([ID_Consultation, ID_Zonage])
 }
 
 model T_Paiements {
-  ID_Paiement        String   @id @default(uuid())
-  ID_Consultation    String
-  ID_Tarif           String
-  ID_Deplacement     String
-  Date_Paiement      DateTime @default(now())
-  Date_Encaissement  DateTime?
-  Montant_Paiement   Decimal  @default(0)
-  Remise_Paiement    Decimal  @default(0)
-  Moyen_Paiement     String?
-  E_Reporting_Paiement Boolean  @default(false)
-  E_Facture_Paiement Boolean  @default(false)
+  ID_Paiement   String @id @default(uuid())
+  ID_Prestation String
 
-  Consultation_Paiement T_Consultations @relation(fields: [ID_Consultation], references: [ID_Consultation])
-  Tarif_Paiements       T_Tarifs        @relation(fields: [ID_Tarif], references: [ID_Tarif])
-  Deplacement_Paiements T_Deplacements  @relation(fields: [ID_Deplacement], references: [ID_Deplacement])
+  Date_Paiement     DateTime  @default(now())
+  Date_Encaissement DateTime?
+  Montant_Paiement  Decimal   @default(0)
+  Moyen_Paiement    String?
+
+  E_Reporting_Paiement Boolean @default(false)
+  E_Facture_Paiement   Boolean @default(false)
+  E_Other_Paiement     Boolean @default(false)
+
+  Prestation_Paiement T_Prestations @relation(fields: [ID_Prestation], references: [ID_Prestation], onDelete: Cascade)
 }
 
 model T_Tarifs {
   ID_Tarif           String  @id @default(uuid())
-  Annee_Tarif        String
+  Annee_Tarif        Int
   Denomination_Tarif String
   Montant_Tarif      Decimal @default(0)
 
-  Paiement_Tarif T_Paiements[]
+  Consultations_Tarif T_Consultations[]
 }
 
 model T_Deplacements {
   ID_Deplacement           String  @id @default(uuid())
-  Annee_Deplacement        String
+  Annee_Deplacement        Int
   Denomination_Deplacement String
   Montant_Deplacement      Decimal @default(0)
 
-  Paiement_Deplacement T_Paiements[]
+  Prestations_Deplacement T_Prestations[]
 }

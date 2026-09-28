@@ -1,22 +1,30 @@
-const selectClasses =
-  "w-full rounded-md border border-blue-300 bg-white px-3 py-2.5 text-sm " +
-  "text-blue-900 focus:border-blue-500 focus:outline-none " +
-  "focus:ring-1 focus:ring-blue-500 cursor-pointer";
+import { forwardRef } from "react";
+import {
+  fieldClasses,
+  fieldLabelClasses,
+  fieldWrapperClasses,
+} from "./fieldStyles";
 
-export default function Select({
-  label,
-  required = false,
-  children,
-  className = "",
-  ...props
-}) {
+const Select = forwardRef(function Select(
+  {
+    id,
+    label,
+    icon: Icon,
+    required = false,
+    children,
+    className = "",
+    ...props
+  },
+  ref,
+) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className={fieldWrapperClasses}>
       {label && (
-        <label
-          htmlFor={props.id}
-          className="text-sm font-semibold text-blue-700"
-        >
+        <label htmlFor={id} className={fieldLabelClasses}>
+          {Icon && (
+            <Icon size={18} className="inline-block mr-2 align-text-bottom" />
+          )}
+
           {label}
 
           {required && <span className="ml-1 text-red-500">*</span>}
@@ -24,12 +32,16 @@ export default function Select({
       )}
 
       <select
-        {...props}
+        ref={ref}
+        id={id}
         required={required}
-        className={`${selectClasses} ${className}`}
+        className={`${fieldClasses} cursor-pointer ${className}`}
+        {...props}
       >
         {children}
       </select>
     </div>
   );
-}
+});
+
+export default Select;

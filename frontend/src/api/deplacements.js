@@ -62,9 +62,5 @@ export async function deleteDeplacement(id) {
     credentials: "include",
   });
 
-  if (!response.ok) {
-    return handleResponse(response);
-  }
-
-  return null;
+  return handleResponse(response);
 }

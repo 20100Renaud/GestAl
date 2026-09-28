@@ -1,31 +1,36 @@
-const textareaClasses =
-  "w-full rounded-md border border-blue-300 px-3 py-2.5 text-sm " +
-  "text-blue-900 placeholder:text-blue-400 " +
-  "focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none";
+import {
+  fieldClasses,
+  fieldLabelClasses,
+  fieldWrapperClasses,
+} from "./fieldStyles";
 
 export default function Textarea({
   label,
+  icon: Icon,
   required = false,
   className = "",
   ...props
 }) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className={fieldWrapperClasses}>
       {label && (
         <label
           htmlFor={props.id}
-          className="text-sm font-semibold text-blue-700"
+          className="flex items-center gap-2 text-sm font-semibold text-blue-700"
         >
-          {label}
+          {Icon && <Icon size={18} />}
 
-          {required && <span className="ml-1 text-red-500">*</span>}
+          <span>
+            {label}
+            {required && <span className="ml-1 text-red-500">*</span>}
+          </span>
         </label>
       )}
 
       <textarea
         {...props}
         required={required}
-        className={`${textareaClasses} ${className}`}
+        className={`${fieldClasses} resize-none ${className}`}
       />
     </div>
   );

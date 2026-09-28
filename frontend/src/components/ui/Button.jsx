@@ -6,7 +6,7 @@ const variants = {
   danger:
     "bg-red-600 text-white hover:bg-red-700 cursor-pointer",
   ghost:
-    "bg-transparent text-blue-600 hover:text-blue-900 cursor-pointer",
+    "bg-transparent text-blue-300 hover:text-blue-100 cursor-pointer",
 };
 
 export default function Button({
@@ -21,8 +21,7 @@ export default function Button({
     <button
       type={type}
       disabled={disabled}
-      className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none  disabled:cursor-not-allowed disabled:opacity-60 ${variants[variant]}`
-}
+      className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none  disabled:cursor-not-allowed disabled:opacity-60 ${variants[variant]} ${className}`}
       {...props}
     >
       {children}

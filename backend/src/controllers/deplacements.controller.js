@@ -78,9 +78,24 @@ export async function createDeplacement(req, res) {
       });
     }
 
+    const annee =
+      Annee_Deplacement === undefined || Annee_Deplacement === ""
+        ? new Date().getFullYear()
+        : Number(Annee_Deplacement);
+
+    if (
+      !Number.isInteger(annee) ||
+      annee < 2000 ||
+      annee > 2100
+    ) {
+      return res.status(400).json({
+        error: "Année invalide",
+      });
+    }
+
     const deplacement = await prisma.t_Deplacements.create({
       data: {
-        Annee_Deplacement: Annee_Deplacement.trim(),
+        Annee_Deplacement: annee,
         Denomination_Deplacement: Denomination_Deplacement.trim(),
         Montant_Deplacement: montant,
       },
@@ -142,7 +157,7 @@ export async function updateDeplacement(req, res) {
         ID_Deplacement: id,
       },
       data: {
-        Annee_Deplacement: Annee_Deplacement.trim(),
+        Annee_Deplacement: Number(Annee_Deplacement),
         Denomination_Deplacement: Denomination_Deplacement.trim(),
         Montant_Deplacement: montant,
       },
@@ -171,6 +186,19 @@ export async function deleteDeplacement(req, res) {
     if (!existingDeplacement) {
       return res.status(404).json({
         error: "Deplacement not found",
+      });
+    }
+
+    const prestationCount = await prisma.t_Prestations.count({
+      where: {
+        ID_Deplacement: id,
+      },
+    });
+
+    if (prestationCount > 0) {
+      return res.status(409).json({
+        error:
+          "Impossible de supprimer ce déplacement car il est utilisé par une ou plusieurs prestations",
       });
     }
 

@@ -1,13 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-
-import Button from "../components/ui/Button.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
-import Input from "../components/ui/Input.jsx";
-import Select from "../components/ui/Select.jsx";
-import Textarea from "../components/ui/Textarea.jsx";
 import Alert from "../components/ui/Alert.jsx";
-import Modal from "../components/ui/Modal.jsx";
-
+import { formatDate } from "../utils/formatDate";
 import Table, {
   Vide,
   TableHead,
@@ -15,7 +9,9 @@ import Table, {
   TableRow,
   TableCell,
 } from "../components/ui/Table.jsx";
-
+import ConsultationsModal from "../components/Modals/Consultations_Modal.jsx";
+import TarifsModal from "../components/Modals/Tarifs_Modal.jsx";
+import AnimauxModal from "../components/Modals/Animaux_Modal.jsx";
 import {
   getConsultations,
   createConsultation,
@@ -23,13 +19,24 @@ import {
   deleteConsultation,
 } from "../api/consultations.js";
 
-import { getAnimaux } from "../api/animaux.js";
+import { getAnimaux, createAnimal } from "../api/animaux.js";
 import { getProprietaires } from "../api/proprietaires.js";
+import { getZonages } from "../api/zonages.js";
+import { getTarifs, createTarif } from "../api/tarifs.js";
+
+import {
+  getConsultationZonages,
+  createConsultationZonage,
+  updateConsultationZonage,
+  deleteConsultationZonage,
+} from "../api/consultation-zonages.js";
+
+import { getPrestations } from "../api/prestations.js";
 
 const emptyForm = {
-  ID_Lieu: "",
+  ID_Prestation: "",
   ID_Animal: "",
-  Date_Consultation: "",
+  ID_Tarif: "",
   Quantite_Consultation: "1",
   Motif_Consultation: "",
   Description_Consultation: "",
@@ -40,12 +47,37 @@ export default function Consultations() {
   const [consultations, setConsultations] = useState([]);
   const [animaux, setAnimaux] = useState([]);
   const [proprietaires, setProprietaires] = useState([]);
+  const [zonages, setZonages] = useState([]);
+  const [tarifs, setTarifs] = useState([]);
+  const [consultationZonages, setConsultationZonages] = useState([]);
+  const [prestations, setPrestations] = useState([]);
 
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
 
   const [showForm, setShowForm] = useState(false);
+  const [showTarifForm, setShowTarifForm] = useState(false);
+  const [showAnimalForm, setShowAnimalForm] = useState(false);
 
+  const [animalForm, setAnimalForm] = useState({
+    ID_Proprietaire: "",
+    Nom_Animal: "",
+    Genre_Animal: "",
+    Race_Animal: "",
+    Date_Naissance_Animal: "",
+    Sexe_Animal: "",
+    Memo_Animal: "",
+  });
+
+  const [savingAnimal, setSavingAnimal] = useState(false);
+
+  const [tarifForm, setTarifForm] = useState({
+    Annee_Tarif: String(new Date().getFullYear()),
+    Denomination_Tarif: "",
+    Montant_Tarif: "",
+  });
+
+  const [savingTarif, setSavingTarif] = useState(false);
   const [search, setSearch] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -57,16 +89,28 @@ export default function Consultations() {
       setLoading(true);
       setError("");
 
-      const [consultationsData, animauxData, proprietairesData] =
-        await Promise.all([
-          getConsultations(),
-          getAnimaux(),
-          getProprietaires(),
-        ]);
+      const [
+        consultationsData,
+        prestationsData,
+        animauxData,
+        proprietairesData,
+        zonagesData,
+        tarifsData,
+      ] = await Promise.all([
+        getConsultations(),
+        getPrestations(),
+        getAnimaux(),
+        getProprietaires(),
+        getZonages(),
+        getTarifs(),
+      ]);
 
       setConsultations(consultationsData);
+      setPrestations(prestationsData);
       setAnimaux(animauxData);
       setProprietaires(proprietairesData);
+      setZonages(zonagesData);
+      setTarifs(tarifsData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -87,30 +131,82 @@ export default function Consultations() {
     }));
   }
 
+  function handleZonageToggle(zonageId) {
+    const existing = consultationZonages.find(
+      (item) => item.ID_Zonage === zonageId,
+    );
+
+    if (existing) {
+      setConsultationZonages((current) =>
+        current.filter((item) => item.ID_Zonage !== zonageId),
+      );
+
+      return;
+    }
+
+    const zonage = zonages.find((item) => item.ID_Zonage === zonageId);
+
+    if (!zonage) {
+      return;
+    }
+
+    setConsultationZonages((current) => [
+      ...current,
+      {
+        ID_Consultation_Zonage: `new-${zonageId}`,
+        ID_Consultation: editingId,
+        ID_Zonage: zonageId,
+        Commentaire_Zonage: "",
+        Zonage: zonage,
+      },
+    ]);
+  }
+
+  function handleZonageCommentChange(zonageId, value) {
+    setConsultationZonages((current) =>
+      current.map((item) =>
+        item.ID_Zonage === zonageId
+          ? {
+              ...item,
+              Commentaire_Zonage: value,
+            }
+          : item,
+      ),
+    );
+  }
+
   function openCreateForm() {
     setEditingId(null);
     setForm(emptyForm);
+    setConsultationZonages([]);
     setError("");
     setShowForm(true);
   }
 
-  function openEditForm(consultation) {
+  async function openEditForm(consultation) {
     setEditingId(consultation.ID_Consultation);
 
     setForm({
-      ID_Lieu: consultation.ID_Lieu ?? "",
+      ID_Prestation: consultation.ID_Prestation ?? "",
       ID_Animal: consultation.ID_Animal ?? "",
-      Date_Consultation: consultation.Date_Consultation
-        ? consultation.Date_Consultation.slice(0, 16)
-        : "",
+      ID_Tarif: consultation.ID_Tarif ?? "",
       Quantite_Consultation: String(consultation.Quantite_Consultation ?? "1"),
       Motif_Consultation: consultation.Motif_Consultation || "",
       Description_Consultation: consultation.Description_Consultation || "",
       Commentaire_Consultation: consultation.Commentaire_Consultation || "",
     });
 
+    setConsultationZonages([]);
     setError("");
     setShowForm(true);
+
+    try {
+      const data = await getConsultationZonages(consultation.ID_Consultation);
+
+      setConsultationZonages(data);
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   function closeForm() {
@@ -121,6 +217,120 @@ export default function Consultations() {
     setShowForm(false);
     setEditingId(null);
     setForm(emptyForm);
+    setConsultationZonages([]);
+  }
+
+  function openTarifForm() {
+    setTarifForm({
+      Annee_Tarif: String(new Date().getFullYear()),
+      Denomination_Tarif: "",
+      Montant_Tarif: "",
+    });
+
+    setShowTarifForm(true);
+  }
+
+  function closeTarifForm() {
+    if (savingTarif) {
+      return;
+    }
+
+    setShowTarifForm(false);
+  }
+
+  function handleTarifChange(event) {
+    const { name, value } = event.target;
+
+    setTarifForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  }
+
+  async function handleTarifSubmit(event) {
+    event.preventDefault();
+
+    try {
+      setSavingTarif(true);
+      setError("");
+
+      const newTarif = await createTarif(tarifForm);
+
+      const tarifsData = await getTarifs();
+      setTarifs(tarifsData);
+
+      setForm((current) => ({
+        ...current,
+        ID_Tarif: newTarif.ID_Tarif,
+      }));
+
+      setShowTarifForm(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSavingTarif(false);
+    }
+  }
+
+  function openAnimalForm() {
+    const selectedPrestation = prestations.find(
+      (prestation) => prestation.ID_Prestation === form.ID_Prestation,
+    );
+
+    setAnimalForm({
+      ID_Proprietaire: selectedPrestation?.ID_Proprietaire ?? "",
+      Nom_Animal: "",
+      Genre_Animal: "",
+      Race_Animal: "",
+      Date_Naissance_Animal: "",
+      Sexe_Animal: "",
+      Memo_Animal: "",
+    });
+
+    setShowAnimalForm(true);
+  }
+
+  function closeAnimalForm() {
+    if (savingAnimal) {
+      return;
+    }
+
+    setShowAnimalForm(false);
+  }
+
+  function handleAnimalChange(event) {
+    const { name, value } = event.target;
+
+    setAnimalForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  }
+
+  async function handleAnimalSubmit(event) {
+    event.preventDefault();
+
+    try {
+      setSavingAnimal(true);
+      setError("");
+
+      const newAnimal = await createAnimal(animalForm);
+
+      const animauxData = await getAnimaux();
+
+      setAnimaux(animauxData);
+
+      setForm((current) => ({
+        ...current,
+        ID_Animal: newAnimal.ID_Animal,
+      }));
+
+      setShowAnimalForm(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSavingAnimal(false);
+    }
   }
 
   function getAnimalName(consultation) {
@@ -132,31 +342,42 @@ export default function Consultations() {
       (item) => item.ID_Animal === consultation.ID_Animal,
     );
 
-    return animal ? animal.Nom_Animal : "—";
+    return animal ? animal.Nom_Animal : "-";
   }
 
-  function getLieuName(consultation) {
-    if (consultation.Lieu_Consultation) {
-      return `${consultation.Lieu_Consultation.Prenom_Proprietaire} ${consultation.Lieu_Consultation.Nom_Proprietaire}`;
-    }
-
-    const proprietaire = proprietaires.find(
-      (item) => item.ID_Proprietaire === consultation.ID_Lieu,
-    );
+  function getProprietaireLabel(consultation) {
+    const proprietaire =
+      consultation.Prestation_Consultation?.Proprietaire_Prestation;
 
     if (!proprietaire) {
-      return "—";
+      return "-";
     }
 
-    return `${proprietaire.Prenom_Proprietaire} ${proprietaire.Nom_Proprietaire}`;
+    if (proprietaire.Etablissement) {
+      return (
+        <span className="text-left ml-4 sm:ml-0">
+          {proprietaire.Raison_sociale} {proprietaire.Etablissement}
+        </span>
+      );
+    }
+
+    return (
+      <span className="text-left ml-4 sm:ml-0">
+        {proprietaire.Prenom_Proprietaire} {proprietaire.Nom_Proprietaire}
+      </span>
+    );
   }
 
-  function formatDate(date) {
-    if (!date) {
-      return "—";
-    }
+  function getTarifName(consultation) {
+    const tarif =
+      consultation.Tarif_Consultation ??
+      tarifs.find((item) => item.ID_Tarif === consultation.ID_Tarif);
 
-    return new Date(date).toLocaleString("fr-FR");
+    return `${tarif.Denomination_Tarif} (${tarif.Montant_Tarif} €)`;
+  }
+
+  function getPrestationDate(consultation) {
+    return consultation.Prestation_Consultation?.Date_Prestation ?? null;
   }
 
   const filteredConsultations = useMemo(() => {
@@ -168,22 +389,71 @@ export default function Consultations() {
 
     return consultations.filter((consultation) => {
       const animalName = getAnimalName(consultation);
-      const lieuName = getLieuName(consultation);
-      const date = formatDate(consultation.Date_Consultation);
+      const proprietaire = getProprietaireLabel(consultation);
+      const tarifName = getTarifName(consultation);
+      const date = formatDate(getPrestationDate(consultation));
 
       return [
         animalName,
-        lieuName,
-        consultation.Motif_Consultation,
-        consultation.Description_Consultation,
-        consultation.Commentaire_Consultation,
-        consultation.Quantite_Consultation,
+        proprietaire,
+        tarifName,
         date,
+        consultation.Motif_Consultation,
       ]
         .filter(Boolean)
         .some((field) => String(field).toLowerCase().includes(value));
     });
-  }, [consultations, animaux, proprietaires, search]);
+  }, [consultations, animaux, tarifs, search]);
+
+  async function saveConsultationZonages(consultationId) {
+    const existing = await getConsultationZonages(consultationId);
+
+    const existingIds = existing.map((item) => item.ID_Zonage);
+
+    const selectedIds = consultationZonages.map((item) => item.ID_Zonage);
+
+    const toDelete = existing.filter(
+      (item) => !selectedIds.includes(item.ID_Zonage),
+    );
+
+    const toCreate = consultationZonages.filter(
+      (item) => !existingIds.includes(item.ID_Zonage),
+    );
+
+    const toUpdate = consultationZonages.filter((item) => {
+      if (!existingIds.includes(item.ID_Zonage)) {
+        return false;
+      }
+
+      const existingItem = existing.find(
+        (existingZonage) => existingZonage.ID_Zonage === item.ID_Zonage,
+      );
+
+      return (
+        (existingItem?.Commentaire_Zonage ?? "") !==
+        (item.Commentaire_Zonage ?? "")
+      );
+    });
+
+    await Promise.all([
+      ...toDelete.map((item) =>
+        deleteConsultationZonage(consultationId, item.ID_Zonage),
+      ),
+
+      ...toCreate.map((item) =>
+        createConsultationZonage(consultationId, {
+          ID_Zonage: item.ID_Zonage,
+          Commentaire_Zonage: item.Commentaire_Zonage || "",
+        }),
+      ),
+
+      ...toUpdate.map((item) =>
+        updateConsultationZonage(consultationId, item.ID_Zonage, {
+          Commentaire_Zonage: item.Commentaire_Zonage || "",
+        }),
+      ),
+    ]);
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -192,11 +462,16 @@ export default function Consultations() {
       setSaving(true);
       setError("");
 
+      let consultationId = editingId;
+
       if (editingId) {
         await updateConsultation(editingId, form);
       } else {
-        await createConsultation(form);
+        const consultation = await createConsultation(form);
+        consultationId = consultation.ID_Consultation;
       }
+
+      await saveConsultationZonages(consultationId);
 
       await loadData();
       closeForm();
@@ -232,7 +507,12 @@ export default function Consultations() {
       {error && <Alert variant="error">{error}</Alert>}
 
       <PageHeader
-        title="Gestion des Consultations"
+        title={
+          <>
+            <span className="hidden md:inline">Gestion des Consultations</span>
+            <span className="md:hidden">Consultations</span>
+          </>
+        }
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Rechercher une consultation..."
@@ -250,9 +530,9 @@ export default function Consultations() {
             <TableRow>
               <TableHeader>Date</TableHeader>
               <TableHeader>Animal</TableHeader>
-              <TableHeader>Lieu</TableHeader>
-              <TableHeader>Motif</TableHeader>
-              <TableHeader>Quantité</TableHeader>
+              <TableHeader>Propriétaire</TableHeader>
+              <TableHeader className="hidden md:table-cell">Tarif</TableHeader>
+              <TableHeader className="hidden md:table-cell">Motif</TableHeader>
             </TableRow>
           </TableHead>
 
@@ -263,17 +543,19 @@ export default function Consultations() {
                 onClick={() => openEditForm(consultation)}
               >
                 <TableCell>
-                  {formatDate(consultation.Date_Consultation)}
+                  {formatDate(getPrestationDate(consultation))}
                 </TableCell>
 
                 <TableCell>{getAnimalName(consultation)}</TableCell>
 
-                <TableCell>{getLieuName(consultation)}</TableCell>
+                <TableCell>{getProprietaireLabel(consultation)}</TableCell>
 
-                <TableCell>{consultation.Motif_Consultation || "—"}</TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {getTarifName(consultation)}
+                </TableCell>
 
-                <TableCell>
-                  {String(consultation.Quantite_Consultation ?? "—")}
+                <TableCell className="hidden md:table-cell">
+                  {consultation.Motif_Consultation || "-"}
                 </TableCell>
               </TableRow>
             ))}
@@ -281,152 +563,51 @@ export default function Consultations() {
         </Table>
       )}
 
-      <Modal
+      <ConsultationsModal
         open={showForm}
-        title={
-          editingId ? "Modifier la consultation" : "Ajouter une consultation"
-        }
+        editingId={editingId}
+        form={form}
+        prestations={prestations}
+        animaux={animaux}
+        proprietaires={proprietaires}
+        tarifs={tarifs}
+        zonages={zonages}
+        consultationZonages={consultationZonages}
+        saving={saving}
         onClose={closeForm}
-      >
-        {animaux.length === 0 || proprietaires.length === 0 ? (
-          <div className="p-6">
-            <p className="text-gray-600">
-              Vous devez créer au moins un propriétaire et un animal avant de
-              pouvoir créer une consultation.
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="p-6">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Select
-                id="Lieu"
-                label="Lieu de consultation"
-                name="ID_Lieu"
-                value={form.ID_Lieu}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Sélectionner un lieu</option>
+        onSubmit={handleSubmit}
+        onChange={handleChange}
+        onDelete={handleDelete}
+        onZonageToggle={handleZonageToggle}
+        onZonageCommentChange={handleZonageCommentChange}
+        onAddTarif={openTarifForm}
+        onAddAnimal={openAnimalForm}
+      />
 
-                {proprietaires.map((proprietaire) => (
-                  <option
-                    key={proprietaire.ID_Proprietaire}
-                    value={proprietaire.ID_Proprietaire}
-                  >
-                    {proprietaire.Prenom_Proprietaire}{" "}
-                    {proprietaire.Nom_Proprietaire}
-                  </option>
-                ))}
-              </Select>
+      <TarifsModal
+        open={showTarifForm}
+        editingId={null}
+        form={tarifForm}
+        saving={savingTarif}
+        error={error}
+        onClose={closeTarifForm}
+        onSubmit={handleTarifSubmit}
+        onChange={handleTarifChange}
+        onDelete={() => {}}
+      />
 
-              <Select
-                id="Animal"
-                label="Animal"
-                name="ID_Animal"
-                value={form.ID_Animal}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Sélectionner un animal</option>
-
-                {animaux.map((animal) => (
-                  <option key={animal.ID_Animal} value={animal.ID_Animal}>
-                    {animal.Nom_Animal}
-                  </option>
-                ))}
-              </Select>
-
-              <Input
-                id="Date_Consultation"
-                label="Date de consultation"
-                type="datetime-local"
-                name="Date_Consultation"
-                value={form.Date_Consultation}
-                onChange={handleChange}
-                required
-              />
-
-              <Input
-                id="Quantite_Consultation"
-                label="Quantité"
-                type="number"
-                name="Quantite_Consultation"
-                value={form.Quantite_Consultation}
-                onChange={handleChange}
-                min="1"
-                step="1"
-                required
-              />
-
-              <Input
-                id="Motif_Consultation"
-                label="Motif"
-                type="text"
-                name="Motif_Consultation"
-                value={form.Motif_Consultation}
-                onChange={handleChange}
-                required
-              />
-
-              <div className="md:col-span-2">
-                <Textarea
-                  label="Description"
-                  name="Description_Consultation"
-                  value={form.Description_Consultation}
-                  onChange={handleChange}
-                  rows="4"
-                  required
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <Textarea
-                  label="Commentaire personnel"
-                  name="Commentaire_Consultation"
-                  value={form.Commentaire_Consultation}
-                  onChange={handleChange}
-                  rows="4"
-                />
-              </div>
-            </div>
-
-            {/* Modal Btns */}
-            <div className="flex items-center justify-between gap-3 mt-6">
-              <div>
-                {editingId && (
-                  <Button
-                    type="button"
-                    variant="danger"
-                    onClick={() => handleDelete(editingId)}
-                    disabled={saving}
-                  >
-                    Supprimer
-                  </Button>
-                )}
-              </div>
-
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  onClick={closeForm}
-                  variant="secondary"
-                  disabled={saving}
-                >
-                  Annuler
-                </Button>
-
-                <Button type="submit" disabled={saving}>
-                  {saving
-                    ? "Enregistrement..."
-                    : editingId
-                      ? "Modifier"
-                      : "Ajouter"}
-                </Button>
-              </div>
-            </div>
-          </form>
-        )}
-      </Modal>
+      <AnimauxModal
+        open={showAnimalForm}
+        editingId={null}
+        form={animalForm}
+        proprietaires={proprietaires}
+        saving={savingAnimal}
+        onClose={closeAnimalForm}
+        onSubmit={handleAnimalSubmit}
+        onChange={handleAnimalChange}
+        onDelete={() => {}}
+      />
+      
     </div>
   );
 }

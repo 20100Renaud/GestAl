@@ -32,7 +32,7 @@ export default function PageHeader({
 
             <Search
               size={20}
-              className="absolute right-8 top-1/2 -translate-y-1/2 text-blue-700"
+              className="absolute right-8 top-1/2 -translate-y-1/2 text-blue-900"
             />
           </>
         )}

@@ -55,6 +55,7 @@ export async function login(req, res) {
       {
         userId: user.ID_User,
         role: user.Role_User,
+        pratique: user.Pratique ?? "",
       },
       JWT_SECRET,
       {

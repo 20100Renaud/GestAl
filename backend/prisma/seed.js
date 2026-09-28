@@ -45,6 +45,7 @@ async function main() {
       Role_User: "ADMIN",
       Nom_User: "Admin",
       Prenom_User: "System",
+      Pratique: "Admin",
       Email_User: normalizedAdminEmail,
       Password_Hash_User: passwordHash,
     },

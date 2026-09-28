@@ -25,7 +25,7 @@ export function TableHead({ children }) {
 export function TableRow({ children, className = "", ...props }) {
   return (
     <tr
-      className="border-b border-blue-200 transition-colors hover:bg-blue-50 cursor-pointer "
+      className="border-b border-blue-200 transition-colors hover:bg-blue-50 cursor-pointer"
       {...props}
     >
       {children}
@@ -33,17 +33,17 @@ export function TableRow({ children, className = "", ...props }) {
   );
 }
 
-export function TableHeader({ children }) {
+export function TableHeader({ children, className = "" }) {
   return (
-    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-blue-900">
+    <th className={`px-4 py-3 text-xs font-semibold uppercase tracking-wide text-blue-900 text-center ${className}`}>
       {children}
     </th>
   );
 }
 
-export function TableCell({ children }) {
+export function TableCell({ children, className = "" }) {
   return (
-    <td className="px-4 py-3 text-blue-900">
+    <td className={`px-2 md:px-4 py-2 md:py-3 text-blue-900 text-center ${className}`}>
       {children}
     </td>
   );

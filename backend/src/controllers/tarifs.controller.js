@@ -77,9 +77,20 @@ export async function createTarif(req, res) {
       });
     }
 
+    const annee =
+      Annee_Tarif === undefined || Annee_Tarif === ""
+        ? new Date().getFullYear()
+        : Number(Annee_Tarif);
+
+    if (!Number.isInteger(annee) || annee < 2000 || annee > 2100) {
+      return res.status(400).json({
+        error: "Année invalide",
+      });
+    }
+
     const tarif = await prisma.t_Tarifs.create({
       data: {
-        Annee_Tarif: Annee_Tarif.trim(),
+        Annee_Tarif: annee,
         Denomination_Tarif: Denomination_Tarif.trim(),
         Montant_Tarif: montant,
       },
@@ -140,7 +151,7 @@ export async function updateTarif(req, res) {
         ID_Tarif: id,
       },
       data: {
-        Annee_Tarif: Annee_Tarif.trim(),
+        Annee_Tarif: Number(Annee_Tarif),
         Denomination_Tarif: Denomination_Tarif.trim(),
         Montant_Tarif: montant,
       },
@@ -169,6 +180,19 @@ export async function deleteTarif(req, res) {
     if (!existingTarif) {
       return res.status(404).json({
         error: "Tarif not found",
+      });
+    }
+
+    const consultationCount = await prisma.t_Consultations.count({
+      where: {
+        ID_Tarif: id,
+      },
+    });
+
+    if (consultationCount > 0) {
+      return res.status(409).json({
+        error:
+          "Impossible de supprimer ce tarif car il est utilisé par une ou plusieurs consultations",
       });
     }
 

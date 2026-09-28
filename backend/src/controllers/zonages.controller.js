@@ -6,9 +6,6 @@ export async function getZonages(req, res) {
       orderBy: {
         Nom_Zonage: "asc",
       },
-      include: {
-        Consultation_Zonage: true,
-      },
     });
 
     return res.json(zonages);
@@ -28,9 +25,6 @@ export async function getZonage(req, res) {
     const zonage = await prisma.t_Zonages.findUnique({
       where: {
         ID_Zonage: id,
-      },
-      include: {
-        Consultation_Zonage: true,
       },
     });
 
@@ -53,55 +47,43 @@ export async function getZonage(req, res) {
 export async function createZonage(req, res) {
   try {
     const {
-      ID_Consultation,
+      Pratique_Zonage,
       Nom_Zonage,
       Position_Zonage,
       Orientation_Zonage,
-      Commentaire_Zonage,
+      Technique_Zonage,
     } = req.body;
 
     if (
-      typeof ID_Consultation !== "string" ||
-      !ID_Consultation.trim() ||
+      typeof Pratique_Zonage !== "string" ||
+      !Pratique_Zonage.trim() ||
       typeof Nom_Zonage !== "string" ||
       !Nom_Zonage.trim()
     ) {
       return res.status(400).json({
-        error: "ID_Consultation and Nom_Zonage are required",
-      });
-    }
-
-    const consultation = await prisma.t_Consultations.findUnique({
-      where: {
-        ID_Consultation,
-      },
-    });
-
-    if (!consultation) {
-      return res.status(404).json({
-        error: "Consultation not found",
+        error: "Pratique_Zonage and Nom_Zonage are required",
       });
     }
 
     const zonage = await prisma.t_Zonages.create({
       data: {
-        ID_Consultation,
+        Pratique_Zonage: Pratique_Zonage.trim(),
         Nom_Zonage: Nom_Zonage.trim(),
+
         Position_Zonage:
           typeof Position_Zonage === "string" && Position_Zonage.trim()
             ? Position_Zonage.trim()
             : null,
+
         Orientation_Zonage:
           typeof Orientation_Zonage === "string" && Orientation_Zonage.trim()
             ? Orientation_Zonage.trim()
             : null,
-        Commentaire_Zonage:
-          typeof Commentaire_Zonage === "string" && Commentaire_Zonage.trim()
-            ? Commentaire_Zonage.trim()
+
+        Technique_Zonage:
+          typeof Technique_Zonage === "string" && Technique_Zonage.trim()
+            ? Technique_Zonage.trim()
             : null,
-      },
-      include: {
-        Consultation_Zonage: true,
       },
     });
 
@@ -120,21 +102,21 @@ export async function updateZonage(req, res) {
     const { id } = req.params;
 
     const {
-      ID_Consultation,
+      Pratique_Zonage,
       Nom_Zonage,
       Position_Zonage,
       Orientation_Zonage,
-      Commentaire_Zonage,
+      Technique_Zonage,
     } = req.body;
 
     if (
-      typeof ID_Consultation !== "string" ||
-      !ID_Consultation.trim() ||
+      typeof Pratique_Zonage !== "string" ||
+      !Pratique_Zonage.trim() ||
       typeof Nom_Zonage !== "string" ||
       !Nom_Zonage.trim()
     ) {
       return res.status(400).json({
-        error: "ID_Consultation and Nom_Zonage are required",
+        error: "Pratique_Zonage and Nom_Zonage are required",
       });
     }
 
@@ -150,40 +132,28 @@ export async function updateZonage(req, res) {
       });
     }
 
-    const consultation = await prisma.t_Consultations.findUnique({
-      where: {
-        ID_Consultation,
-      },
-    });
-
-    if (!consultation) {
-      return res.status(404).json({
-        error: "Consultation not found",
-      });
-    }
-
     const zonage = await prisma.t_Zonages.update({
       where: {
         ID_Zonage: id,
       },
       data: {
-        ID_Consultation,
+        Pratique_Zonage: Pratique_Zonage.trim(),
         Nom_Zonage: Nom_Zonage.trim(),
+
         Position_Zonage:
           typeof Position_Zonage === "string" && Position_Zonage.trim()
             ? Position_Zonage.trim()
             : null,
+
         Orientation_Zonage:
           typeof Orientation_Zonage === "string" && Orientation_Zonage.trim()
             ? Orientation_Zonage.trim()
             : null,
-        Commentaire_Zonage:
-          typeof Commentaire_Zonage === "string" && Commentaire_Zonage.trim()
-            ? Commentaire_Zonage.trim()
+
+        Technique_Zonage:
+          typeof Technique_Zonage === "string" && Technique_Zonage.trim()
+            ? Technique_Zonage.trim()
             : null,
-      },
-      include: {
-        Consultation_Zonage: true,
       },
     });
 

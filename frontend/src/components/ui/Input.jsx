@@ -1,7 +1,8 @@
-const inputClasses =
-  "w-full rounded-md border border-blue-300 px-3 py-2.5 text-sm " +
-  "text-blue-900 placeholder:text-blue-400 shadow " +
-  "focus:outline-none focus:ring-1 focus:ring-blue-500";
+import {
+  fieldClasses,
+  fieldLabelClasses,
+  fieldWrapperClasses,
+} from "./fieldStyles";
 
 const checkboxClasses =
   "my-auto peer appearance-none h-4 w-4 " +
@@ -11,12 +12,16 @@ const checkboxClasses =
 
 export default function Input({
   label,
+  icon,
   required = false,
   error,
   className = "",
   type = "text",
+  suffix,
   ...props
 }) {
+  const icons = icon ? (Array.isArray(icon) ? icon : [icon]) : [];
+
   if (type === "checkbox") {
     return (
       <label className="flex items-center gap-2">
@@ -28,13 +33,13 @@ export default function Input({
             className={`${checkboxClasses} ${className}`}
           />
 
-          <span className="pointer-events-none absolute inset-0 flex justify-center mt-0.5 text-xs font-bold text-white">
+          <span className="pointer-events-none absolute inset-0 mt-0.5 flex justify-center text-xs font-bold text-white">
             ✓
           </span>
         </span>
 
         {label && (
-          <span className="text-sm font-semibold text-blue-700">
+          <span className={fieldLabelClasses}>
             {label}
             {required && <span className="ml-1 text-red-500">*</span>}
           </span>
@@ -44,23 +49,43 @@ export default function Input({
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className={`${fieldWrapperClasses} ${className}`}>
       {label && (
         <label
           htmlFor={props.id}
-          className="text-sm font-semibold text-blue-700"
+          className="flex items-center gap-2 text-sm font-semibold text-blue-700"
         >
-          {label}
-          {required && <span className="ml-1 text-red-500">*</span>}
+          <span className="flex">
+            {icons.map((Icon, index) => (
+              <Icon
+                key={index}
+                size={18}
+                className={index > 0 ? "-ml-1.25" : ""}
+              />
+            ))}
+          </span>
+
+          <span>
+            {label}
+            {required && <span className="ml-1 text-red-500">*</span>}
+          </span>
         </label>
       )}
 
-      <input
-        {...props}
-        type={type}
-        required={required}
-        className={`${inputClasses} ${className}`}
-      />
+      <div className="relative">
+        <input
+          {...props}
+          type={type}
+          required={required}
+          className={`${fieldClasses} ${suffix ? "pr-10" : ""}`}
+        />
+
+        {suffix && (
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-blue-900">
+            {suffix}
+          </span>
+        )}
+      </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>

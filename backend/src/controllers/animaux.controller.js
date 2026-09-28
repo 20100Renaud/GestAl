@@ -50,6 +50,23 @@ export async function getAnimal(req, res) {
   }
 }
 
+function normalizeUpper(value) {
+  return typeof value === "string"
+    ? value.trim().toUpperCase()
+    : "";
+}
+
+function normalizeCamel(value) {
+  return typeof value === "string"
+    ? value
+        .trim()
+        .toLowerCase()
+        .replace(/(^|[\s-])(\p{L})/gu, (_, separator, letter) => {
+          return separator + letter.toUpperCase();
+        })
+    : "";
+}
+
 export async function createAnimal(req, res) {
   try {
     const {
@@ -62,20 +79,9 @@ export async function createAnimal(req, res) {
       Sexe_Animal,
     } = req.body;
 
-    if (
-      typeof ID_Proprietaire !== "string" ||
-      !ID_Proprietaire.trim() ||
-      typeof Nom_Animal !== "string" ||
-      !Nom_Animal.trim() ||
-      typeof Genre_Animal !== "string" ||
-      !Genre_Animal.trim() ||
-      typeof Date_Naissance_Animal !== "string" ||
-      !Date_Naissance_Animal.trim() ||
-      typeof Sexe_Animal !== "string" ||
-      !Sexe_Animal.trim()
-    ) {
+    if (typeof ID_Proprietaire !== "string" || !ID_Proprietaire.trim()) {
       return res.status(400).json({
-        error: "Required fields are missing",
+        error: "Propriétaire requis",
       });
     }
 
@@ -102,11 +108,11 @@ export async function createAnimal(req, res) {
     const animal = await prisma.t_Animaux.create({
       data: {
         ID_Proprietaire,
-        Nom_Animal: Nom_Animal.trim(),
-        Genre_Animal: Genre_Animal.trim(),
+        Nom_Animal: normalizeUpper(Nom_Animal),
+        Genre_Animal: normalizeCamel(Genre_Animal),
         Race_Animal:
           typeof Race_Animal === "string" && Race_Animal.trim()
-            ? Race_Animal.trim()
+            ? normalizeCamel(Race_Animal)
             : null,
         Date_Naissance_Animal: dateNaissance,
         Memo_Animal:
@@ -120,6 +126,11 @@ export async function createAnimal(req, res) {
       },
     });
 
+    if (animal.ID_Proprietaire !== ID_Proprietaire) {
+      return res.status(400).json({
+        error: "L'animal ne appartient pas au propriétaire sélectionné",
+      });
+    }
     return res.status(201).json(animal);
   } catch (error) {
     console.error("Create animal error:", error);
@@ -199,12 +210,13 @@ export async function updateAnimal(req, res) {
       },
       data: {
         ID_Proprietaire,
-        Nom_Animal: Nom_Animal.trim(),
-        Genre_Animal: Genre_Animal.trim(),
+        Nom_Animal: normalizeUpper(Nom_Animal),
+        Genre_Animal: normalizeCamel(Genre_Animal),
         Race_Animal:
           typeof Race_Animal === "string" && Race_Animal.trim()
-            ? Race_Animal.trim()
+            ? normalizeCamel(Race_Animal)
             : null,
+
         Date_Naissance_Animal: dateNaissance,
         Memo_Animal:
           typeof Memo_Animal === "string" && Memo_Animal.trim()

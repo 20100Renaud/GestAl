@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
-import PageHeader from "../components/ui/PageHeader.jsx";
+
 import Button from "../components/ui/Button.jsx";
 import Input from "../components/ui/Input.jsx";
 
@@ -28,40 +28,65 @@ export default function Login() {
   }
 
   return (
-    <main>
-      <PageHeader title="GestAL" description="Connexion" />
+    <main className="min-h-screen bg-blue-50 flex items-center justify-center px-4">
+      <div className="w-full max-w-xs">
+        {/* Logo / application name */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-blue-900">GestAL</h1>
 
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="email">E-mail</label>
-          <Input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            autoComplete="email"
-            required
-          />
+          <p className="text-sm text-blue-500">Gestion de prestations animales</p>
         </div>
 
-        <div>
-          <label htmlFor="password">Mot de passe</label>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete="current-password"
-            required
-          />
+        {/* Login card */}
+        <div className="bg-white border border-blue-200 rounded-xl shadow-sm p-8">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-blue-900">Connexion</h2>
+
+            <p className="mt-1 text-sm text-blue-500">
+              Espace professionnel.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <Input
+              id="email"
+              label="E-mail"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
+              required
+            />
+
+            <Input
+              id="password"
+              label="Mot de passe"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+              required
+            />
+
+            {error && (
+              <div
+                role="alert"
+                className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+              >
+                {error}
+              </div>
+            )}
+
+            <Button type="submit" disabled={submitting} className="w-full">
+              {submitting ? "Connexion..." : "Se connecter"}
+            </Button>
+          </form>
         </div>
 
-        {error && <p>{error}</p>}
-
-        <Button type="submit" disabled={submitting}>
-          {submitting ? "Chargement..." : "Se connecter"}
-        </Button>
-      </form>
+        <p className="mt-6 text-center text-xs text-blue-400">
+          GestAL · Lun-e
+        </p>
+      </div>
     </main>
   );
 }

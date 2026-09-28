@@ -21,16 +21,18 @@ export function authenticate(req, res, next) {
     if (
       typeof payload !== "object" ||
       typeof payload.userId !== "string" ||
-      typeof payload.role !== "string"
+      typeof payload.role !== "string" ||
+      typeof payload.pratique !== "string"
     ) {
       return res.status(401).json({
         error: "Invalid authentication token",
       });
     }
-    
+
     req.user = {
       userId: payload.userId,
       role: payload.role,
+      pratique: payload.pratique,
     };
 
     next();

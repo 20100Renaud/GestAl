@@ -8,6 +8,10 @@ const navigation = [
     separator: true,
   },
   {
+    label: "Prestations",
+    path: "/dashboard/prestations",
+  },
+  {
     label: "Consultations",
     path: "/dashboard/consultations",
   },
@@ -38,7 +42,7 @@ const navigation = [
   },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ onNavigate }) {
   const { logout } = useAuth();
 
   async function handleLogout() {
@@ -62,9 +66,11 @@ export default function Sidebar() {
               key={item.path}
               to={item.path}
               end={item.path === "/dashboard"}
+              onClick={() => onNavigate?.()}
             >
               {item.label}
             </NavLink>
+
             {item.separator && index < navigation.length - 1 && (
               <div className="border-b border-white/40 my-6" />
             )}
@@ -75,8 +81,11 @@ export default function Sidebar() {
       <div className="mt-auto p-4 border-t border-white/10">
         <button
           type="button"
-          onClick={handleLogout}
-          className="w-full p-2.5 rounded-lg bg-gray-700 text-white cursor-pointer hover:bg-gray-600"
+          onClick={async () => {
+            await handleLogout();
+            onNavigate?.();
+          }}
+          className="w-full p-2 rounded-lg bg-gray-700 text-white cursor-pointer hover:bg-gray-600"
         >
           Déconnexion
         </button>

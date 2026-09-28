@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import Button from "../components/ui/Button.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
-import Input from "../components/ui/Input.jsx";
+import TarifsModal from "../components/Modals/Tarifs_Modal.jsx";
 import Alert from "../components/ui/Alert.jsx";
-import Modal from "../components/ui/Modal.jsx";
 import Table, {
   Vide,
   TableHead,
@@ -19,7 +17,7 @@ import {
 } from "../api/tarifs.js";
 
 const emptyForm = {
-  Annee_Tarif: "",
+  Annee_Tarif: String(new Date().getFullYear()),
   Denomination_Tarif: "",
   Montant_Tarif: "",
 };
@@ -94,6 +92,7 @@ export default function Tarifs() {
     setShowForm(false);
     setEditingId(null);
     setForm(emptyForm);
+    setError("");
   }
 
   const filteredTarifs = useMemo(() => {
@@ -157,7 +156,12 @@ export default function Tarifs() {
       {error && <Alert variant="error">{error}</Alert>}
 
       <PageHeader
-        title="Gestion des Tarifs"
+        title={
+          <>
+            <span className="hidden md:inline">Gestion des Tarifs</span>
+            <span className="md:hidden">Tarifs</span>
+          </>
+        }
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Rechercher un tarif..."
@@ -189,91 +193,24 @@ export default function Tarifs() {
 
                 <TableCell>{tarif.Denomination_Tarif}</TableCell>
 
-                <TableCell>
-                  {Number(tarif.Montant_Tarif).toFixed(2)} €
-                </TableCell>
+                <TableCell>{Number(tarif.Montant_Tarif)} €</TableCell>
               </TableRow>
             ))}
           </tbody>
         </Table>
       )}
 
-      <Modal
+      <TarifsModal
         open={showForm}
-        title={editingId ? "Modifier le tarif" : "Ajouter un tarif"}
+        editingId={editingId}
+        form={form}
+        saving={saving}
+        error={error}
         onClose={closeForm}
-      >
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Input
-              id="Annee_Tarif"
-              label="Année"
-              type="text"
-              name="Annee_Tarif"
-              value={form.Annee_Tarif}
-              onChange={handleChange}
-              required
-            />
-
-            <Input
-              id="Denomination_Tarif"
-              label="Désignation"
-              type="text"
-              name="Denomination_Tarif"
-              value={form.Denomination_Tarif}
-              onChange={handleChange}
-              required
-            />
-
-            <Input
-              id="Montant_Tarif"
-              label="Montant"
-              type="number"
-              name="Montant_Tarif"
-              value={form.Montant_Tarif}
-              onChange={handleChange}
-              min="0"
-              step="0.01"
-              required
-            />
-          </div>
-
-          {/* Modal Btns */}
-          <div className="flex items-center justify-between gap-3 mt-6">
-            <div>
-              {editingId && (
-                <Button
-                  type="button"
-                  variant="danger"
-                  onClick={() => handleDelete(editingId)}
-                  disabled={saving}
-                >
-                  Supprimer
-                </Button>
-              )}
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                type="button"
-                onClick={closeForm}
-                variant="secondary"
-                disabled={saving}
-              >
-                Annuler
-              </Button>
-
-              <Button type="submit" disabled={saving}>
-                {saving
-                  ? "Enregistrement..."
-                  : editingId
-                    ? "Modifier"
-                    : "Ajouter"}
-              </Button>
-            </div>
-          </div>
-        </form>
-      </Modal>
+        onSubmit={handleSubmit}
+        onChange={handleChange}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }

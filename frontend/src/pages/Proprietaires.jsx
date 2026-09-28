@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import Button from "../components/ui/Button.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
-import Input from "../components/ui/Input.jsx";
-import Select from "../components/ui/Select.jsx";
-import Modal from "../components/ui/Modal.jsx";
+import ProprietairesModal from "../components/Modals/Proprietaires_Modal.jsx";
+import { normalizeUpper, normalizeCamel } from "../utils/normalizeField.js";
 import Alert from "../components/ui/Alert.jsx";
 import Table, {
   Vide,
@@ -20,7 +18,7 @@ import {
 } from "../api/proprietaires.js";
 
 const emptyForm = {
-  raisonSociale: "",
+  raisonSociale: "Particulier",
   etablissement: "",
   civilite: "",
   nom: "",
@@ -142,10 +140,17 @@ export default function Proprietaires() {
       setSaving(true);
       setError("");
 
+      const normalizedForm = {
+        ...form,
+        nom: normalizeUpper(form.nom),
+        prenom: normalizeCamel(form.prenom),
+        ville: normalizeCamel(form.ville),
+      };
+
       if (editingId) {
-        await updateProprietaire(editingId, form);
+        await updateProprietaire(editingId, normalizedForm);
       } else {
-        await createProprietaire(form);
+        await createProprietaire(normalizedForm);
       }
 
       await loadProprietaires();
@@ -182,7 +187,12 @@ export default function Proprietaires() {
       {error && <Alert variant="error">{error}</Alert>}
 
       <PageHeader
-        title="Gestion des Propriétaires"
+        title={
+          <>
+            <span className="hidden md:inline">Gestion des Propriétaires</span>
+            <span className="md:hidden">Propriétaires</span>
+          </>
+        }
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Recherche par nom, e-mail, ville..."
@@ -199,10 +209,8 @@ export default function Proprietaires() {
           <TableHead>
             <TableRow>
               <TableHeader>Raison sociale</TableHeader>
-              <TableHeader>Civilité</TableHeader>
               <TableHeader>Nom</TableHeader>
-              <TableHeader>Prénom</TableHeader>
-              <TableHeader>Email</TableHeader>
+              <TableHeader className="hidden md:table-cell">Email</TableHeader>
               <TableHeader>Ville</TableHeader>
             </TableRow>
           </TableHead>
@@ -216,178 +224,38 @@ export default function Proprietaires() {
                 <TableCell>
                   {[proprietaire.Raison_sociale, proprietaire.Etablissement]
                     .filter(Boolean)
-                    .join(" ") || "—"}
+                    .join(" ") || "-"}
                 </TableCell>
 
                 <TableCell>
-                  {proprietaire.Civilite_Proprietaire || "—"}
+                  {[
+                    proprietaire.Civilite_Proprietaire,
+                    proprietaire.Prenom_Proprietaire,
+                    proprietaire.Nom_Proprietaire,
+                  ]
+                    .filter(Boolean)
+                    .join(" ") || "-"}
                 </TableCell>
 
-                <TableCell>{proprietaire.Nom_Proprietaire || "—"}</TableCell>
+                <TableCell className="hidden md:table-cell">{proprietaire.Email_Proprietaire || "-"}</TableCell>
 
-                <TableCell>{proprietaire.Prenom_Proprietaire || "—"}</TableCell>
-
-                <TableCell>{proprietaire.Email_Proprietaire || "—"}</TableCell>
-
-                <TableCell>{proprietaire.Ville_Proprietaire || "—"}</TableCell>
+                <TableCell>{proprietaire.Ville_Proprietaire || "-"}</TableCell>
               </TableRow>
             ))}
           </tbody>
         </Table>
       )}
 
-      <Modal
+      <ProprietairesModal
         open={showForm}
-        title={
-          editingId ? "Modifier le propriétaire" : "Ajouter un propriétaire"
-        }
+        editingId={editingId}
+        form={form}
+        saving={saving}
         onClose={closeForm}
-      >
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Select
-              id="raisonSociale"
-              label="Raison sociale"
-              name="raisonSociale"
-              value={form.raisonSociale}
-              onChange={handleChange}
-              required
-            >
-              <option value="Particulier">Particulier</option>
-              <option value="Ecurie">Ecurie</option>
-              <option value="Asso">Association</option>
-            </Select>
-
-            <Input
-              id="etablissement"
-              label="Établissement"
-              type="text"
-              name="etablissement"
-              value={form.etablissement}
-              onChange={handleChange}
-            />
-
-            <Select
-              id="civilite"
-              label="Civilité"
-              name="civilite"
-              value={form.civilite}
-              onChange={handleChange}
-            >
-              <option value="">Sélectionner</option>
-              <option value="M">M.</option>
-              <option value="Mme">Mme</option>
-            </Select>
-
-            <Input
-              id="nom"
-              label="Nom"
-              type="text"
-              name="nom"
-              value={form.nom}
-              onChange={handleChange}
-              required
-            />
-
-            <Input
-              id="prenom"
-              label="Prénom"
-              type="text"
-              name="prenom"
-              value={form.prenom}
-              onChange={handleChange}
-              required
-            />
-
-            <Input
-              id="email"
-              label="Email"
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              required
-            />
-
-            <div className="md:col-span-2">
-              <Input
-                id="adresse"
-                label="Adresse"
-                type="text"
-                name="adresse"
-                value={form.adresse}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <Input
-              id="ville"
-              label="Ville"
-              type="text"
-              name="ville"
-              value={form.ville}
-              onChange={handleChange}
-              required
-            />
-
-            <Input
-              id="cp"
-              label="Code postal"
-              type="text"
-              name="cp"
-              value={form.cp}
-              onChange={handleChange}
-              required
-            />
-
-            <Input
-              id="tel"
-              label="Téléphone"
-              type="tel"
-              name="tel"
-              value={form.tel}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          {/* Modal Btns */}
-          <div className="flex items-center justify-between gap-3 mt-6">
-            <div>
-              {editingId && (
-                <Button
-                  type="button"
-                  variant="danger"
-                  onClick={() => handleDelete(editingId)}
-                  disabled={saving}
-                >
-                  Supprimer
-                </Button>
-              )}
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                type="button"
-                onClick={closeForm}
-                variant="secondary"
-                disabled={saving}
-              >
-                Annuler
-              </Button>
-
-              <Button type="submit" disabled={saving}>
-                {saving
-                  ? "Enregistrement..."
-                  : editingId
-                    ? "Modifier"
-                    : "Ajouter"}
-              </Button>
-            </div>
-          </div>
-        </form>
-      </Modal>
+        onSubmit={handleSubmit}
+        onChange={handleChange}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }

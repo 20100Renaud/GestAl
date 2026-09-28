@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import Button from "../components/ui/Button.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
-import Input from "../components/ui/Input.jsx";
-import Select from "../components/ui/Select.jsx";
+import { formatDate } from "../utils/formatDate";
+import PaiementsModal from "../components/Modals/Paiements_Modal.jsx";
 import Alert from "../components/ui/Alert.jsx";
-import Modal from "../components/ui/Modal.jsx";
 import Table, {
   Vide,
   TableHead,
@@ -12,6 +10,7 @@ import Table, {
   TableRow,
   TableCell,
 } from "../components/ui/Table.jsx";
+
 import {
   getPaiements,
   createPaiement,
@@ -19,26 +18,22 @@ import {
   deletePaiement,
 } from "../api/paiements.js";
 
-import { getConsultations } from "../api/consultations.js";
-import { getTarifs } from "../api/tarifs.js";
-import { getDeplacements } from "../api/deplacements.js";
+import { getPrestations } from "../api/prestations.js";
 
 const emptyForm = {
-  ID_Consultation: "",
-  ID_Tarif: "",
-  ID_Deplacement: "",
+  ID_Prestation: "",
   Date_Paiement: "",
+  Date_Encaissement: "",
   Montant_Paiement: "",
-  Remise_Paiement: "0",
   Moyen_Paiement: "",
-  Selection_Paiement: false,
+  E_Reporting_Paiement: false,
+  E_Facture_Paiement: false,
+  E_Other_Paiement: false,
 };
 
 export default function Paiements() {
   const [paiements, setPaiements] = useState([]);
-  const [consultations, setConsultations] = useState([]);
-  const [tarifs, setTarifs] = useState([]);
-  const [deplacements, setDeplacements] = useState([]);
+  const [prestations, setPrestations] = useState([]);
 
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -56,18 +51,13 @@ export default function Paiements() {
       setLoading(true);
       setError("");
 
-      const [paiementsData, consultationsData, tarifsData, deplacementsData] =
-        await Promise.all([
-          getPaiements(),
-          getConsultations(),
-          getTarifs(),
-          getDeplacements(),
-        ]);
+      const [paiementsData, prestationsData] = await Promise.all([
+        getPaiements(),
+        getPrestations(),
+      ]);
 
       setPaiements(paiementsData);
-      setConsultations(consultationsData);
-      setTarifs(tarifsData);
-      setDeplacements(deplacementsData);
+      setPrestations(prestationsData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -79,13 +69,67 @@ export default function Paiements() {
     loadData();
   }, []);
 
+  function isPaiementComplete(form) {
+    const hasMoyen = Boolean(form.Moyen_Paiement?.trim());
+
+    const hasType =
+      form.E_Reporting_Paiement ||
+      form.E_Facture_Paiement ||
+      form.E_Other_Paiement;
+
+    return hasMoyen && hasType;
+  }
+
   function handleChange(event) {
     const { name, value, type, checked } = event.target;
 
-    setForm((current) => ({
-      ...current,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+      if (type === "checkbox") {
+        setForm((current) => {
+          const next = {
+            ...current,
+            E_Reporting_Paiement: checked && name === "E_Reporting_Paiement",
+            E_Facture_Paiement: checked && name === "E_Facture_Paiement",
+            E_Other_Paiement: checked && name === "E_Other_Paiement",
+          };
+
+          const hasMoyen = Boolean(next.Moyen_Paiement?.trim());
+
+          const hasType =
+            next.E_Reporting_Paiement ||
+            next.E_Facture_Paiement ||
+            next.E_Other_Paiement;
+
+          if (!hasMoyen || !hasType) {
+            next.Date_Encaissement = "";
+          }
+
+          return next;
+        });
+
+        return;
+      }
+
+    setForm((current) => {
+      const next = {
+        ...current,
+        [name]: value,
+      };
+
+      if (name === "Moyen_Paiement") {
+        const hasMoyen = Boolean(value.trim());
+
+        const hasType =
+          next.E_Reporting_Paiement ||
+          next.E_Facture_Paiement ||
+          next.E_Other_Paiement;
+
+        if (!hasMoyen || !hasType) {
+          next.Date_Encaissement = "";
+        }
+      }
+
+      return next;
+    });
   }
 
   function openCreateForm() {
@@ -99,16 +143,25 @@ export default function Paiements() {
     setEditingId(paiement.ID_Paiement);
 
     setForm({
-      ID_Consultation: paiement.ID_Consultation ?? "",
-      ID_Tarif: paiement.ID_Tarif ?? "",
-      ID_Deplacement: paiement.ID_Deplacement ?? "",
+      ID_Prestation: paiement.ID_Prestation ?? "",
+
       Date_Paiement: paiement.Date_Paiement
         ? paiement.Date_Paiement.slice(0, 10)
         : "",
+
+      Date_Encaissement: paiement.Date_Encaissement
+        ? paiement.Date_Encaissement.slice(0, 10)
+        : "",
+
       Montant_Paiement: paiement.Montant_Paiement ?? "",
-      Remise_Paiement: paiement.Remise_Paiement ?? "0",
+
       Moyen_Paiement: paiement.Moyen_Paiement || "",
-      Selection_Paiement: paiement.Selection_Paiement ?? false,
+
+      E_Reporting_Paiement: paiement.E_Reporting_Paiement ?? false,
+
+      E_Facture_Paiement: paiement.E_Facture_Paiement ?? false,
+
+      E_Other_Paiement: paiement.E_Other_Paiement ?? false,
     });
 
     setError("");
@@ -125,20 +178,30 @@ export default function Paiements() {
     setForm(emptyForm);
   }
 
-  function getConsultationLabel(consultation) {
-    const date = consultation.Date_Consultation
-      ? new Date(consultation.Date_Consultation).toLocaleDateString("fr-FR")
-      : "";
+  function getProprietaireLabel(prestation) {
+    const proprietaire = prestation.Proprietaire_Prestation;
 
-    return `${date} — ${consultation.Motif_Consultation}`;
-  }
+    if (!proprietaire) {
+      return "-";
+    }
 
-  function getTarifLabel(tarif) {
-    return `${tarif.Annee_Tarif} — ${tarif.Denomination_Tarif} (${tarif.Montant_Tarif} €)`;
-  }
+    if (proprietaire.Etablissement) {
+      return (
+        <span className="flex flex-col md:flex-row md:gap-1 justify-center">
+          <span>{proprietaire.Raison_sociale}</span>
 
-  function getDeplacementLabel(deplacement) {
-    return `${deplacement.Annee_Deplacement} — ${deplacement.Denomination_Deplacement} (${deplacement.Montant_Deplacement} €)`;
+          <span>{proprietaire.Etablissement}</span>
+        </span>
+      );
+    }
+
+    return (
+      <span className="flex flex-col md:flex-row md:gap-1 justify-center">
+        <span>{proprietaire.Prenom_Proprietaire}</span>
+
+        <span>{proprietaire.Nom_Proprietaire}</span>
+      </span>
+    );
   }
 
   const filteredPaiements = useMemo(() => {
@@ -149,20 +212,25 @@ export default function Paiements() {
     }
 
     return paiements.filter((paiement) => {
-      const consultation = paiement.Consultation_Paiement;
-      const tarif = paiement.Tarif_Paiements;
-      const deplacement = paiement.Deplacement_Paiements;
+      const prestation = paiement.Prestation_Paiement;
+
+      const proprietaire = prestation?.Proprietaire_Prestation;
 
       const fields = [
         paiement.Date_Paiement
           ? new Date(paiement.Date_Paiement).toLocaleDateString("fr-FR")
           : "",
-        consultation ? getConsultationLabel(consultation) : "",
-        tarif?.Denomination_Tarif,
-        deplacement?.Denomination_Deplacement,
+
+        paiement.Date_Encaissement
+          ? new Date(paiement.Date_Encaissement).toLocaleDateString("fr-FR")
+          : "",
+
         paiement.Montant_Paiement,
-        paiement.Remise_Paiement,
         paiement.Moyen_Paiement,
+
+        proprietaire?.Nom_Proprietaire,
+        proprietaire?.Prenom_Proprietaire,
+        proprietaire?.Etablissement,
       ];
 
       return fields
@@ -173,6 +241,16 @@ export default function Paiements() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+
+    const paiementComplete = isPaiementComplete(form);
+
+    if (form.Date_Encaissement && !paiementComplete) {
+      setError(
+        "Un moyen de paiement et un type de paiement sont nécessaires pour renseigner la date d'encaissement.",
+      );
+
+      return;
+    }
 
     try {
       setSaving(true);
@@ -218,7 +296,13 @@ export default function Paiements() {
       {error && <Alert variant="error">{error}</Alert>}
 
       <PageHeader
-        title="Gestion des Paiements"
+        title={
+          <>
+            <span className="hidden md:inline">Gestion des Paiements</span>
+
+            <span className="md:hidden">Paiements</span>
+          </>
+        }
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Rechercher un paiement..."
@@ -234,13 +318,11 @@ export default function Paiements() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableHeader>Date</TableHeader>
-              <TableHeader>Consultation</TableHeader>
-              <TableHeader>Tarif</TableHeader>
-              <TableHeader>Déplacement</TableHeader>
+              <TableHeader>Encaissé</TableHeader>
+              <TableHeader>Propriétaire</TableHeader>
               <TableHeader>Montant</TableHeader>
-              <TableHeader>Remise</TableHeader>
-              <TableHeader>Moyen</TableHeader>
+              <TableHeader className="hidden lg:table-cell">Moyen</TableHeader>
+              <TableHeader className="hidden lg:table-cell">Type</TableHeader>
             </TableRow>
           </TableHead>
 
@@ -250,199 +332,47 @@ export default function Paiements() {
                 key={paiement.ID_Paiement}
                 onClick={() => openEditForm(paiement)}
               >
-                <TableCell>
-                  {paiement.Date_Paiement
-                    ? new Date(paiement.Date_Paiement).toLocaleDateString(
-                        "fr-FR",
-                      )
-                    : "—"}
-                </TableCell>
+                <TableCell>{formatDate(paiement.Date_Encaissement)}</TableCell>
 
                 <TableCell>
-                  {paiement.Consultation_Paiement
-                    ? getConsultationLabel(paiement.Consultation_Paiement)
-                    : "—"}
+                  {paiement.Prestation_Paiement
+                    ? getProprietaireLabel(paiement.Prestation_Paiement)
+                    : "-"}
                 </TableCell>
 
-                <TableCell>
-                  {paiement.Tarif_Paiements
-                    ? paiement.Tarif_Paiements.Denomination_Tarif
-                    : "—"}
+                <TableCell>{paiement.Montant_Paiement ?? "-"} €</TableCell>
+
+                <TableCell className="hidden lg:table-cell">
+                  {paiement.Moyen_Paiement || "-"}
                 </TableCell>
 
-                <TableCell>
-                  {paiement.Deplacement_Paiements
-                    ? paiement.Deplacement_Paiements.Denomination_Deplacement
-                    : "—"}
+                <TableCell className="hidden lg:table-cell">
+                  {paiement.E_Reporting_Paiement
+                    ? "E-Reporting"
+                    : paiement.E_Facture_Paiement
+                      ? "E-Facture"
+                      : paiement.E_Other_Paiement
+                        ? "E-Other"
+                        : "-"}
                 </TableCell>
-
-                <TableCell>{paiement.Montant_Paiement ?? "—"} €</TableCell>
-
-                <TableCell>{paiement.Remise_Paiement ?? "0"} €</TableCell>
-
-                <TableCell>{paiement.Moyen_Paiement || "—"}</TableCell>
               </TableRow>
             ))}
           </tbody>
         </Table>
       )}
 
-      <Modal
+      <PaiementsModal
         open={showForm}
-        title={editingId ? "Modifier le paiement" : "Ajouter un paiement"}
+        editingId={editingId}
+        form={form}
+        prestations={prestations}
+        saving={saving}
+        paiementComplete={isPaiementComplete(form)}
         onClose={closeForm}
-      >
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Select
-              id="Consultation"
-              label="Consultation"
-              name="ID_Consultation"
-              value={form.ID_Consultation}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Sélectionner une consultation</option>
-
-              {consultations.map((consultation) => (
-                <option
-                  key={consultation.ID_Consultation}
-                  value={consultation.ID_Consultation}
-                >
-                  {getConsultationLabel(consultation)}
-                </option>
-              ))}
-            </Select>
-
-            <Select
-              id="Tarif"
-              label="Tarif"
-              name="ID_Tarif"
-              value={form.ID_Tarif}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Sélectionner un tarif</option>
-
-              {tarifs.map((tarif) => (
-                <option key={tarif.ID_Tarif} value={tarif.ID_Tarif}>
-                  {getTarifLabel(tarif)}
-                </option>
-              ))}
-            </Select>
-
-            <Select
-              id="Deplacement"
-              label="Déplacement"
-              name="ID_Deplacement"
-              value={form.ID_Deplacement}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Sélectionner un déplacement</option>
-
-              {deplacements.map((deplacement) => (
-                <option
-                  key={deplacement.ID_Deplacement}
-                  value={deplacement.ID_Deplacement}
-                >
-                  {getDeplacementLabel(deplacement)}
-                </option>
-              ))}
-            </Select>
-
-            <Input
-              id="Date_Paiement"
-              label="Date"
-              type="date"
-              name="Date_Paiement"
-              value={form.Date_Paiement}
-              onChange={handleChange}
-            />
-
-            <Input
-              id="Montant_Paiement"
-              label="Montant"
-              type="number"
-              step="0.01"
-              min="0"
-              name="Montant_Paiement"
-              value={form.Montant_Paiement}
-              onChange={handleChange}
-            />
-
-            <Input
-              id="Remise_Paiement"
-              label="Remise"
-              type="number"
-              step="0.01"
-              min="0"
-              name="Remise_Paiement"
-              value={form.Remise_Paiement}
-              onChange={handleChange}
-            />
-
-            <Select
-              id="Moyen_Paiement"
-              label="Moyen de paiement"
-              name="Moyen_Paiement"
-              value={form.Moyen_Paiement}
-              onChange={handleChange}
-            >
-              <option value="">Sélectionner</option>
-              <option value="Carte">Carte</option>
-              <option value="Espèces">Espèces</option>
-              <option value="Chèque">Chèque</option>
-              <option value="Virement">Virement</option>
-              <option value="Autre">Autre</option>
-            </Select>
-
-            <Input
-              id="Selection"
-              label="Selection"
-              type="checkbox"
-              name="Selection_Paiement"
-              checked={form.Selection_Paiement}
-              onChange={handleChange}
-            />
-          </div>
-
-          {/* Modal Btns */}
-          <div className="flex items-center justify-between gap-3 mt-6">
-            <div>
-              {editingId && (
-                <Button
-                  type="button"
-                  variant="danger"
-                  onClick={() => handleDelete(editingId)}
-                  disabled={saving}
-                >
-                  Supprimer
-                </Button>
-              )}
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                type="button"
-                onClick={closeForm}
-                variant="secondary"
-                disabled={saving}
-              >
-                Annuler
-              </Button>
-
-              <Button type="submit" disabled={saving}>
-                {saving
-                  ? "Enregistrement..."
-                  : editingId
-                    ? "Modifier"
-                    : "Ajouter"}
-              </Button>
-            </div>
-          </div>
-        </form>
-      </Modal>
+        onSubmit={handleSubmit}
+        onChange={handleChange}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }

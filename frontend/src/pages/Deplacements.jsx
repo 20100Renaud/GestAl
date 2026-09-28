@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import Button from "../components/ui/Button.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
-import Input from "../components/ui/Input.jsx";
+import DeplacementsModal from "../components/Modals/Deplacements_Modal.jsx";
 import Alert from "../components/ui/Alert.jsx";
-import Modal from "../components/ui/Modal.jsx";
 import Table, {
   Vide,
   TableHead,
@@ -19,7 +17,7 @@ import {
 } from "../api/deplacements.js";
 
 const emptyForm = {
-  Annee_Deplacement: "",
+  Annee_Deplacement: String(new Date().getFullYear()),
   Denomination_Deplacement: "",
   Montant_Deplacement: "",
 };
@@ -91,6 +89,7 @@ export default function Deplacements() {
     setShowForm(false);
     setEditingId(null);
     setForm(emptyForm);
+    setError("");
   }
 
   const filteredDeplacements = useMemo(() => {
@@ -158,7 +157,12 @@ export default function Deplacements() {
       {error && <Alert variant="error">{error}</Alert>}
 
       <PageHeader
-        title="Gestion des Déplacements"
+        title={
+          <>
+            <span className="hidden md:inline">Gestion des Déplacements</span>
+            <span className="md:hidden">Déplacements</span>
+          </>
+        }
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Rechercher un déplacement..."
@@ -191,7 +195,7 @@ export default function Deplacements() {
                 <TableCell>{deplacement.Denomination_Deplacement}</TableCell>
 
                 <TableCell>
-                  {Number(deplacement.Montant_Deplacement).toFixed(2)} €
+                  {Number(deplacement.Montant_Deplacement)} €
                 </TableCell>
               </TableRow>
             ))}
@@ -199,81 +203,17 @@ export default function Deplacements() {
         </Table>
       )}
 
-      <Modal
+      <DeplacementsModal
         open={showForm}
-        title={editingId ? "Modifier le déplacement" : "Ajouter un déplacement"}
+        editingId={editingId}
+        form={form}
+        saving={saving}
+        error={error}
         onClose={closeForm}
-      >
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="grid grid-cols-1 gap-4">
-            <Input
-              id="Annee_Deplacement"
-              label="Année"
-              type="text"
-              name="Annee_Deplacement"
-              value={form.Annee_Deplacement}
-              onChange={handleChange}
-              required
-            />
-
-            <Input
-              id="Denomination_Deplacement"
-              label="Désignation"
-              type="text"
-              name="Denomination_Deplacement"
-              value={form.Denomination_Deplacement}
-              onChange={handleChange}
-              required
-            />
-
-            <Input
-              id="Montant_Deplacement"
-              label="Montant"
-              type="number"
-              name="Montant_Deplacement"
-              value={form.Montant_Deplacement}
-              onChange={handleChange}
-              min="0"
-              step="0.01"
-              required
-            />
-          </div>
-
-          <div className="flex items-center justify-between gap-3 mt-6">
-            <div>
-              {editingId && (
-                <Button
-                  type="button"
-                  variant="danger"
-                  onClick={() => handleDelete(editingId)}
-                  disabled={saving}
-                >
-                  Supprimer
-                </Button>
-              )}
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                type="button"
-                onClick={closeForm}
-                variant="secondary"
-                disabled={saving}
-              >
-                Annuler
-              </Button>
-
-              <Button type="submit" disabled={saving}>
-                {saving
-                  ? "Enregistrement..."
-                  : editingId
-                    ? "Modifier"
-                    : "Ajouter"}
-              </Button>
-            </div>
-          </div>
-        </form>
-      </Modal>
+        onSubmit={handleSubmit}
+        onChange={handleChange}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }

@@ -1,7 +1,9 @@
 # GestAL
+
 Gestion de consulations animales pour les professionnels
 
 ## Technos
+
 - Backend
   - Node.js
   - Express
@@ -15,24 +17,44 @@ Gestion de consulations animales pour les professionnels
 - Database
   - PostgresSQL
 
-## Ports
-- Backend: http://localhost:3000/
-- Frontend: http://localhost:5173/
-- Docker: http://localhost:5432/
 
-## Commandes
-```
-~/GestAl/backend$ npm run dev
-```
+## Commandes & ports
+
+Database: http://localhost:5432/
 ```
 ~/GestAl/backend$ docker compose up
 ```
-```
-~/GestAl/frontend$ npm run dev
-```
+Studio: http://localhost:5173/
 ```
 ~/GestAl/backend$ npx prisma studio
 ```
 
-## Tasks
-dashboard data layer—instead of just navigation, start showing useful veterinary/business information on the dashboard: number of propriétaires, animaux, consultations, unpaid payments, etc.
+Backend: http://localhost:3000/
+```
+~/GestAl/backend$ npm run dev
+```
+
+Frontend: http://localhost:5173/
+```
+~/GestAl/frontend$ npm run dev
+```
+
+
+## Business model
+
+```
+User
+└── Propriétaires
+    ├── Animaux
+    └── Prestations
+        ├── Date
+        ├── Lieu
+        ├── Déplacement
+        ├── Remise
+        ├── Consultations
+        │   ├── Animal
+        │   ├── Tarif
+        │   └── Zonages
+        └── Paiements
+
+```

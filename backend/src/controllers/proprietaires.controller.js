@@ -38,12 +38,27 @@ function validateProprietaireData(body) {
   return null;
 }
 
+function normalizeNom(value) {
+  return typeof value === "string" ? value.trim().toUpperCase() : "";
+}
+
+function normalizePrenom(value) {
+  return typeof value === "string"
+    ? value
+        .trim()
+        .toLowerCase()
+        .replace(/(^|[\s-])(\p{L})/gu, (_, separator, letter) => {
+          return separator + letter.toUpperCase();
+        })
+    : "";
+}
+
 function normalizeData(body) {
   return {
     Raison_sociale:
-      typeof body.raisonSociale === "string"
-        ? body.raisonSociale.trim() || null
-        : null,
+      typeof body.raisonSociale === "string" && body.raisonSociale.trim()
+        ? body.raisonSociale.trim()
+        : "Particulier",
 
     Etablissement:
       typeof body.etablissement === "string"
@@ -53,8 +68,8 @@ function normalizeData(body) {
     Civilite_Proprietaire:
       typeof body.civilite === "string" ? body.civilite.trim() || null : null,
 
-    Nom_Proprietaire: body.nom.trim(),
-    Prenom_Proprietaire: body.prenom.trim(),
+    Nom_Proprietaire: normalizeNom(body.nom),
+    Prenom_Proprietaire: normalizePrenom(body.prenom),
     Email_Proprietaire: body.email.toLowerCase().trim(),
     Adresse_Proprietaire: body.adresse.trim(),
     Ville_Proprietaire: body.ville.trim(),
@@ -131,7 +146,12 @@ export async function createProprietaire(req, res) {
     const proprietaire = await prisma.t_Proprietaires.create({
       data: {
         ...data,
-        ID_User: req.user.userId,
+
+        User_Proprietaires: {
+          connect: {
+            ID_User: req.user.userId,
+          },
+        },
       },
     });
 
@@ -208,15 +228,31 @@ export async function deleteProprietaire(req, res) {
       });
     }
 
-    await prisma.t_Proprietaires.delete({
-      where: {
-        ID_Proprietaire: id,
-      },
+    const lieuTexte =
+      typeof existing.Etablissement === "string" &&
+      existing.Etablissement.trim()
+        ? existing.Etablissement.trim()
+        : existing.Nom_Proprietaire.trim();
+
+    await prisma.$transaction(async (tx) => {
+      await tx.t_Consultations.updateMany({
+        where: {
+          ID_Lieu: id,
+        },
+        data: {
+          Lieu_Consultation_Texte: lieuTexte,
+          ID_Lieu: null,
+        },
+      });
+
+      await tx.t_Proprietaires.delete({
+        where: {
+          ID_Proprietaire: id,
+        },
+      });
     });
 
-    return res.status(200).json({
-      message: "Proprietaire deleted",
-    });
+    return res.status(204).send();
   } catch (error) {
     console.error("Delete proprietaire error:", error);
 
@@ -225,3 +261,4 @@ export async function deleteProprietaire(req, res) {
     });
   }
 }
+

@@ -13,13 +13,13 @@ import Paiements from "./pages/Paiements.jsx";
 import Tarifs from "./pages/Tarifs.jsx";
 import Deplacements from "./pages/Deplacements.jsx";
 import Zonages from "./pages/Zonages.jsx";
+import Prestaions from "./pages/Prestations.jsx";
 
 
 export default function App() {
   const { isAuthenticated } = useAuth();
 
   return (
-
     <Routes>
       <Route
         path="/login"
@@ -31,12 +31,12 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard/consultations" element={<Consultations />} />
+          <Route path="/dashboard/prestations" element={<Prestaions />} />
 
           <Route path="/dashboard/proprietaires" element={<Proprietaires />} />
 
           <Route path="/dashboard/animaux" element={<Animaux />} />
-
-          <Route path="/dashboard/consultations" element={<Consultations />} />
 
           <Route path="/dashboard/paiements" element={<Paiements />} />
 
@@ -55,6 +55,5 @@ export default function App() {
         }
       />
     </Routes>
-    
   );
 }
