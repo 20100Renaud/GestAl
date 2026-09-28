@@ -3,6 +3,7 @@ import DeplacementsModal from "../components/Modals/Deplacements_Modal.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import PrestationsModal from "../components/Modals/Prestations_Modal.jsx";
 import ProprietairesModal from "../components/Modals/Proprietaires_Modal.jsx";
+import PrestationWorkflowModal from "../components/Modals/PrestationWorkflow_Modal.jsx";
 import Alert from "../components/ui/Alert.jsx";
 import { MapPin } from "lucide-react";
 import { formatDate } from "../utils/formatDate";
@@ -43,6 +44,7 @@ export default function Prestations() {
   const [editingId, setEditingId] = useState(null);
 
   const [showForm, setShowForm] = useState(false);
+  const [showWorkflow, setShowWorkflow] = useState(false);
 
   const [showProprietaireForm, setShowProprietaireForm] = useState(false);
   const [proprietaireForm, setProprietaireForm] = useState({
@@ -111,22 +113,16 @@ export default function Prestations() {
   }
 
   function openCreateForm() {
-    setEditingId(null);
-
-    const now = new Date();
-
-    const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-      .toISOString()
-      .slice(0, 10);
-
-    setForm({
-      ...emptyForm,
-      Date_Prestation: localDate,
-    });
-
     setError("");
-    setShowForm(true);
+    setShowWorkflow(true);
   }
+
+  async function handleWorkflowClose() {
+    setShowWorkflow(false);
+    setError("");
+    await loadData();
+  }
+
 
   function openEditForm(prestation) {
     setEditingId(prestation.ID_Prestation);
@@ -297,7 +293,6 @@ export default function Prestations() {
       setSavingProprietaire(false);
     }
   }
-
 
   function getProprietaireName(prestation) {
     const proprietaire =
@@ -532,6 +527,11 @@ export default function Prestations() {
         </div>
       )}
 
+      <PrestationWorkflowModal
+        open={showWorkflow}
+        onClose={handleWorkflowClose}
+      />
+
       <PrestationsModal
         open={showForm}
         editingId={editingId}
@@ -569,7 +569,6 @@ export default function Prestations() {
         onChange={handleProprietaireChange}
         onDelete={() => {}}
       />
-      
     </div>
   );
 }

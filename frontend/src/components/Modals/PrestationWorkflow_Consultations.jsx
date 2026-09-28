@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import Button from "../ui/Button.jsx";
 import ConsultationsModal from "./Consultations_Modal.jsx";
@@ -246,16 +246,9 @@ export default function PrestationWorkflowConsultations({
     }
   }
 
-  const filteredAnimaux = useMemo(() => {
-    if (!prestation?.ID_Proprietaire) {
-      return [];
-    }
-
-    return animaux.filter(
-      (animal) => animal.ID_Proprietaire === prestation.ID_Proprietaire,
-    );
-  }, [animaux, prestation]);
-
+  const filteredAnimaux = animaux.filter(
+    (animal) => animal.ID_Proprietaire === prestation.ID_Proprietaire,
+  );
 
   return (
     <>
