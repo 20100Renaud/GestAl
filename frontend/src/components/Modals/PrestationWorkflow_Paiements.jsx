@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import Button from "../ui/Button.jsx";
 import PaiementsModal from "./Paiements_Modal.jsx";
-
+import { formatDateInput } from "../../utils/formatDate.js";
 import {
   getPaiements,
   createPaiement,
@@ -79,13 +79,13 @@ export default function PrestationWorkflowPaiements({ prestationId, onError }) {
 
     setForm({
       ID_Prestation: paiement.ID_Prestation ?? prestationId,
-      Date_Paiement: paiement.Date_Paiement ?? "",
+      Date_Paiement: formatDateInput(paiement.Date_Paiement) ?? "",
       Montant_Paiement: paiement.Montant_Paiement ?? "",
       Moyen_Paiement: paiement.Moyen_Paiement ?? "",
       E_Reporting_Paiement: Boolean(paiement.E_Reporting_Paiement),
       E_Facture_Paiement: Boolean(paiement.E_Facture_Paiement),
       E_Other_Paiement: Boolean(paiement.E_Other_Paiement),
-      Date_Encaissement: paiement.Date_Encaissement ?? "",
+      Date_Encaissement: formatDateInput(paiement.Date_Encaissement) ?? "",
     });
 
     onError?.("");
@@ -162,6 +162,7 @@ export default function PrestationWorkflowPaiements({ prestationId, onError }) {
   }
 
   const paiementComplete =
+    Number(form.Montant_Paiement) > 0 &&
     Boolean(form.Moyen_Paiement) &&
     (form.E_Reporting_Paiement ||
       form.E_Facture_Paiement ||
@@ -173,6 +174,15 @@ export default function PrestationWorkflowPaiements({ prestationId, onError }) {
     },
   ];
 
+  useEffect(() => {
+    if (paiementComplete && !form.Date_Encaissement) {
+      setForm((current) => ({
+        ...current,
+        Date_Encaissement: getToday(),
+      }));
+    }
+  }, [paiementComplete, form.Date_Encaissement]);
+  
   return (
     <>
       <div className="space-y-6">

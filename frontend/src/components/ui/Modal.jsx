@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 import Button from "./Button";
-export default function Modal({ open, title, onClose, children, footer }) {
+export default function Modal({ open, title, onClose, children }) {
   if (!open) {
     return null;
   }
@@ -17,10 +17,51 @@ export default function Modal({ open, title, onClose, children, footer }) {
         </div>
 
         <div className="overflow-y-auto md:p-6">{children}</div>
+      </div>
+    </div>
+  );
+}
 
-        {footer && (
-          <div className="border-t border-blue-200 px-6 py-4">{footer}</div>
-        )}
+export function WorkflowModal({
+  open,
+  title,
+  onClose,
+  children,
+}) {
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
+      <div
+        className="
+  flex
+  h-[calc(100vh-2rem)]
+  max-h-[900px]
+  min-h-0
+  w-full
+  max-w-3xl
+  flex-col
+  overflow-hidden
+  rounded-xl
+  bg-white
+  shadow-2xl
+  md:h-[85vh]
+  md:min-h-[500px]
+"
+      >
+        {/* HEADER */}
+        <div className="flex shrink-0 items-center justify-between bg-blue-950 px-6 py-4 text-blue-300 select-none">
+          <h2 className="m-0 text-lg font-semibold">{title}</h2>
+
+          <Button onClick={onClose} variant="ghost">
+            <X size={20} />
+          </Button>
+        </div>
+
+        {/* CONTENT */}
+        <div className="min-h-0 flex-1 overflow-y-auto md:p-6">{children}</div>
       </div>
     </div>
   );

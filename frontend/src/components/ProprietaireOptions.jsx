@@ -31,7 +31,7 @@ export default function ProprietaireOptions({ proprietaires = [] }) {
         {particuliers.map((proprietaire) => (
           <option
             key={proprietaire.ID_Proprietaire}
-            value={proprietaire.ID_Proprietaire}
+            value={String(proprietaire.ID_Proprietaire)}
           >
             {getProprietaireLabel(proprietaire)}
           </option>
@@ -42,7 +42,7 @@ export default function ProprietaireOptions({ proprietaires = [] }) {
         {etablissements.map((proprietaire) => (
           <option
             key={proprietaire.ID_Proprietaire}
-            value={proprietaire.ID_Proprietaire}
+            value={String(proprietaire.ID_Proprietaire)}
           >
             {getProprietaireLabel(proprietaire)}
           </option>

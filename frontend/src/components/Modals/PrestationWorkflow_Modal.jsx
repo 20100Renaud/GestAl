@@ -1,32 +1,185 @@
 import { useEffect, useState } from "react";
 
-import Modal from "../ui/Modal.jsx";
-import Button from "../ui/Button.jsx";
+import { WorkflowModal } from "../ui/Modal.jsx";
 import Alert from "../ui/Alert.jsx";
 
 import PrestationWorkflowPrestation from "./PrestationWorkflow_Prestation.jsx";
 import PrestationWorkflowConsultations from "./PrestationWorkflow_Consultations.jsx";
 import PrestationWorkflowPaiements from "./PrestationWorkflow_Paiements.jsx";
+import { createAnimal } from "../../api/animaux.js";
+import { createTarif } from "../../api/tarifs.js";
+import AnimauxModal from "./Animaux_Modal.jsx";
+import TarifsModal from "./Tarifs_Modal.jsx";
+import { TabButton } from "../ui/Button.jsx";
 
-export default function PrestationWorkflowModal({ open, onClose }) {
+const emptyAnimalForm = {
+  ID_Proprietaire: "",
+  Nom_Animal: "",
+  Genre_Animal: "",
+  Race_Animal: "",
+  Date_Naissance_Animal: "",
+  Sexe_Animal: "",
+  Memo_Animal: "",
+};
+
+const emptyTarifForm = {
+  Annee_Tarif: String(new Date().getFullYear()),
+  Montant_Tarif: "",
+  Denomination_Tarif: "",
+};
+
+export default function PrestationWorkflowModal({
+  open,
+  prestation: initialPrestation = null,
+  onClose,
+}) {
   const [activeTab, setActiveTab] = useState("prestation");
   const [prestationId, setPrestationId] = useState(null);
   const [prestation, setPrestation] = useState(null);
+  const [hasConsultations, setHasConsultations] = useState(false);
   const [error, setError] = useState("");
+
+  const [createdAnimal, setCreatedAnimal] = useState(null);
+  const [createdTarif, setCreatedTarif] = useState(null);
+
+  const [showAnimalModal, setShowAnimalModal] = useState(false);
+  const [animalSaving, setAnimalSaving] = useState(false);
+  const [animalForm, setAnimalForm] = useState(emptyAnimalForm);
+
+  const [showTarifModal, setShowTarifModal] = useState(false);
+  const [tarifSaving, setTarifSaving] = useState(false);
+  const [tarifError, setTarifError] = useState("");
+  const [tarifForm, setTarifForm] = useState(emptyTarifForm);
+
+  const isEditing = Boolean(initialPrestation);
 
   useEffect(() => {
     if (!open) {
       setActiveTab("prestation");
       setPrestationId(null);
       setPrestation(null);
+      setHasConsultations(false);
+      setError("");
+      return;
+    }
+
+    if (initialPrestation) {
+      setPrestation(initialPrestation);
+      setPrestationId(initialPrestation.ID_Prestation);
+      setHasConsultations(
+        (initialPrestation.Consultations_Prestation ?? []).length > 0,
+      );
+
+      setActiveTab("prestation");
+      setError("");
+    } else {
+      setPrestation(null);
+      setPrestationId(null);
+      setHasConsultations(false);
+      setActiveTab("prestation");
       setError("");
     }
-  }, [open]);
+  }, [open, initialPrestation]);
 
   function handleCreatedPrestation(newPrestation) {
     setPrestation(newPrestation);
     setPrestationId(newPrestation.ID_Prestation);
+
+    setHasConsultations(
+      (newPrestation.Consultations_Prestation ?? []).length > 0,
+    );
+
     setActiveTab("consultations");
+  }
+
+  function handleUpdatedPrestation(updatedPrestation) {
+    setPrestation(updatedPrestation);
+    setPrestationId(updatedPrestation.ID_Prestation);
+
+    setHasConsultations(
+      (updatedPrestation.Consultations_Prestation ?? []).length > 0,
+    );
+  }
+
+  function handleAddAnimal(proprietaireId) {
+    setError("");
+
+    setAnimalForm({
+      ...emptyAnimalForm,
+      ID_Proprietaire: proprietaireId,
+    });
+
+    setCreatedAnimal(null);
+    setShowAnimalModal(true);
+  }
+
+  function handleAddTarif() {
+    setError("");
+    setTarifError("");
+
+    setTarifForm({
+      ...emptyTarifForm,
+      Annee_Tarif: String(new Date().getFullYear()),
+    });
+
+    setCreatedTarif(null);
+    setShowTarifModal(true);
+  }
+
+  function handleAnimalChange(event) {
+    const { name, value } = event.target;
+
+    setAnimalForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  }
+
+  function handleTarifChange(event) {
+    const { name, value } = event.target;
+
+    setTarifForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  }
+
+  async function handleAnimalSubmit(event) {
+    event.preventDefault();
+
+    try {
+      setAnimalSaving(true);
+      setError("");
+
+      const newAnimal = await createAnimal(animalForm);
+
+      setCreatedAnimal(newAnimal);
+      setShowAnimalModal(false);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setAnimalSaving(false);
+    }
+  }
+
+
+  async function handleTarifSubmit(event) {
+    event.preventDefault();
+
+    try {
+      setTarifSaving(true);
+      setTarifError("");
+      setError("");
+
+      const newTarif = await createTarif(tarifForm);
+
+      setCreatedTarif(newTarif);
+      setShowTarifModal(false);
+    } catch (err) {
+      setTarifError(err.message);
+    } finally {
+      setTarifSaving(false);
+    }
   }
 
 
@@ -34,7 +187,9 @@ export default function PrestationWorkflowModal({ open, onClose }) {
     setActiveTab("prestation");
     setPrestationId(null);
     setPrestation(null);
+    setHasConsultations(false);
     setError("");
+
     onClose();
   }
 
@@ -43,113 +198,116 @@ export default function PrestationWorkflowModal({ open, onClose }) {
   }
 
   return (
-    <Modal open={open} title="Nouvelle prestation" onClose={handleClose}>
-      <div className="p-6">
-        {error && (
-          <div className="mb-4">
-            <Alert variant="error">{error}</Alert>
+    <>
+      <WorkflowModal
+        open={open}
+        title={isEditing ? "Modifier la prestation" : "Nouvelle prestation"}
+        onClose={handleClose}
+      >
+        <div className="p-4 md:p-6">
+          {error && (
+            <div className="mb-4">
+              <Alert variant="error">{error}</Alert>
+            </div>
+          )}
+
+          {/* TABS */}
+          <div className="mb-6 flex overflow-x-auto border-b border-blue-200 justify-around">
+            <TabButton
+              number={1}
+              label="Prestation"
+              tab="prestation"
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+            />
+
+            <TabButton
+              number={2}
+              label="Consultations"
+              tab="consultations"
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              disabled={!prestationId}
+            />
+
+            <TabButton
+              number={3}
+              label="Paiements"
+              tab="paiements"
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              disabled={!prestationId || !hasConsultations}
+            />
           </div>
-        )}
 
-        {/* TABS */}
-        <div className="mb-6 flex overflow-x-auto border-b border-blue-200">
-          <button
-            type="button"
-            onClick={() => setActiveTab("prestation")}
-            className={`
-              whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium
-              ${
-                activeTab === "prestation"
-                  ? "border-blue-600 text-blue-700"
-                  : "border-transparent text-blue-500 hover:text-blue-700 cursor-pointer"
-              }
-            `}
-          >
-            1. Prestation
-          </button>
-
-          <button
-            type="button"
-            disabled={!prestationId}
-            onClick={() => setActiveTab("consultations")}
-            className={`
-              whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium
-              ${
-                activeTab === "consultations"
-                  ? "border-blue-600 text-blue-700"
-                  : "border-transparent text-blue-500 cursor-pointer"
-              }
-              ${
-                !prestationId
-                  ? "cursor-not-allowed opacity-40"
-                  : "hover:text-blue-700"
-              }
-            `}
-          >
-            2. Consultations
-          </button>
-
-          <button
-            type="button"
-            disabled={!prestationId}
-            onClick={() => setActiveTab("paiements")}
-            className={`
-              whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium
-              ${
-                activeTab === "paiements"
-                  ? "border-blue-600 text-blue-700"
-                  : "border-transparent text-blue-500 cursor-pointer"
-              }
-              ${
-                !prestationId
-                  ? "cursor-not-allowed opacity-40"
-                  : "hover:text-blue-700"
-              }
-            `}
-          >
-            3. Paiements
-          </button>
-        </div>
-
-        {/* PRESTATION */}
-        <div hidden={activeTab !== "prestation"}>
-          <PrestationWorkflowPrestation
-            onCreated={handleCreatedPrestation}
-            onError={handleError}
-          />
-        </div>
-
-        {/* CONSULTATIONS */}
-        {prestationId && (
-          <div hidden={activeTab !== "consultations"}>
-            <PrestationWorkflowConsultations
-              prestationId={prestationId}
+          {/* PRESTATION */}
+          <div hidden={activeTab !== "prestation"}>
+            <PrestationWorkflowPrestation
               prestation={prestation}
-              onNext={() => setActiveTab("paiements")}
+              onCreated={handleCreatedPrestation}
+              onUpdated={handleUpdatedPrestation}
               onError={handleError}
             />
           </div>
-        )}
 
-        {/* PAIEMENTS */}
-        {prestationId && (
-          <div hidden={activeTab !== "paiements"}>
-            <PrestationWorkflowPaiements
-              prestationId={prestationId}
-              onError={handleError}
-            />
-          </div>
-        )}
+          {/* CONSULTATIONS */}
+          {prestationId && (
+            <div hidden={activeTab !== "consultations"}>
+              <PrestationWorkflowConsultations
+                prestationId={prestationId}
+                prestation={prestation}
+                onNext={() => setActiveTab("paiements")}
+                onError={handleError}
+                onConsultationsChange={(items) => {
+                  setHasConsultations(items.length > 0);
+                }}
+                onAddAnimal={handleAddAnimal}
+                onAddTarif={handleAddTarif}
+                createdAnimal={createdAnimal}
+                createdTarif={createdTarif}
+              />
+            </div>
+          )}
 
-        {/* FOOTER */}
-        {prestationId && (
-          <div className="mt-6 flex justify-end border-t border-blue-100 pt-4">
-            <Button type="button" variant="secondary" onClick={handleClose}>
-              Fermer
-            </Button>
-          </div>
-        )}
-      </div>
-    </Modal>
+          {/* PAIEMENTS */}
+          {prestationId && (
+            <div hidden={activeTab !== "paiements"}>
+              <PrestationWorkflowPaiements
+                prestationId={prestationId}
+                onError={handleError}
+              />
+            </div>
+          )}
+        </div>
+      </WorkflowModal>
+
+      <AnimauxModal
+        open={showAnimalModal}
+        editingId={null}
+        form={animalForm}
+        proprietaires={
+          prestation?.Proprietaire_Prestation
+            ? [prestation.Proprietaire_Prestation]
+            : []
+        }
+        saving={animalSaving}
+        onClose={() => setShowAnimalModal(false)}
+        onSubmit={handleAnimalSubmit}
+        onChange={handleAnimalChange}
+        onDelete={() => {}}
+      />
+
+      <TarifsModal
+        open={showTarifModal}
+        editingId={null}
+        form={tarifForm}
+        saving={tarifSaving}
+        error={tarifError}
+        onClose={() => setShowTarifModal(false)}
+        onSubmit={handleTarifSubmit}
+        onChange={handleTarifChange}
+        onDelete={() => {}}
+      />
+    </>
   );
 }

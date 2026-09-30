@@ -167,6 +167,7 @@ export default function Tarifs() {
         searchPlaceholder="Rechercher un tarif..."
         createLabel="Nouveau tarif"
         onAction={openCreateForm}
+        className="mb-6"
       />
 
       {loading ? (

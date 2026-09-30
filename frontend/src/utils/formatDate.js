@@ -14,3 +14,11 @@ export function formatDate(date) {
 
   return `${day} ${displayMonth.charAt(0).toUpperCase()}${displayMonth.slice(1)}`;
 }
+
+export function formatDateInput(value) {
+  if (!value) {
+    return "";
+  }
+
+  return String(value).slice(0, 10);
+}

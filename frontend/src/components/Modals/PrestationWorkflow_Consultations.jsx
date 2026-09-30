@@ -6,6 +6,7 @@ import ConsultationsModal from "./Consultations_Modal.jsx";
 import {
   getConsultations,
   createConsultation,
+  updateConsultation,
 } from "../../api/consultations.js";
 
 import { getAnimaux } from "../../api/animaux.js";
@@ -34,12 +35,16 @@ export default function PrestationWorkflowConsultations({
   prestation,
   onNext,
   onError,
+  onConsultationsChange,
+  onAddAnimal,
+  onAddTarif,
+  createdAnimal,
+  createdTarif,
 }) {
   const [consultations, setConsultations] = useState([]);
   const [animaux, setAnimaux] = useState([]);
   const [tarifs, setTarifs] = useState([]);
   const [zonages, setZonages] = useState([]);
-
   const [consultationZonages, setConsultationZonages] = useState([]);
 
   const [form, setForm] = useState({
@@ -52,9 +57,51 @@ export default function PrestationWorkflowConsultations({
 
   const [saving, setSaving] = useState(false);
 
+  // Initialize prestation
   useEffect(() => {
     loadData();
   }, [prestationId]);
+
+  // New animal
+  useEffect(() => {
+    if (!createdAnimal?.ID_Animal) {
+      return;
+    }
+
+    setAnimaux((current) => {
+      const exists = current.some(
+        (animal) =>
+          String(animal.ID_Animal) === String(createdAnimal.ID_Animal),
+      );
+
+      return exists ? current : [...current, createdAnimal];
+    });
+
+    setForm((current) => ({
+      ...current,
+      ID_Animal: String(createdAnimal.ID_Animal),
+    }));
+  }, [createdAnimal]);
+
+  // New tarif
+  useEffect(() => {
+    if (!createdTarif) {
+      return;
+    }
+
+    setTarifs((current) => {
+      const exists = current.some(
+        (tarif) => String(tarif.ID_Tarif) === String(createdTarif.ID_Tarif),
+      );
+
+      return exists ? current : [...current, createdTarif];
+    });
+
+    setForm((current) => ({
+      ...current,
+      ID_Tarif: String(createdTarif.ID_Tarif),
+    }));
+  }, [createdTarif]);
 
   async function loadData() {
     try {
@@ -66,13 +113,15 @@ export default function PrestationWorkflowConsultations({
           getZonages(),
         ]);
 
-      setConsultations(
-        consultationsData.filter((item) => item.ID_Prestation === prestationId),
+      const filteredConsultations = consultationsData.filter(
+        (item) => item.ID_Prestation === prestationId,
       );
 
+      setConsultations(filteredConsultations);
       setAnimaux(animauxData);
       setTarifs(tarifsData);
       setZonages(zonagesData);
+      onConsultationsChange?.(filteredConsultations);
     } catch (err) {
       onError?.(err.message);
     }
@@ -131,6 +180,21 @@ export default function PrestationWorkflowConsultations({
     setEditingId(null);
     setConsultationZonages([]);
   }
+
+  function handleAddAnimal() {
+    const proprietaireId =
+      prestation?.ID_Proprietaire ??
+      prestation?.Proprietaire_Prestation?.ID_Proprietaire ??
+      null;
+
+    if (!proprietaireId) {
+      onError?.("Le propriétaire de la prestation est introuvable.");
+      return;
+    }
+
+    onAddAnimal?.(proprietaireId);
+  }
+
 
   function handleZonageToggle(zonageId) {
     const existing = consultationZonages.find(
@@ -233,9 +297,15 @@ export default function PrestationWorkflowConsultations({
       setSaving(true);
       onError?.("");
 
-      const consultation = await createConsultation(form);
+      let consultation;
 
-      await saveConsultationZonages(consultation.ID_Consultation);
+      if (editingId) {
+        consultation = await updateConsultation(editingId, form);
+      } else {
+        consultation = await createConsultation(form);
+      }
+
+      await saveConsultationZonages(consultation.ID_Consultation ?? editingId);
 
       await loadData();
       closeForm();
@@ -246,9 +316,17 @@ export default function PrestationWorkflowConsultations({
     }
   }
 
-  const filteredAnimaux = animaux.filter(
-    (animal) => animal.ID_Proprietaire === prestation.ID_Proprietaire,
-  );
+  const proprietaireId =
+    prestation?.ID_Proprietaire ??
+    prestation?.Proprietaire_Prestation?.ID_Proprietaire ??
+    null;
+
+  const filteredAnimaux = proprietaireId
+    ? animaux.filter(
+        (animal) => String(animal.ID_Proprietaire) === String(proprietaireId),
+      )
+    : [];
+
 
   return (
     <>
@@ -257,7 +335,7 @@ export default function PrestationWorkflowConsultations({
           <p className="text-sm text-blue-700">Prestation</p>
 
           <p className="font-medium text-blue-900">
-            #{prestation.ID_Prestation}
+            #{prestation?.ID_Prestation ?? prestationId}
           </p>
         </div>
 
@@ -327,7 +405,7 @@ export default function PrestationWorkflowConsultations({
         open={showForm}
         editingId={editingId}
         form={form}
-        prestations={[prestation]}
+        prestations={prestation ? [prestation] : []}
         animaux={filteredAnimaux}
         tarifs={tarifs}
         zonages={zonages}
@@ -339,9 +417,8 @@ export default function PrestationWorkflowConsultations({
         onDelete={() => {}}
         onZonageToggle={handleZonageToggle}
         onZonageCommentChange={handleZonageCommentChange}
-        onAddTarif={() => {
-          onError?.("La création rapide d'un tarif sera ajoutée ensuite.");
-        }}
+        onAddAnimal={handleAddAnimal}
+        onAddTarif={() => onAddTarif?.()}
       />
     </>
   );

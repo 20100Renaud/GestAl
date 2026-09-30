@@ -11,6 +11,7 @@ export default function PageHeader({
   searchPlaceholder = "Rechercher...",
   createLabel,
   onAction,
+  className = "",
 }) {
   const { setTitle } = usePageTitle();
 
@@ -19,7 +20,7 @@ export default function PageHeader({
   }, [title, setTitle]);
 
   return (
-    <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between w-full">
+    <div className={`flex flex-col gap-4 md:flex-row md:items-center md:justify-between w-full ${className}`}>
       <div className="relative w-full max-w-[420px]">
         {onSearchChange && (
           <>

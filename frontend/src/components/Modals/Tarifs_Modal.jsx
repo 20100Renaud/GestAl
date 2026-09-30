@@ -44,6 +44,18 @@ export default function TarifsModal({
           />
 
           <Input
+            id="Denomination_Tarif"
+            label="Désignation"
+            icon={ClipboardPen}
+            type="text"
+            name="Denomination_Tarif"
+            value={form.Denomination_Tarif}
+            onChange={onChange}
+            className="col-span-2 md:col-span-1"
+            required
+          />
+
+          <Input
             id="Montant_Tarif"
             label="Montant"
             icon={CircleEuro}
@@ -54,18 +66,6 @@ export default function TarifsModal({
             min="0"
             step="1"
             suffix="€"
-            required
-          />
-
-          <Input
-            id="Denomination_Tarif"
-            label="Désignation"
-            icon={ClipboardPen}
-            type="text"
-            name="Denomination_Tarif"
-            value={form.Denomination_Tarif}
-            onChange={onChange}
-            className="col-span-2 md:col-span-1"
             required
           />
         </div>

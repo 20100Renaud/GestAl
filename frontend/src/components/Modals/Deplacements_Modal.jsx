@@ -41,6 +41,18 @@ export default function DeplacementsModal({
           />
 
           <Input
+            id="Denomination_Deplacement"
+            label="Désignation"
+            icon={ClipboardPen}
+            type="text"
+            name="Denomination_Deplacement"
+            value={form.Denomination_Deplacement}
+            onChange={onChange}
+            className="col-span-2 md:col-span-1"
+            required
+          />
+
+          <Input
             id="Montant_Deplacement"
             label="Montant"
             icon={CircleEuro}
@@ -51,18 +63,6 @@ export default function DeplacementsModal({
             min="0"
             step="1"
             suffix="€"
-            required
-          />
-
-          <Input
-            id="Denomination_Deplacement"
-            label="Désignation"
-            icon={ClipboardPen}
-            type="text"
-            name="Denomination_Deplacement"
-            value={form.Denomination_Deplacement}
-            onChange={onChange}
-            className="col-span-2 md:col-span-1"
             required
           />
         </div>

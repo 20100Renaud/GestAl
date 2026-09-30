@@ -231,6 +231,7 @@ export default function Animaux() {
         searchPlaceholder="Rechercher un animal..."
         createLabel="Nouvel animal"
         onAction={openCreateForm}
+        className="mb-6"
       />
 
       {loading ? (

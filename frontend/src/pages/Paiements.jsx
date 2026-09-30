@@ -308,6 +308,7 @@ export default function Paiements() {
         searchPlaceholder="Rechercher un paiement..."
         createLabel="Nouveau paiement"
         onAction={openCreateForm}
+        className="mb-6"
       />
 
       {loading ? (

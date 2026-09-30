@@ -198,6 +198,7 @@ export default function Proprietaires() {
         searchPlaceholder="Recherche par nom, e-mail, ville..."
         createLabel="Nouveau propriétaire"
         onAction={openCreateForm}
+        className="mb-6"
       />
 
       {loading ? (
@@ -237,7 +238,9 @@ export default function Proprietaires() {
                     .join(" ") || "-"}
                 </TableCell>
 
-                <TableCell className="hidden md:table-cell">{proprietaire.Email_Proprietaire || "-"}</TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {proprietaire.Email_Proprietaire || "-"}
+                </TableCell>
 
                 <TableCell>{proprietaire.Ville_Proprietaire || "-"}</TableCell>
               </TableRow>

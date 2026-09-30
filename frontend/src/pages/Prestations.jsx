@@ -45,6 +45,7 @@ export default function Prestations() {
 
   const [showForm, setShowForm] = useState(false);
   const [showWorkflow, setShowWorkflow] = useState(false);
+  const [workflowPrestation, setWorkflowPrestation] = useState(null);
 
   const [showProprietaireForm, setShowProprietaireForm] = useState(false);
   const [proprietaireForm, setProprietaireForm] = useState({
@@ -113,37 +114,25 @@ export default function Prestations() {
   }
 
   function openCreateForm() {
+    setWorkflowPrestation(null);
     setError("");
     setShowWorkflow(true);
   }
 
-  async function handleWorkflowClose() {
-    setShowWorkflow(false);
+  function openEditForm(prestation) {
+    setWorkflowPrestation(prestation);
     setError("");
+    setShowWorkflow(true);
+  }
+
+  async function closeWorkflow() {
+    setShowWorkflow(false);
+    setWorkflowPrestation(null);
+    setError("");
+
     await loadData();
   }
 
-
-  function openEditForm(prestation) {
-    setEditingId(prestation.ID_Prestation);
-
-    setForm({
-      ID_Proprietaire: prestation.ID_Proprietaire ?? "",
-
-      ID_Lieu: prestation.ID_Lieu ?? "",
-
-      ID_Deplacement: prestation.ID_Deplacement ?? "",
-
-      Date_Prestation: prestation.Date_Prestation
-        ? prestation.Date_Prestation.slice(0, 10)
-        : "",
-
-      Remise_Prestation: String(prestation.Remise_Prestation ?? "0"),
-    });
-
-    setError("");
-    setShowForm(true);
-  }
 
   function closeForm() {
     if (saving) {
@@ -451,6 +440,7 @@ export default function Prestations() {
         searchPlaceholder="Rechercher une prestation..."
         createLabel="Nouvelle prestation"
         onAction={openCreateForm}
+        className="mb-6"
       />
 
       {loading ? (
@@ -529,7 +519,8 @@ export default function Prestations() {
 
       <PrestationWorkflowModal
         open={showWorkflow}
-        onClose={handleWorkflowClose}
+        prestation={workflowPrestation}
+        onClose={closeWorkflow}
       />
 
       <PrestationsModal

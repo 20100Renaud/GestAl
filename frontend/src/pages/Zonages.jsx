@@ -176,6 +176,7 @@ export default function Zonages() {
         searchPlaceholder="Rechercher un zonage..."
         createLabel="Nouveau zonage"
         onAction={openCreateForm}
+        className="mb-6"
       />
 
       {loading ? (

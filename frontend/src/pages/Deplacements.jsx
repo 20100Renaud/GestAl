@@ -168,6 +168,7 @@ export default function Deplacements() {
         searchPlaceholder="Rechercher un déplacement..."
         createLabel="Nouveau déplacement"
         onAction={openCreateForm}
+        className="mb-6"
       />
 
       {loading ? (

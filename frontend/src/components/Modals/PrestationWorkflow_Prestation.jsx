@@ -1,3 +1,4 @@
+// frontend/src/components/Modals/PrestationWorkflow_Prestation.jsx
 import { useEffect, useState } from "react";
 
 import Button from "../ui/Button.jsx";
@@ -5,18 +6,26 @@ import Input from "../ui/Input.jsx";
 import Select from "../ui/Select.jsx";
 import ProprietaireOptions from "../ProprietaireOptions.jsx";
 import DeplacementsModal from "./Deplacements_Modal.jsx";
+import ProprietairesModal from "./Proprietaires_Modal.jsx";
 
 import {
   File,
-  MapPin,
   CalendarDays,
   Car,
   Plus,
   BanknoteArrowDown,
+  Undo2,
+  House,
+  Warehouse,
 } from "lucide-react";
 
-import { createPrestation } from "../../api/prestations.js";
-import { getProprietaires } from "../../api/proprietaires.js";
+import { createPrestation, updatePrestation } from "../../api/prestations.js";
+
+import {
+  getProprietaires,
+  createProprietaire,
+} from "../../api/proprietaires.js";
+
 import { getDeplacements, createDeplacement } from "../../api/deplacements.js";
 
 const emptyForm = {
@@ -27,7 +36,24 @@ const emptyForm = {
   Remise_Prestation: "0",
 };
 
-export default function PrestationWorkflowPrestation({ onCreated, onError }) {
+const emptyProprietaireForm = {
+  raisonSociale: "Particulier",
+  etablissement: "",
+  civilite: "",
+  nom: "",
+  prenom: "",
+  email: "",
+  adresse: "",
+  ville: "",
+  cp: "",
+  tel: "",
+};
+
+export default function PrestationWorkflowPrestation({
+  prestation,
+  onCreated,
+  onError,
+}) {
   const [proprietaires, setProprietaires] = useState([]);
   const [deplacements, setDeplacements] = useState([]);
 
@@ -40,6 +66,13 @@ export default function PrestationWorkflowPrestation({ onCreated, onError }) {
   const [showDeplacementForm, setShowDeplacementForm] = useState(false);
   const [savingDeplacement, setSavingDeplacement] = useState(false);
 
+  const [showProprietaireForm, setShowProprietaireForm] = useState(false);
+  const [savingProprietaire, setSavingProprietaire] = useState(false);
+
+  const [proprietaireForm, setProprietaireForm] = useState(
+    emptyProprietaireForm,
+  );
+
   const [deplacementForm, setDeplacementForm] = useState({
     Annee_Deplacement: String(new Date().getFullYear()),
     Denomination_Deplacement: "",
@@ -49,6 +82,41 @@ export default function PrestationWorkflowPrestation({ onCreated, onError }) {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (prestation) {
+      const proprietaireId = prestation.ID_Proprietaire
+        ? String(prestation.ID_Proprietaire)
+        : "";
+
+      const lieuId = prestation.ID_Lieu ? String(prestation.ID_Lieu) : "";
+
+      const deplacementId = prestation.ID_Deplacement
+        ? String(prestation.ID_Deplacement)
+        : "";
+
+      setForm({
+        ID_Proprietaire: proprietaireId,
+        ID_Lieu: lieuId,
+        ID_Deplacement: deplacementId,
+        Date_Prestation: prestation.Date_Prestation
+          ? prestation.Date_Prestation.slice(0, 10)
+          : "",
+        Remise_Prestation: String(prestation.Remise_Prestation ?? "0"),
+      });
+
+      setCustomLieu(Boolean(lieuId && lieuId !== proprietaireId));
+
+      return;
+    }
+
+    setForm({
+      ...emptyForm,
+      Date_Prestation: getToday(),
+    });
+
+    setCustomLieu(false);
+  }, [prestation]);
 
   function getToday() {
     const now = new Date();
@@ -67,11 +135,6 @@ export default function PrestationWorkflowPrestation({ onCreated, onError }) {
 
       setProprietaires(proprietairesData);
       setDeplacements(deplacementsData);
-
-      setForm({
-        ...emptyForm,
-        Date_Prestation: getToday(),
-      });
     } catch (err) {
       onError?.(err.message);
     }
@@ -87,17 +150,13 @@ export default function PrestationWorkflowPrestation({ onCreated, onError }) {
   }
 
   function handleProprietaireChange(event) {
-    const value = event.target.value;
+    const value = String(event.target.value);
 
-    handleChange(event);
-
-    if (!customLieu) {
-      setForm((current) => ({
-        ...current,
-        ID_Proprietaire: value,
-        ID_Lieu: value,
-      }));
-    }
+    setForm((current) => ({
+      ...current,
+      ID_Proprietaire: value,
+      ...(customLieu ? {} : { ID_Lieu: value }),
+    }));
   }
 
   function handleLieuDifferent() {
@@ -118,6 +177,74 @@ export default function PrestationWorkflowPrestation({ onCreated, onError }) {
       ID_Lieu: current.ID_Proprietaire,
     }));
   }
+
+  /*
+   * --------------------------------------------------
+   * PROPRIETAIRE
+   * --------------------------------------------------
+   */
+
+  function openProprietaireForm() {
+    setProprietaireForm({
+      ...emptyProprietaireForm,
+    });
+
+    setShowProprietaireForm(true);
+  }
+
+  function closeProprietaireForm() {
+    if (savingProprietaire) {
+      return;
+    }
+
+    setShowProprietaireForm(false);
+  }
+
+  function handleProprietaireFormChange(event) {
+    const { name, value } = event.target;
+
+    setProprietaireForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  }
+
+  async function handleProprietaireSubmit(event) {
+    event.preventDefault();
+
+    try {
+      setSavingProprietaire(true);
+      onError?.("");
+
+      const newProprietaire = await createProprietaire(proprietaireForm);
+      const newProprietaireId = String(
+        newProprietaire.proprietaire.ID_Proprietaire,
+      );
+
+      const proprietairesData = await getProprietaires();
+
+      setProprietaires(proprietairesData);
+
+      setForm((current) => ({
+        ...current,
+        ID_Proprietaire: newProprietaireId,
+        ID_Lieu: customLieu ? current.ID_Lieu : newProprietaireId,
+      }));
+
+      setShowProprietaireForm(false);
+    } catch (err) {
+      onError?.(err.message);
+    } finally {
+      setSavingProprietaire(false);
+    }
+  }
+
+
+  /*
+   * --------------------------------------------------
+   * DEPLACEMENT
+   * --------------------------------------------------
+   */
 
   function openDeplacementForm() {
     setDeplacementForm({
@@ -172,6 +299,12 @@ export default function PrestationWorkflowPrestation({ onCreated, onError }) {
     }
   }
 
+  /*
+   * --------------------------------------------------
+   * PRESTATION
+   * --------------------------------------------------
+   */
+
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -179,9 +312,15 @@ export default function PrestationWorkflowPrestation({ onCreated, onError }) {
       setSaving(true);
       onError?.("");
 
-      const prestation = await createPrestation(form);
+      let result;
 
-      onCreated(prestation);
+      if (prestation?.ID_Prestation) {
+        result = await updatePrestation(prestation.ID_Prestation, form);
+      } else {
+        result = await createPrestation(form);
+      }
+
+      onCreated(result);
     } catch (err) {
       onError?.(err.message);
     } finally {
@@ -194,50 +333,58 @@ export default function PrestationWorkflowPrestation({ onCreated, onError }) {
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* PROPRIETAIRE */}
-          <Select
-            id="workflow-Proprietaire"
-            label="Propriétaire"
-            icon={File}
-            name="ID_Proprietaire"
-            value={form.ID_Proprietaire}
-            onChange={handleProprietaireChange}
-            required
-          >
-            <option value="">Sélectionner</option>
+          <div className="relative">
+            <Select
+              id="workflow-Proprietaire"
+              label="Propriétaire"
+              icon={File}
+              name="ID_Proprietaire"
+              value={form.ID_Proprietaire}
+              onChange={handleProprietaireChange}
+              required
+            >
+              <option value="">Sélectionner</option>
 
-            <ProprietaireOptions proprietaires={proprietaires} />
-          </Select>
+              <ProprietaireOptions proprietaires={proprietaires} />
+            </Select>
+
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={openProprietaireForm}
+              disabled={saving}
+              className="absolute right-0 top-0 !p-1"
+            >
+              <Plus size={16} />
+            </Button>
+          </div>
 
           {/* LIEU */}
           <div className="flex flex-col gap-2">
             <label className="flex text-sm font-medium text-blue-700">
               <div className="flex items-center gap-2">
-                <MapPin size={18} />
-                Lieu de prestation
+                {customLieu ? <Warehouse size={18} /> : <House size={18} />}
+
+                {customLieu ? "Lieu de prestation" : "Prestation à domicile"}
               </div>
             </label>
 
             {!form.ID_Proprietaire ? (
-              <div className="flex min-h-10 items-center rounded-md border border-blue-200 bg-blue-50 px-3 text-sm text-blue-900">
+              <div className="flex h-full items-center rounded-md border border-blue-200 bg-blue-50 px-3 text-sm text-blue-900">
                 Sélectionner d'abord un propriétaire
               </div>
             ) : !customLieu ? (
-              <>
-                <div className="flex min-h-10 items-center rounded-md border border-blue-200 bg-blue-50 px-3 text-sm text-blue-900">
-                  Même adresse que le propriétaire
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleLieuDifferent}
-                  disabled={saving}
-                  className="cursor-pointer text-left text-sm text-blue-700 underline hover:text-blue-900 disabled:opacity-50"
-                >
-                  Choisir un autre lieu
-                </button>
-              </>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleLieuDifferent}
+                disabled={saving}
+                className="h-full"
+              >
+                Changer de lieu
+              </Button>
             ) : (
-              <>
+              <div className="relative">
                 <Select
                   id="workflow-Lieu"
                   label=""
@@ -252,15 +399,18 @@ export default function PrestationWorkflowPrestation({ onCreated, onError }) {
                   <ProprietaireOptions proprietaires={proprietaires} />
                 </Select>
 
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={handleLieuProprietaire}
                   disabled={saving}
-                  className="cursor-pointer text-left text-sm text-blue-700 underline hover:text-blue-900 disabled:opacity-50"
+                  title="Revenir à l'adresse du propriétaire"
+                  aria-label="Revenir à l'adresse du propriétaire"
+                  className="absolute right-0 -top-7 !p-1"
                 >
-                  Revenir à l'adresse du propriétaire
-                </button>
-              </>
+                  <Undo2 size={16} />
+                </Button>
+              </div>
             )}
           </div>
 
@@ -302,20 +452,15 @@ export default function PrestationWorkflowPrestation({ onCreated, onError }) {
               ))}
             </Select>
 
-            <div className="absolute right-0 top-0">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={openDeplacementForm}
-                disabled={saving}
-                className="!py-1"
-              >
-                <div className="flex items-center gap-2">
-                  <Plus size={16} />
-                  Ajouter
-                </div>
-              </Button>
-            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={openDeplacementForm}
+              disabled={saving}
+              className="absolute right-0 top-0 !p-1"
+            >
+              <Plus size={16} />
+            </Button>
           </div>
 
           {/* REMISE */}
@@ -335,7 +480,11 @@ export default function PrestationWorkflowPrestation({ onCreated, onError }) {
 
         <div className="mt-6 flex justify-end">
           <Button type="submit" disabled={saving}>
-            {saving ? "Création..." : "Créer la prestation →"}
+            {saving
+              ? "Enregistrement..."
+              : prestation?.ID_Prestation
+                ? "Enregistrer les modifications →"
+                : "Créer la prestation →"}
           </Button>
         </div>
       </form>
@@ -349,6 +498,17 @@ export default function PrestationWorkflowPrestation({ onCreated, onError }) {
         onClose={closeDeplacementForm}
         onSubmit={handleDeplacementSubmit}
         onChange={handleDeplacementChange}
+        onDelete={() => {}}
+      />
+
+      <ProprietairesModal
+        open={showProprietaireForm}
+        editingId={null}
+        form={proprietaireForm}
+        saving={savingProprietaire}
+        onClose={closeProprietaireForm}
+        onSubmit={handleProprietaireSubmit}
+        onChange={handleProprietaireFormChange}
         onDelete={() => {}}
       />
     </>

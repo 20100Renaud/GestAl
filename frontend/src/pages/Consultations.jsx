@@ -316,8 +316,6 @@ export default function Consultations() {
 
       const newAnimal = await createAnimal(animalForm);
 
-      const animauxData = await getAnimaux();
-
       setAnimaux(animauxData);
 
       setForm((current) => ({
@@ -518,6 +516,7 @@ export default function Consultations() {
         searchPlaceholder="Rechercher une consultation..."
         createLabel="Nouvelle consultation"
         onAction={openCreateForm}
+        className="mb-6"
       />
 
       {loading ? (
@@ -607,7 +606,6 @@ export default function Consultations() {
         onChange={handleAnimalChange}
         onDelete={() => {}}
       />
-      
     </div>
   );
 }

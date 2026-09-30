@@ -18,7 +18,6 @@ import {
   ClipboardPen,
 } from "lucide-react";
 
-import { useMemo } from "react";
 
 export default function ConsultationsModal({
   open,
@@ -39,24 +38,6 @@ export default function ConsultationsModal({
   onAddTarif,
   onAddAnimal,
 }) {
-  const selectedPrestation = useMemo(() => {
-    return prestations.find(
-      (prestation) => prestation.ID_Prestation === form.ID_Prestation,
-    );
-  }, [prestations, form.ID_Prestation]);
-
-  const filteredAnimaux = useMemo(() => {
-    const proprietaireId = selectedPrestation?.ID_Proprietaire;
-
-    if (!proprietaireId) {
-      return [];
-    }
-
-    return animaux.filter(
-      (animal) => animal.ID_Proprietaire === proprietaireId,
-    );
-  }, [animaux, selectedPrestation]);
-
   return (
     <Modal
       open={open}
@@ -65,9 +46,7 @@ export default function ConsultationsModal({
       }
       onClose={onClose}
     >
-      {prestations.length === 0 ||
-      animaux.length === 0 ||
-      tarifs.length === 0 ? (
+      {prestations.length === 0 || tarifs.length === 0 ? (
         <div className="p-6">
           <p className="text-blue-900">
             Une <u>prestation</u>, un <u>animal</u> et un <u>tarif</u> doivent
@@ -127,7 +106,7 @@ export default function ConsultationsModal({
                     : "Sélectionner d'abord une prestation"}
                 </option>
 
-                {filteredAnimaux.map((animal) => (
+                {animaux.map((animal) => (
                   <option key={animal.ID_Animal} value={animal.ID_Animal}>
                     {animal.Nom_Animal}
                   </option>
