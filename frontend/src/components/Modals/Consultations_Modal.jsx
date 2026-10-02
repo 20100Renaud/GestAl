@@ -3,7 +3,6 @@ import Input from "../ui/Input.jsx";
 import Select from "../ui/Select.jsx";
 import Textarea from "../ui/Textarea.jsx";
 import Modal from "../ui/Modal.jsx";
-
 import { formatDate } from "../../utils/formatDate";
 import {
   PawPrint,
@@ -14,7 +13,6 @@ import {
   Plus,
   TextInitial,
   TextAlignStart,
-  Crosshair,
   ClipboardPen,
 } from "lucide-react";
 
@@ -26,15 +24,12 @@ export default function ConsultationsModal({
   prestations,
   animaux,
   tarifs,
-  zonages,
-  consultationZonages,
   saving,
   onClose,
   onSubmit,
   onChange,
   onDelete,
-  onZonageToggle,
-  onZonageCommentChange,
+  onOpenZonages,
   onAddTarif,
   onAddAnimal,
 }) {
@@ -127,7 +122,6 @@ export default function ConsultationsModal({
             </div>
 
             {/* TARIF */}
-
             <div className="relative">
               <Select
                 id="Tarif"
@@ -212,101 +206,31 @@ export default function ConsultationsModal({
                 rows="4"
               />
             </div>
-
-            {/* ZONAGES */}
-            <div className="md:col-span-2">
-              <div className="mb-2">
-                <label className="flex gap-2 text-sm font-medium text-blue-700">
-                  <Crosshair size={18} />
-                  Zonages associés
-                </label>
-              </div>
-
-              {zonages.length === 0 ? (
-                <p className="text-sm text-blue-900">
-                  Aucun zonage disponible.
-                </p>
-              ) : (
-                <div className="space-y-3 rounded border border-blue-300 p-3">
-                  {zonages.map((zonage) => {
-                    const selected = consultationZonages.find(
-                      (item) => item.ID_Zonage === zonage.ID_Zonage,
-                    );
-
-                    return (
-                      <div
-                        key={zonage.ID_Zonage}
-                        className="flex flex-col gap-3 rounded border border-blue-400 px-3 md:flex-row md:items-center"
-                      >
-                        <label className="flex h-12 cursor-pointer items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={Boolean(selected)}
-                            onChange={() => onZonageToggle(zonage.ID_Zonage)}
-                            disabled={saving}
-                          />
-
-                          <span className="flex items-center gap-1 text-md font-medium text-blue-900">
-                            {zonage.Nom_Zonage}
-
-                            {zonage.Position_Zonage &&
-                              `-${zonage.Position_Zonage}`}
-
-                            {zonage.Orientation_Zonage && (
-                              <span className="rounded-full bg-yellow-400 px-2 py-1 text-xs text-blue-900">
-                                {zonage.Orientation_Zonage}
-                              </span>
-                            )}
-
-                            {zonage.Technique_Zonage && (
-                              <span className="rounded-full bg-green-600 px-2 py-1 text-xs text-white">
-                                {zonage.Technique_Zonage}
-                              </span>
-                            )}
-
-                            {zonage.Pratique_Zonage && (
-                              <span className="rounded-full bg-blue-500 px-2 py-1 text-xs text-white">
-                                {zonage.Pratique_Zonage}
-                              </span>
-                            )}
-                          </span>
-                        </label>
-
-                        {selected && (
-                          <Input
-                            id={`Commentaire_Zonage_${zonage.ID_Zonage}`}
-                            label=""
-                            type="text"
-                            value={selected.Commentaire_Zonage ?? ""}
-                            onChange={(event) =>
-                              onZonageCommentChange(
-                                zonage.ID_Zonage,
-                                event.target.value,
-                              )
-                            }
-                            disabled={saving}
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
           </div>
 
           {/* ACTIONS */}
           <div className="mt-6 flex items-center justify-between gap-3">
-            <div>
+            <div className="flex gap-3">
               {editingId && (
-                <Button
-                  type="button"
-                  variant="danger"
-                  onClick={() => onDelete(editingId)}
-                  disabled={saving}
-                >
-                  Supprimer
-                </Button>
+                <>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => onOpenZonages?.(editingId)}
+                    disabled={saving}
+                  >
+                    Zonages
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="danger"
+                    onClick={() => onDelete(editingId)}
+                    disabled={saving}
+                  >
+                    Supprimer
+                  </Button>
+                </>
               )}
             </div>
 

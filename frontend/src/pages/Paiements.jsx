@@ -80,57 +80,6 @@ export default function Paiements() {
     return hasMoyen && hasType;
   }
 
-  function handleChange(event) {
-    const { name, value, type, checked } = event.target;
-
-      if (type === "checkbox") {
-        setForm((current) => {
-          const next = {
-            ...current,
-            E_Reporting_Paiement: checked && name === "E_Reporting_Paiement",
-            E_Facture_Paiement: checked && name === "E_Facture_Paiement",
-            E_Other_Paiement: checked && name === "E_Other_Paiement",
-          };
-
-          const hasMoyen = Boolean(next.Moyen_Paiement?.trim());
-
-          const hasType =
-            next.E_Reporting_Paiement ||
-            next.E_Facture_Paiement ||
-            next.E_Other_Paiement;
-
-          if (!hasMoyen || !hasType) {
-            next.Date_Encaissement = "";
-          }
-
-          return next;
-        });
-
-        return;
-      }
-
-    setForm((current) => {
-      const next = {
-        ...current,
-        [name]: value,
-      };
-
-      if (name === "Moyen_Paiement") {
-        const hasMoyen = Boolean(value.trim());
-
-        const hasType =
-          next.E_Reporting_Paiement ||
-          next.E_Facture_Paiement ||
-          next.E_Other_Paiement;
-
-        if (!hasMoyen || !hasType) {
-          next.Date_Encaissement = "";
-        }
-      }
-
-      return next;
-    });
-  }
 
   function openCreateForm() {
     setEditingId(null);
@@ -366,12 +315,11 @@ export default function Paiements() {
         open={showForm}
         editingId={editingId}
         form={form}
+        setForm={setForm}
         prestations={prestations}
         saving={saving}
-        paiementComplete={isPaiementComplete(form)}
         onClose={closeForm}
         onSubmit={handleSubmit}
-        onChange={handleChange}
         onDelete={handleDelete}
       />
     </div>

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-
-import Button from "../ui/Button.jsx";
 import PaiementsModal from "./Paiements_Modal.jsx";
-import { formatDateInput } from "../../utils/formatDate.js";
+import { formatDateInput, formatDateShort } from "../../utils/formatDate.js";
+import PrestationAmountHeader from "../PrestationAmountHeader.jsx";
+import { MOYENS_PAIEMENT } from "../../constants/paiement.js";
+import { Plus } from "lucide-react";
+
 import {
   getPaiements,
   createPaiement,
@@ -29,7 +31,12 @@ function getToday() {
     .slice(0, 10);
 }
 
-export default function PrestationWorkflowPaiements({ prestationId, onError }) {
+export default function PrestationWorkflowPaiements({
+  prestationId,
+  prestation,
+  onError,
+  onPrestationUpdated,
+}) {
   const [paiements, setPaiements] = useState([]);
 
   const [showForm, setShowForm] = useState(false);
@@ -102,15 +109,6 @@ export default function PrestationWorkflowPaiements({ prestationId, onError }) {
     setForm(emptyForm);
   }
 
-  function handleChange(event) {
-    const { name, value, type, checked } = event.target;
-
-    setForm((current) => ({
-      ...current,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  }
-
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -130,6 +128,7 @@ export default function PrestationWorkflowPaiements({ prestationId, onError }) {
       }
 
       await loadData();
+      await onPrestationUpdated?.();
       closeForm();
     } catch (err) {
       onError?.(err.message);
@@ -154,6 +153,7 @@ export default function PrestationWorkflowPaiements({ prestationId, onError }) {
       }
 
       await loadData();
+      await onPrestationUpdated?.();
     } catch (err) {
       onError?.(err.message);
     } finally {
@@ -161,74 +161,93 @@ export default function PrestationWorkflowPaiements({ prestationId, onError }) {
     }
   }
 
-  const paiementComplete =
-    Number(form.Montant_Paiement) > 0 &&
-    Boolean(form.Moyen_Paiement) &&
-    (form.E_Reporting_Paiement ||
-      form.E_Facture_Paiement ||
-      form.E_Other_Paiement);
-
-  const prestations = [
-    {
-      ID_Prestation: prestationId,
-    },
-  ];
-
-  useEffect(() => {
-    if (paiementComplete && !form.Date_Encaissement) {
-      setForm((current) => ({
-        ...current,
-        Date_Encaissement: getToday(),
-      }));
-    }
-  }, [paiementComplete, form.Date_Encaissement]);
-  
   return (
     <>
       <div className="space-y-6">
-        <div className="rounded-md border border-blue-200 bg-blue-50 p-4">
-          <p className="text-sm text-blue-700">Prestation</p>
+        <PrestationAmountHeader prestation={prestation} />
 
-          <p className="font-medium text-blue-900">#{prestationId}</p>
-        </div>
+        <div className="flex flex-wrap justify-center gap-3">
+          {/* Add a payment */}
+          <button
+            type="button"
+            onClick={openCreateForm}
+            disabled={saving}
+            className="flex w-full max-w-[220px] min-h-[100px] items-center justify-center rounded-md border-2 border-dashed border-blue-300 p-4 text-blue-600 transition hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed cursor-pointer disabled:opacity-50 shadow-lg"
+          >
+            <span className="flex flex-col items-center text-sm">
+              <Plus size={58} strokeWidth={1} />
+              <span>Ajouter un paiement</span>
+            </span>
+          </button>
 
-        {paiements.length === 0 ? (
-          <div className="rounded-md border border-blue-200 p-8 text-center">
-            <p className="text-blue-700">Aucun paiement ajouté.</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {paiements.map((paiement) => (
+          {paiements.map((paiement) => {
+            const moyen = MOYENS_PAIEMENT[paiement.Moyen_Paiement];
+            const MoyenIcon = moyen?.icon;
+
+            return (
               <button
                 key={paiement.ID_Paiement}
                 type="button"
                 onClick={() => openEditForm(paiement)}
-                className="w-full rounded-md border border-blue-200 p-4 text-left transition hover:border-blue-400 hover:bg-blue-50"
+                className="relative w-full max-w-[220px] min-h-[100px] rounded-md border border-blue-200 p-4 pt-6 transition hover:border-blue-400 hover:bg-blue-50 cursor-pointer  shadow-lg"
               >
-                <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <div className="font-medium text-blue-900">
-                      {paiement.Montant_Paiement} €
-                    </div>
+                <div className="flex flex-col gap-1">
+                  <div className="font-medium text-blue-900">
+                    {paiement.Montant_Paiement}€
+                    {moyen ? (
+                      <span className="ml-1 inline-flex items-center gap-1 text-xs">
+                        {"en "}
+                        {moyen.label.toLowerCase()}
+                      </span>
+                    ) : (
+                      <span className="ml-1 text-xs text-amber-600">
+                        (pas de moyen sélectionné)
+                      </span>
+                    )}
+                  </div>
 
-                    <div className="text-sm text-blue-600">
-                      {paiement.Moyen_Paiement || "Moyen non renseigné"}
+                  {/* Badges */}
+                  <div>
+                    {moyen && (
+                      <div className="absolute left-8 top-7">
+                        {MoyenIcon && (
+                          <MoyenIcon size={18} strokeWidth={1.25} />
+                        )}
+                      </div>
+                    )}
+                    <div className="absolute -right-0 top-0 flex">
+                      {paiement.E_Reporting_Paiement && (
+                        <span className="rounded-tr-md rounded-bl-md bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                          E-Reporting
+                        </span>
+                      )}
+                      {paiement.E_Facture_Paiement && (
+                        <span className="rounded-tr-md rounded-bl-md bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                          E-Facture
+                        </span>
+                      )}
+                      {paiement.E_Other_Paiement && (
+                        <span className="rounded-tr-md rounded-bl-md bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                          E-Autre
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  <div className="text-sm text-blue-700">
-                    {paiement.Date_Paiement || "-"}
+                  <div className="flex flex-col text-sm text-blue-700">
+                    <span>
+                      Réception : {formatDateShort(paiement.Date_Paiement)}
+                    </span>
+
+                    <span>
+                      Encaissement :{" "}
+                      {formatDateShort(paiement.Date_Encaissement)}
+                    </span>
                   </div>
                 </div>
               </button>
-            ))}
-          </div>
-        )}
-
-        <div className="flex justify-end">
-          <Button type="button" onClick={openCreateForm} disabled={saving}>
-            + Ajouter un paiement
-          </Button>
+            );
+          })}
         </div>
       </div>
 
@@ -236,12 +255,11 @@ export default function PrestationWorkflowPaiements({ prestationId, onError }) {
         open={showForm}
         editingId={editingId}
         form={form}
-        prestations={prestations}
+        setForm={setForm}
+        prestation={prestation}
         saving={saving}
-        paiementComplete={paiementComplete}
         onClose={closeForm}
         onSubmit={handleSubmit}
-        onChange={handleChange}
         onDelete={handleDelete}
       />
     </>

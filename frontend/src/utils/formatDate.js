@@ -22,3 +22,19 @@ export function formatDateInput(value) {
 
   return String(value).slice(0, 10);
 }
+
+export function formatDateShort(date) {
+  if (!date) {
+    return "-";
+  }
+
+  const value = String(date).slice(0, 10);
+
+  const [year, month, day] = value.split("-");
+
+  if (!year || !month || !day) {
+    return "-";
+  }
+
+  return `${day}/${month}/${year}`;
+}

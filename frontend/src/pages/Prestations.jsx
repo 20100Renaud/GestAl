@@ -4,6 +4,11 @@ import PageHeader from "../components/ui/PageHeader.jsx";
 import PrestationsModal from "../components/Modals/Prestations_Modal.jsx";
 import ProprietairesModal from "../components/Modals/Proprietaires_Modal.jsx";
 import PrestationWorkflowModal from "../components/Modals/PrestationWorkflow_Modal.jsx";
+import {
+  getStatutPaiement,
+  formatAmountShort,
+} from "../components/PrestationAmountHeader.jsx";
+
 import Alert from "../components/ui/Alert.jsx";
 import { MapPin } from "lucide-react";
 import { formatDate } from "../utils/formatDate";
@@ -132,7 +137,6 @@ export default function Prestations() {
 
     await loadData();
   }
-
 
   function closeForm() {
     if (saving) {
@@ -366,19 +370,18 @@ export default function Prestations() {
 
     return prestations.filter((prestation) => {
       const proprietaire = getProprietaireName(prestation);
-
       const lieu = getLieuName(prestation);
-
       const date = formatDate(prestation.Date_Prestation);
-
       const deplacement =
         prestation.Deplacement_Prestation?.Denomination_Deplacement ?? "";
+      const statut = getStatutPaiement(prestation);
 
       return [
         proprietaire,
         lieu,
         date,
         deplacement,
+        statut.label,
         prestation.Remise_Prestation,
         prestation.Montant_Prestation,
       ]
@@ -508,7 +511,31 @@ export default function Prestations() {
                   </TableCell>
 
                   <TableCell>
-                    {String(prestation.Montant_Prestation ?? "0")} €
+                    {(() => {
+                      const statut = getStatutPaiement(prestation);
+
+                      const statusColor = {
+                        reste: "text-red-600",
+                        "trop-percu": "text-orange-600",
+                        soldee: "text-green-600",
+                        "aucun-paiement": "text-gray-500",
+                      }[statut.type];
+
+                      return (
+                        <div className="flex flex-col">
+                          <span>
+                            {formatAmountShort(statut.montantPrestation)}
+                          </span>
+
+                          <span className={`text-xs ${statusColor}`}>
+                            {statut.type === "reste" ||
+                            statut.type === "trop-percu"
+                              ? `${statut.label} : ${formatAmountShort(statut.montant)}`
+                              : statut.label}
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </TableCell>
                 </TableRow>
               ))}

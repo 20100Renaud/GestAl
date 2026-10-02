@@ -6,6 +6,7 @@ import Alert from "../ui/Alert.jsx";
 import PrestationWorkflowPrestation from "./PrestationWorkflow_Prestation.jsx";
 import PrestationWorkflowConsultations from "./PrestationWorkflow_Consultations.jsx";
 import PrestationWorkflowPaiements from "./PrestationWorkflow_Paiements.jsx";
+import { getPrestation } from "../../api/prestations.js";
 import { createAnimal } from "../../api/animaux.js";
 import { createTarif } from "../../api/tarifs.js";
 import AnimauxModal from "./Animaux_Modal.jsx";
@@ -99,6 +100,24 @@ export default function PrestationWorkflowModal({
     setHasConsultations(
       (updatedPrestation.Consultations_Prestation ?? []).length > 0,
     );
+  }
+
+  async function refreshPrestation() {
+    if (!prestationId) {
+      return;
+    }
+
+    try {
+      const updatedPrestation = await getPrestation(prestationId);
+
+      setPrestation(updatedPrestation);
+
+      setHasConsultations(
+        (updatedPrestation.Consultations_Prestation ?? []).length > 0,
+      );
+    } catch (err) {
+      setError(err.message);
+    }
   }
 
   function handleAddAnimal(proprietaireId) {
@@ -203,16 +222,8 @@ export default function PrestationWorkflowModal({
         open={open}
         title={isEditing ? "Modifier la prestation" : "Nouvelle prestation"}
         onClose={handleClose}
-      >
-        <div className="p-4 md:p-6">
-          {error && (
-            <div className="mb-4">
-              <Alert variant="error">{error}</Alert>
-            </div>
-          )}
-
-          {/* TABS */}
-          <div className="mb-6 flex overflow-x-auto border-b border-blue-200 justify-around">
+        tabs={
+          <div className="relative z-10 flex overflow-x-auto justify-around mt-2">
             <TabButton
               number={1}
               label="Prestation"
@@ -239,6 +250,14 @@ export default function PrestationWorkflowModal({
               disabled={!prestationId || !hasConsultations}
             />
           </div>
+        }
+      >
+        <div className="py-4">
+          {error && (
+            <div className="mb-4">
+              <Alert variant="error">{error}</Alert>
+            </div>
+          )}
 
           {/* PRESTATION */}
           <div hidden={activeTab !== "prestation"}>
@@ -256,7 +275,6 @@ export default function PrestationWorkflowModal({
               <PrestationWorkflowConsultations
                 prestationId={prestationId}
                 prestation={prestation}
-                onNext={() => setActiveTab("paiements")}
                 onError={handleError}
                 onConsultationsChange={(items) => {
                   setHasConsultations(items.length > 0);
@@ -265,6 +283,7 @@ export default function PrestationWorkflowModal({
                 onAddTarif={handleAddTarif}
                 createdAnimal={createdAnimal}
                 createdTarif={createdTarif}
+                onPrestationUpdated={refreshPrestation}
               />
             </div>
           )}
@@ -274,7 +293,9 @@ export default function PrestationWorkflowModal({
             <div hidden={activeTab !== "paiements"}>
               <PrestationWorkflowPaiements
                 prestationId={prestationId}
+                prestation={prestation}
                 onError={handleError}
+                onPrestationUpdated={refreshPrestation}
               />
             </div>
           )}

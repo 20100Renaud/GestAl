@@ -1,4 +1,3 @@
-// frontend/src/components/Modals/PrestationWorkflow_Prestation.jsx
 import { useEffect, useState } from "react";
 
 import Button from "../ui/Button.jsx";
@@ -17,6 +16,8 @@ import {
   Undo2,
   House,
   Warehouse,
+  SavePlus,
+  Save,
 } from "lucide-react";
 
 import { createPrestation, updatePrestation } from "../../api/prestations.js";
@@ -52,13 +53,14 @@ const emptyProprietaireForm = {
 export default function PrestationWorkflowPrestation({
   prestation,
   onCreated,
+  onUpdated,
   onError,
 }) {
   const [proprietaires, setProprietaires] = useState([]);
   const [deplacements, setDeplacements] = useState([]);
 
   const [form, setForm] = useState(emptyForm);
-
+  const [initialForm, setInitialForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
   const [customLieu, setCustomLieu] = useState(false);
@@ -95,7 +97,7 @@ export default function PrestationWorkflowPrestation({
         ? String(prestation.ID_Deplacement)
         : "";
 
-      setForm({
+      const prestationForm = {
         ID_Proprietaire: proprietaireId,
         ID_Lieu: lieuId,
         ID_Deplacement: deplacementId,
@@ -103,18 +105,23 @@ export default function PrestationWorkflowPrestation({
           ? prestation.Date_Prestation.slice(0, 10)
           : "",
         Remise_Prestation: String(prestation.Remise_Prestation ?? "0"),
-      });
+      };
+
+      setForm(prestationForm);
+      setInitialForm(prestationForm);
 
       setCustomLieu(Boolean(lieuId && lieuId !== proprietaireId));
 
       return;
     }
 
-    setForm({
+    const newForm = {
       ...emptyForm,
       Date_Prestation: getToday(),
-    });
+    };
 
+    setForm(newForm);
+    setInitialForm(newForm);
     setCustomLieu(false);
   }, [prestation]);
 
@@ -178,11 +185,7 @@ export default function PrestationWorkflowPrestation({
     }));
   }
 
-  /*
-   * --------------------------------------------------
-   * PROPRIETAIRE
-   * --------------------------------------------------
-   */
+  /* PROPRIETAIRE */
 
   function openProprietaireForm() {
     setProprietaireForm({
@@ -239,12 +242,7 @@ export default function PrestationWorkflowPrestation({
     }
   }
 
-
-  /*
-   * --------------------------------------------------
-   * DEPLACEMENT
-   * --------------------------------------------------
-   */
+  /* DEPLACEMENT */
 
   function openDeplacementForm() {
     setDeplacementForm({
@@ -299,12 +297,7 @@ export default function PrestationWorkflowPrestation({
     }
   }
 
-  /*
-   * --------------------------------------------------
-   * PRESTATION
-   * --------------------------------------------------
-   */
-
+  /* PRESTATION */
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -312,15 +305,21 @@ export default function PrestationWorkflowPrestation({
       setSaving(true);
       onError?.("");
 
-      let result;
-
       if (prestation?.ID_Prestation) {
-        result = await updatePrestation(prestation.ID_Prestation, form);
-      } else {
-        result = await createPrestation(form);
+        const updatedPrestation = await updatePrestation(
+          prestation.ID_Prestation,
+          form,
+        );
+
+        setInitialForm(form);
+        onUpdated?.(updatedPrestation);
+
+        return;
       }
 
-      onCreated(result);
+      const newPrestation = await createPrestation(form);
+
+      onCreated?.(newPrestation);
     } catch (err) {
       onError?.(err.message);
     } finally {
@@ -328,9 +327,12 @@ export default function PrestationWorkflowPrestation({
     }
   }
 
+  // Changes ?
+  const hasChanges = JSON.stringify(form) !== JSON.stringify(initialForm);
+
   return (
     <>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="p-2 md:p-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* PROPRIETAIRE */}
           <div className="relative">
@@ -479,12 +481,25 @@ export default function PrestationWorkflowPrestation({
         </div>
 
         <div className="mt-6 flex justify-end">
-          <Button type="submit" disabled={saving}>
-            {saving
-              ? "Enregistrement..."
-              : prestation?.ID_Prestation
-                ? "Enregistrer les modifications →"
-                : "Créer la prestation →"}
+          <Button
+            type="submit"
+            disabled={
+              saving || (Boolean(prestation?.ID_Prestation) && !hasChanges)
+            }
+          >
+            {saving ? (
+              <p className="mr-2 h-4 w-4 animate-pulse">Enregistrement...</p>
+            ) : prestation?.ID_Prestation ? (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Enregistrer les modifications
+              </>
+            ) : (
+              <>
+                <SavePlus className="mr-2 h-4 w-4" />
+                Créer la prestation
+              </>
+            )}
           </Button>
         </div>
       </form>

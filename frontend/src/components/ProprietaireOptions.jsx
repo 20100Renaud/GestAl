@@ -1,6 +1,6 @@
 export function getProprietaireLabel(proprietaire) {
   if (proprietaire.Etablissement) {
-    return `${proprietaire.Raison_sociale} ${proprietaire.Etablissement}`;
+    return `${proprietaire.Raison_sociale} ${proprietaire.Etablissement}`.trim();
   }
 
   return `${proprietaire.Civilite_Proprietaire || ""} ${
@@ -27,6 +27,17 @@ export default function ProprietaireOptions({ proprietaires = [] }) {
 
   return (
     <>
+    <optgroup label="Professionnels">
+        {etablissements.map((proprietaire) => (
+          <option
+            key={proprietaire.ID_Proprietaire}
+            value={String(proprietaire.ID_Proprietaire)}
+          >
+            {getProprietaireLabel(proprietaire)}
+          </option>
+        ))}
+      </optgroup>
+
       <optgroup label="Particuliers">
         {particuliers.map((proprietaire) => (
           <option
@@ -38,16 +49,7 @@ export default function ProprietaireOptions({ proprietaires = [] }) {
         ))}
       </optgroup>
 
-      <optgroup label="Professionnels">
-        {etablissements.map((proprietaire) => (
-          <option
-            key={proprietaire.ID_Proprietaire}
-            value={String(proprietaire.ID_Proprietaire)}
-          >
-            {getProprietaireLabel(proprietaire)}
-          </option>
-        ))}
-      </optgroup>
+
     </>
   );
 }
