@@ -23,4 +23,3 @@ dist-ssr
 
 .env
 backend/prisma/seed.js
-backend/prisma/seed copy.js
