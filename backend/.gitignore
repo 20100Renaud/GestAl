@@ -1,4 +1,4 @@
 node_modules
 .env
-/prisma/seed.js
+prisma/seed.js
 /src/generated/prisma
