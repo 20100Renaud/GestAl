@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 
-import Button from "../ui/Button.jsx";
 import ConsultationsModal from "./Consultations_Modal.jsx";
 import PrestationHeader from "../PrestationHeader.jsx";
 import PrestationWorkflowZonages from "./PrestationWorkflow_Zonages.jsx";
@@ -34,6 +33,7 @@ export default function PrestationWorkflowConsultations({
   createdAnimal,
   createdTarif,
   onPrestationUpdated,
+  onOpenPrestation,
 }) {
   const [consultations, setConsultations] = useState([]);
   const [animaux, setAnimaux] = useState([]);
@@ -307,6 +307,7 @@ export default function PrestationWorkflowConsultations({
         open={showForm}
         editingId={editingId}
         form={form}
+        prestation={prestation}
         prestations={prestation ? [prestation] : []}
         animaux={filteredAnimaux}
         tarifs={tarifs}
@@ -318,6 +319,7 @@ export default function PrestationWorkflowConsultations({
         onOpenZonages={openZonages}
         onAddAnimal={handleAddAnimal}
         onAddTarif={() => onAddTarif?.()}
+        onOpenPrestation={onOpenPrestation}
       />
 
       <PrestationWorkflowZonages

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import Alert from "../components/ui/Alert.jsx";
 import { formatDate } from "../utils/formatDate";
@@ -44,6 +45,9 @@ const emptyForm = {
 };
 
 export default function Consultations() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [consultations, setConsultations] = useState([]);
   const [animaux, setAnimaux] = useState([]);
   const [proprietaires, setProprietaires] = useState([]);
@@ -51,6 +55,7 @@ export default function Consultations() {
   const [tarifs, setTarifs] = useState([]);
   const [consultationZonages, setConsultationZonages] = useState([]);
   const [prestations, setPrestations] = useState([]);
+  const [selectedPrestation, setSelectedPrestation] = useState(null);
 
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -122,6 +127,32 @@ export default function Consultations() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    const state = location.state;
+
+    if (!state?.openPrestationId) {
+      return;
+    }
+
+    const prestation = prestations.find(
+      (item) => String(item.ID_Prestation) === String(state.openPrestationId),
+    );
+
+    if (!prestation) {
+      return;
+    }
+
+    setWorkflowPrestation(prestation);
+    setInitialConsultationId(state.consultationId ?? null);
+    setError("");
+    setShowWorkflow(true);
+
+    navigate(location.pathname, {
+      replace: true,
+      state: null,
+    });
+  }, [location.state, prestations, navigate, location.pathname]);
+
   function handleChange(event) {
     const { name, value } = event.target;
 
@@ -129,6 +160,21 @@ export default function Consultations() {
       ...current,
       [name]: value,
     }));
+  }
+
+  function openPrestation(prestation) {
+    if (!prestation?.ID_Prestation) {
+      return;
+    }
+
+    navigate("/dashboard/prestations", {
+      state: {
+        openPrestationId: prestation.ID_Prestation,
+        consultationId: editingId,
+      },
+    });
+
+    setShowForm(false);
   }
 
   function handleZonageToggle(zonageId) {
@@ -175,16 +221,17 @@ export default function Consultations() {
     );
   }
 
-  function openCreateForm() {
-    setEditingId(null);
-    setForm(emptyForm);
-    setConsultationZonages([]);
-    setError("");
-    setShowForm(true);
-  }
-
   async function openEditForm(consultation) {
     setEditingId(consultation.ID_Consultation);
+
+    setSelectedPrestation(
+      consultation.Prestation_Consultation ??
+        prestations.find(
+          (item) =>
+            String(item.ID_Prestation) === String(consultation.ID_Prestation),
+        ) ??
+        null,
+    );
 
     setForm({
       ID_Prestation: consultation.ID_Prestation ?? "",
@@ -216,6 +263,7 @@ export default function Consultations() {
 
     setShowForm(false);
     setEditingId(null);
+    setSelectedPrestation(null);
     setForm(emptyForm);
     setConsultationZonages([]);
   }
@@ -274,7 +322,8 @@ export default function Consultations() {
 
   function openAnimalForm() {
     const selectedPrestation = prestations.find(
-      (prestation) => prestation.ID_Prestation === form.ID_Prestation,
+      (prestation) =>
+        String(prestation.ID_Prestation) === String(form.ID_Prestation),
     );
 
     setAnimalForm({
@@ -316,7 +365,7 @@ export default function Consultations() {
 
       const newAnimal = await createAnimal(animalForm);
 
-      setAnimaux(animauxData);
+      setAnimaux((current) => [...current, newAnimal]);
 
       setForm((current) => ({
         ...current,
@@ -366,10 +415,33 @@ export default function Consultations() {
     );
   }
 
+  function getProprietaireName(consultation) {
+    const proprietaire =
+      consultation.Prestation_Consultation?.Proprietaire_Prestation;
+
+    if (!proprietaire) {
+      return "";
+    }
+
+    if (proprietaire.Etablissement) {
+      return `${proprietaire.Raison_sociale ?? ""} ${
+        proprietaire.Etablissement ?? ""
+      }`.trim();
+    }
+
+    return `${proprietaire.Prenom_Proprietaire ?? ""} ${
+      proprietaire.Nom_Proprietaire ?? ""
+    }`.trim();
+  }
+
   function getTarifName(consultation) {
     const tarif =
       consultation.Tarif_Consultation ??
       tarifs.find((item) => item.ID_Tarif === consultation.ID_Tarif);
+
+    if (!tarif) {
+      return "-";
+    }
 
     return `${tarif.Denomination_Tarif} (${tarif.Montant_Tarif} €)`;
   }
@@ -386,18 +458,15 @@ export default function Consultations() {
     }
 
     return consultations.filter((consultation) => {
-      const animalName = getAnimalName(consultation);
-      const proprietaire = getProprietaireLabel(consultation);
-      const tarifName = getTarifName(consultation);
-      const date = formatDate(getPrestationDate(consultation));
-
-      return [
-        animalName,
-        proprietaire,
-        tarifName,
-        date,
+      const searchableFields = [
+        getAnimalName(consultation),
+        getProprietaireName(consultation),
+        getTarifName(consultation),
+        formatDate(getPrestationDate(consultation)),
         consultation.Motif_Consultation,
-      ]
+      ];
+
+      return searchableFields
         .filter(Boolean)
         .some((field) => String(field).toLowerCase().includes(value));
     });
@@ -514,8 +583,6 @@ export default function Consultations() {
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Rechercher une consultation..."
-        createLabel="Nouvelle consultation"
-        onAction={openCreateForm}
         className="mb-6"
       />
 
@@ -566,6 +633,7 @@ export default function Consultations() {
         open={showForm}
         editingId={editingId}
         form={form}
+        prestation={selectedPrestation}
         prestations={prestations}
         animaux={animaux}
         proprietaires={proprietaires}
@@ -579,6 +647,7 @@ export default function Consultations() {
         onDelete={handleDelete}
         onZonageToggle={handleZonageToggle}
         onZonageCommentChange={handleZonageCommentChange}
+        onOpenPrestation={() => openPrestation(selectedPrestation)}
         onAddTarif={openTarifForm}
         onAddAnimal={openAnimalForm}
       />

@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import DeplacementsModal from "../components/Modals/Deplacements_Modal.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import PrestationsModal from "../components/Modals/Prestations_Modal.jsx";
 import ProprietairesModal from "../components/Modals/Proprietaires_Modal.jsx";
 import PrestationWorkflowModal from "../components/Modals/PrestationWorkflow_Modal.jsx";
+import Alert from "../components/ui/Alert.jsx";
+import { House } from "lucide-react";
+import { formatDate } from "../utils/formatDate";
 import {
   getStatutPaiement,
   formatAmountShort,
 } from "../components/PrestationAmountHeader.jsx";
-
-import Alert from "../components/ui/Alert.jsx";
-import { MapPin } from "lucide-react";
-import { formatDate } from "../utils/formatDate";
 
 import Table, {
   Vide,
@@ -41,6 +41,9 @@ const emptyForm = {
 };
 
 export default function Prestations() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [prestations, setPrestations] = useState([]);
   const [proprietaires, setProprietaires] = useState([]);
   const [deplacements, setDeplacements] = useState([]);
@@ -51,8 +54,8 @@ export default function Prestations() {
   const [showForm, setShowForm] = useState(false);
   const [showWorkflow, setShowWorkflow] = useState(false);
   const [workflowPrestation, setWorkflowPrestation] = useState(null);
-
   const [showProprietaireForm, setShowProprietaireForm] = useState(false);
+
   const [proprietaireForm, setProprietaireForm] = useState({
     raisonSociale: "Particulier",
     etablissement: "",
@@ -108,6 +111,32 @@ export default function Prestations() {
   useEffect(() => {
     loadData();
   }, []);
+
+useEffect(() => {
+  const prestationId = location.state?.openPrestationId;
+
+  if (!prestationId || prestations.length === 0) {
+    return;
+  }
+
+  const prestation = prestations.find(
+    (item) => String(item.ID_Prestation) === String(prestationId),
+  );
+
+  if (!prestation) {
+    return;
+  }
+
+  setWorkflowPrestation(prestation);
+  setShowWorkflow(true);
+
+  navigate(location.pathname, {
+    replace: true,
+    state: null,
+  });
+}, [location.state, location.pathname, prestations, navigate]);
+
+
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -341,7 +370,7 @@ export default function Prestations() {
 
     return (
       <span className="flex justify-center ml-4 sm:ml-0">
-        {isSameAsProprietaire ? <MapPin size={16} strokeWidth={1.25} /> : label}
+        {isSameAsProprietaire ? <House size={16} strokeWidth={1.25} /> : label}
       </span>
     );
   }
@@ -547,7 +576,10 @@ export default function Prestations() {
       <PrestationWorkflowModal
         open={showWorkflow}
         prestation={workflowPrestation}
-        onClose={closeWorkflow}
+        onClose={() => {
+          setShowWorkflow(false);
+          setWorkflowPrestation(null);
+        }}
       />
 
       <PrestationsModal

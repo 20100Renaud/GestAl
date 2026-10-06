@@ -23,6 +23,7 @@ export default function PaiementsModal({
   onClose,
   onSubmit,
   onDelete,
+  onOpenPrestation,
 }) {
   function handleChange(event) {
     const { name, value, type, checked } = event.target;
@@ -88,7 +89,7 @@ export default function PaiementsModal({
 
   const paiementComplete = isPaiementComplete(form);
 
-function getToday() {
+  function getToday() {
     const now = new Date();
 
     return new Date(now.getTime() - now.getTimezoneOffset() * 60000)
@@ -105,16 +106,18 @@ function getToday() {
     }
   }, [paiementComplete, form.Date_Encaissement, setForm]);
 
-
-
-
   return (
     <Modal
       open={open}
       title={editingId ? "Modifier le paiement" : "Ajouter un paiement"}
       onClose={onClose}
     >
-      <PrestationHeader prestation={prestation} className=" !border-none" />
+      <PrestationHeader
+        prestation={prestation}
+        className=" !border-none"
+        onClick={onOpenPrestation}
+      />
+
       <form onSubmit={onSubmit} className="p-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Input

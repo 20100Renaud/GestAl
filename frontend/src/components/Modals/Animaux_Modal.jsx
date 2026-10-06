@@ -50,7 +50,6 @@ export default function AnimauxModal({
               required
             >
               <option value="">Sélectionner</option>
-
               <ProprietaireOptions proprietaires={proprietaires} />
             </Select>
 
@@ -65,16 +64,25 @@ export default function AnimauxModal({
               required
             />
 
-            <Input
+            <Select
               id="Genre_Animal"
               label="Genre"
               icon={Cat}
-              type="text"
               name="Genre_Animal"
               value={form.Genre_Animal}
               onChange={onChange}
               required
-            />
+            >
+              <option value="">Sélectionner</option>
+              <option value="Chien">Chien</option>
+              <option value="Chat">Chat</option>
+              <option value="Cheval">Cheval</option>
+              <option value="Mouton">Mouton</option>
+              <option value="Chèvre">Chèvre</option>
+              <option value="Oiseaux">Oiseaux</option>
+              <option value="NAC">NAC</option>
+              <option value="Autre">Autre</option>
+            </Select>
 
             <Input
               id="Race_Animal"

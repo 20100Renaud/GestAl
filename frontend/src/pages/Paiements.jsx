@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import { formatDate } from "../utils/formatDate";
 import PaiementsModal from "../components/Modals/Paiements_Modal.jsx";
@@ -32,6 +33,8 @@ const emptyForm = {
 };
 
 export default function Paiements() {
+  const navigate = useNavigate();
+
   const [paiements, setPaiements] = useState([]);
   const [prestations, setPrestations] = useState([]);
 
@@ -39,7 +42,7 @@ export default function Paiements() {
   const [editingId, setEditingId] = useState(null);
 
   const [showForm, setShowForm] = useState(false);
-
+  const [selectedPrestation, setSelectedPrestation] = useState(null);
   const [search, setSearch] = useState("");
 
   const [loading, setLoading] = useState(true);
@@ -80,9 +83,9 @@ export default function Paiements() {
     return hasMoyen && hasType;
   }
 
-
   function openCreateForm() {
     setEditingId(null);
+    setSelectedPrestation(null);
     setForm(emptyForm);
     setError("");
     setShowForm(true);
@@ -90,6 +93,15 @@ export default function Paiements() {
 
   function openEditForm(paiement) {
     setEditingId(paiement.ID_Paiement);
+
+    setSelectedPrestation(
+      paiement.Prestation_Paiement ??
+        prestations.find(
+          (item) =>
+            String(item.ID_Prestation) === String(paiement.ID_Prestation),
+        ) ??
+        null,
+    );
 
     setForm({
       ID_Prestation: paiement.ID_Prestation ?? "",
@@ -124,7 +136,22 @@ export default function Paiements() {
 
     setShowForm(false);
     setEditingId(null);
+    setSelectedPrestation(null);
     setForm(emptyForm);
+  }
+
+  function openPrestation(prestation) {
+    if (!prestation?.ID_Prestation) {
+      return;
+    }
+
+    navigate("/dashboard/prestations", {
+      state: {
+        openPrestationId: prestation.ID_Prestation,
+      },
+    });
+
+    setShowForm(false);
   }
 
   function getProprietaireLabel(prestation) {
@@ -162,7 +189,6 @@ export default function Paiements() {
 
     return paiements.filter((paiement) => {
       const prestation = paiement.Prestation_Paiement;
-
       const proprietaire = prestation?.Proprietaire_Prestation;
 
       const fields = [
@@ -255,8 +281,6 @@ export default function Paiements() {
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Rechercher un paiement..."
-        createLabel="Nouveau paiement"
-        onAction={openCreateForm}
         className="mb-6"
       />
 
@@ -317,10 +341,12 @@ export default function Paiements() {
         form={form}
         setForm={setForm}
         prestations={prestations}
+        prestation={selectedPrestation}
         saving={saving}
         onClose={closeForm}
         onSubmit={handleSubmit}
         onDelete={handleDelete}
+        onOpenPrestation={() => openPrestation(selectedPrestation)}
       />
     </div>
   );
