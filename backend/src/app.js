@@ -3,6 +3,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 
 import authRoutes from "./routes/auth.routes.js";
+import usersRoutes from "./routes/users.routes.js";
 import proprietairesRoutes from "./routes/proprietaires.routes.js";
 import animauxRoutes from "./routes/animaux.routes.js";
 import prestationsRoutes from "./routes/prestations.routes.js";
@@ -33,6 +34,7 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/users", usersRoutes);
 app.use("/api/proprietaires", proprietairesRoutes);
 app.use("/api/animaux", animauxRoutes);
 app.use("/api/prestations", prestationsRoutes);

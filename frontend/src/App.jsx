@@ -7,6 +7,7 @@ import Consultations from "./pages/Consultations.jsx";
 
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
+import Users from "./pages/Users.jsx";
 import Proprietaires from "./pages/Proprietaires.jsx";
 import Animaux from "./pages/Animaux.jsx";
 import Paiements from "./pages/Paiements.jsx";
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/dashboard/deplacements" element={<Deplacements />} />
 
           <Route path="/dashboard/zonages" element={<Zonages />} />
+          <Route path="/dashboard/users" element={<Users />} />
         </Route>
       </Route>
 

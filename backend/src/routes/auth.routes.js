@@ -1,12 +1,18 @@
 import { Router } from "express";
-
-import { login } from "../controllers/auth.controller.js";
-import { authenticate } from "../middleware/auth.middleware.js";
 import prisma from "../lib/prisma.js";
+import {
+  login,
+  getMyProfile,
+  updateMyProfile,
+} from "../controllers/auth.controller.js";
+import { authenticate } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
 router.post("/login", login);
+
+router.get("/profile", authenticate, getMyProfile);
+router.put("/profile", authenticate, updateMyProfile);
 
 router.get("/me", authenticate, async (req, res) => {
   try {

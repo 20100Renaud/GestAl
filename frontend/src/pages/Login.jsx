@@ -34,7 +34,9 @@ export default function Login() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-blue-900">GestAL</h1>
 
-          <p className="text-sm text-blue-500">Gestion de prestations animales</p>
+          <p className="text-sm text-blue-500">
+            Gestion de consultations animales
+          </p>
         </div>
 
         {/* Login card */}
@@ -42,9 +44,7 @@ export default function Login() {
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-blue-900">Connexion</h2>
 
-            <p className="mt-1 text-sm text-blue-500">
-              Espace professionnel.
-            </p>
+            <p className="mt-1 text-sm text-blue-500">Espace professionnel.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -83,9 +83,7 @@ export default function Login() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-xs text-blue-400">
-          GestAL · Lun-e
-        </p>
+        <p className="mt-6 text-center text-xs text-blue-400 cursor-pointer">CGU · Lun-e · Création de compte</p>
       </div>
     </main>
   );

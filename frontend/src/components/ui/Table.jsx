@@ -1,7 +1,11 @@
-export default function Table({ children }) {
+export default function Table({ children, layout = "auto" }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-blue-200 border-t-6 shadow-sm">
-      <table className="w-full border-collapse bg-white text-sm">
+      <table
+        className={`w-full border-collapse bg-white text-sm ${
+          layout === "fixed" ? "table-fixed" : "table-auto"
+        }`}
+      >
         {children}
       </table>
     </div>

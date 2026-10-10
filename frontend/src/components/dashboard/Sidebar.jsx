@@ -1,5 +1,6 @@
 import NavLink from "../ui/NavLink.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { Settings } from "lucide-react";
 
 const navigation = [
   {
@@ -40,11 +41,19 @@ const navigation = [
     label: "Zonage",
     path: "/dashboard/zonages",
   },
+  {
+    label: "Utilisateurs",
+    path: "/dashboard/users",
+    adminOnly: true,
+  },
 ];
 
-export default function Sidebar({ onNavigate }) {
-  const { logout } = useAuth();
+export default function Sidebar({ onNavigate, onOpenProfile }) {
+  const { user, logout } = useAuth();
 
+  const visibleNavigation = navigation.filter(
+    (item) => !item.adminOnly || user?.role === "ADMIN",
+  );
   async function handleLogout() {
     try {
       await logout();
@@ -54,13 +63,13 @@ export default function Sidebar({ onNavigate }) {
   }
 
   return (
-    <aside className="w-[240px] min-h-full flex flex-col bg-blue-950 text-white sticky top-0 h-screen">
-      <div className="p-5 border-b border-white/40 text-2xl">
+    <aside className="sticky top-0 flex h-screen min-h-full w-[240px] flex-col bg-blue-950 text-white">
+      <div className="border-b border-white/40 p-5 text-2xl">
         <h1>GestAL</h1>
       </div>
 
       <nav className="flex flex-col p-4">
-        {navigation.map((item, index) => (
+        {visibleNavigation.map((item, index) => (
           <div key={item.path}>
             <NavLink
               key={item.path}
@@ -71,14 +80,38 @@ export default function Sidebar({ onNavigate }) {
               {item.label}
             </NavLink>
 
-            {item.separator && index < navigation.length - 1 && (
-              <div className="border-b border-white/40 my-6" />
+            {item.separator && index < visibleNavigation.length - 1 && (
+              <div className="border-b border-white/40 my-2 md:my-6" />
             )}
           </div>
         ))}
       </nav>
 
       <div className="mt-auto p-4 border-t border-white/10">
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold">
+              {user?.firstName} {user?.lastName}
+            </p>
+
+            {user?.role === "CLIENT" && user?.Pratique && (
+              <p className="truncate text-xs text-blue-200">{user.Pratique}</p>
+            )}
+          </div>
+
+          {user?.role === "CLIENT" && (
+            <button
+              type="button"
+              onClick={onOpenProfile}
+              className="shrink-0 rounded-lg p-2 transition-colors hover:bg-white/10 cursor-pointer"
+              aria-label="Modifier mon profil"
+              title="Modifier mon profil"
+            >
+              <Settings size={20} />
+            </button>
+          )}
+        </div>
+
         <button
           type="button"
           onClick={async () => {

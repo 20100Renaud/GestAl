@@ -466,7 +466,12 @@ useEffect(() => {
       {error && <Alert variant="error">{error}</Alert>}
 
       <PageHeader
-        title="Prestations"
+        title={
+          <>
+            <span className="hidden md:inline">Gestion des Prestations</span>
+            <span className="md:hidden">Prestations</span>
+          </>
+        }
         search={search}
         onSearchChange={setSearch}
         searchPlaceholder="Rechercher une prestation..."

@@ -1,5 +1,4 @@
-import { useState } from "react";
-
+import { useEffect, useState } from "react";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import Button from "../components/ui/Button.jsx";
 import { CardDashboard, DashboardCards } from "../components/ui/Card.jsx";
@@ -11,12 +10,13 @@ export default function Dashboard() {
 
   return (
     <div>
-      <PageHeader title="Tableau de bord"/>
+      <PageHeader title="Tableau de bord" />
 
-      <div className="mb-6 flex justify-center">
+      <div className="mb-6 flex justify-around">
         <Button onClick={() => setShowWorkflow(true)}>
           Nouvelle prestation
         </Button>
+
       </div>
 
       <DashboardCards>

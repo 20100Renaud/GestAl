@@ -10,4 +10,3 @@ export function normalizeCamel(value) {
         return separator + letter.toUpperCase();
       });
   }
-
