@@ -86,9 +86,9 @@ CREATE TABLE "T_Zonages" (
     "ID_Zonage" TEXT NOT NULL,
     "Pratique_Zonage" TEXT NOT NULL,
     "Nom_Zonage" TEXT NOT NULL,
-    "Position_Zonage" TEXT,
-    "Orientation_Zonage" TEXT,
-    "Technique_Zonage" TEXT,
+    "Position_Zonage" TEXT NOT NULL DEFAULT '',
+    "Orientation_Zonage" TEXT NOT NULL DEFAULT '',
+    "Technique_Zonage" TEXT NOT NULL,
 
     CONSTRAINT "T_Zonages_pkey" PRIMARY KEY ("ID_Zonage")
 );
@@ -121,6 +121,7 @@ CREATE TABLE "T_Paiements" (
 -- CreateTable
 CREATE TABLE "T_Tarifs" (
     "ID_Tarif" TEXT NOT NULL,
+    "ID_User" TEXT NOT NULL,
     "Annee_Tarif" INTEGER NOT NULL,
     "Denomination_Tarif" TEXT NOT NULL,
     "Montant_Tarif" DECIMAL(65,30) NOT NULL DEFAULT 0,
@@ -131,6 +132,7 @@ CREATE TABLE "T_Tarifs" (
 -- CreateTable
 CREATE TABLE "T_Deplacements" (
     "ID_Deplacement" TEXT NOT NULL,
+    "ID_User" TEXT NOT NULL,
     "Annee_Deplacement" INTEGER NOT NULL,
     "Denomination_Deplacement" TEXT NOT NULL,
     "Montant_Deplacement" DECIMAL(65,30) NOT NULL DEFAULT 0,
@@ -142,7 +144,16 @@ CREATE TABLE "T_Deplacements" (
 CREATE UNIQUE INDEX "T_Users_Email_User_key" ON "T_Users"("Email_User");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "T_Zonages_Pratique_Zonage_Nom_Zonage_Position_Zonage_Orient_key" ON "T_Zonages"("Pratique_Zonage", "Nom_Zonage", "Position_Zonage", "Orientation_Zonage", "Technique_Zonage");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "T_Consultation_Zonages_ID_Consultation_ID_Zonage_key" ON "T_Consultation_Zonages"("ID_Consultation", "ID_Zonage");
+
+-- CreateIndex
+CREATE INDEX "T_Tarifs_ID_User_idx" ON "T_Tarifs"("ID_User");
+
+-- CreateIndex
+CREATE INDEX "T_Deplacements_ID_User_idx" ON "T_Deplacements"("ID_User");
 
 -- AddForeignKey
 ALTER TABLE "T_Proprietaires" ADD CONSTRAINT "T_Proprietaires_ID_User_fkey" FOREIGN KEY ("ID_User") REFERENCES "T_Users"("ID_User") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -176,3 +187,9 @@ ALTER TABLE "T_Consultation_Zonages" ADD CONSTRAINT "T_Consultation_Zonages_ID_Z
 
 -- AddForeignKey
 ALTER TABLE "T_Paiements" ADD CONSTRAINT "T_Paiements_ID_Prestation_fkey" FOREIGN KEY ("ID_Prestation") REFERENCES "T_Prestations"("ID_Prestation") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "T_Tarifs" ADD CONSTRAINT "T_Tarifs_ID_User_fkey" FOREIGN KEY ("ID_User") REFERENCES "T_Users"("ID_User") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "T_Deplacements" ADD CONSTRAINT "T_Deplacements_ID_User_fkey" FOREIGN KEY ("ID_User") REFERENCES "T_Users"("ID_User") ON DELETE CASCADE ON UPDATE CASCADE;

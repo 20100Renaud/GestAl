@@ -28,6 +28,8 @@ model T_Users {
   Tel_User           String?
 
   Proprietaires_User T_Proprietaires[]
+  Tarifs_User        T_Tarifs[]
+  Deplacements_User  T_Deplacements[]
 }
 
 model T_Proprietaires {
@@ -113,14 +115,16 @@ model T_Consultations {
 }
 
 model T_Zonages {
-  ID_Zonage          String  @id @default(uuid())
+  ID_Zonage          String @id @default(uuid())
   Pratique_Zonage    String
   Nom_Zonage         String
-  Position_Zonage    String?
-  Orientation_Zonage String?
-  Technique_Zonage   String?
+  Position_Zonage    String @default("")
+  Orientation_Zonage String @default("")
+  Technique_Zonage   String
 
   Consultations_Zonage T_Consultation_Zonages[]
+
+  @@unique([Pratique_Zonage, Nom_Zonage, Position_Zonage, Orientation_Zonage, Technique_Zonage])
 }
 
 model T_Consultation_Zonages {
@@ -155,18 +159,28 @@ model T_Paiements {
 
 model T_Tarifs {
   ID_Tarif           String  @id @default(uuid())
+  ID_User            String
   Annee_Tarif        Int
   Denomination_Tarif String
   Montant_Tarif      Decimal @default(0)
 
+  User_Tarif T_Users @relation(fields: [ID_User], references: [ID_User], onDelete: Cascade)
+
   Consultations_Tarif T_Consultations[]
+
+  @@index([ID_User])
 }
 
 model T_Deplacements {
   ID_Deplacement           String  @id @default(uuid())
+  ID_User                  String
   Annee_Deplacement        Int
   Denomination_Deplacement String
   Montant_Deplacement      Decimal @default(0)
 
+  User_Deplacement T_Users @relation(fields: [ID_User], references: [ID_User], onDelete: Cascade)
+
   Prestations_Deplacement T_Prestations[]
+
+  @@index([ID_User])
 }
