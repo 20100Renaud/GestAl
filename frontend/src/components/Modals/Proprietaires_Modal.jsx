@@ -106,18 +106,16 @@ export default function ProprietairesModal({
             required
           />
 
-          <div className="md:col-span-2">
-            <Input
-              id="adresse"
-              label="Adresse"
-              icon={MapPin}
-              type="text"
-              name="adresse"
-              value={form.adresse}
-              onChange={onChange}
-              required
-            />
-          </div>
+          <Input
+            id="adresse"
+            label="Adresse"
+            icon={MapPin}
+            type="text"
+            name="adresse"
+            value={form.adresse}
+            onChange={onChange}
+            required
+          />
 
           <Input
             id="ville"

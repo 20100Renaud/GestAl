@@ -20,9 +20,20 @@ const prestationInclude = {
   Paiements_Prestation: true,
 };
 
+function prestationOwnerWhere(userId) {
+  return {
+    Proprietaire_Prestation: {
+      is: {
+        ID_User: userId,
+      },
+    },
+  };
+}
+
 export async function getPrestations(req, res) {
   try {
     const prestations = await prisma.t_Prestations.findMany({
+      where: prestationOwnerWhere(req.user.userId),
       orderBy: {
         Date_Prestation: "desc",
       },
@@ -43,9 +54,10 @@ export async function getPrestation(req, res) {
   try {
     const { id } = req.params;
 
-    const prestation = await prisma.t_Prestations.findUnique({
+    const prestation = await prisma.t_Prestations.findFirst({
       where: {
         ID_Prestation: id,
+        ...prestationOwnerWhere(req.user.userId),
       },
       include: prestationInclude,
     });
@@ -143,6 +155,15 @@ export async function createPrestation(req, res) {
       });
     }
 
+    if (
+      proprietaire.ID_User !== req.user.userId ||
+      lieu.ID_User !== req.user.userId
+    ) {
+      return res.status(403).json({
+        error: "Access denied to this proprietor or location",
+      });
+    }
+
     let datePrestation;
 
     if (Date_Prestation) {
@@ -190,9 +211,10 @@ export async function updatePrestation(req, res) {
   try {
     const { id } = req.params;
 
-    const existingPrestation = await prisma.t_Prestations.findUnique({
+    const existingPrestation = await prisma.t_Prestations.findFirst({
       where: {
         ID_Prestation: id,
+        ...prestationOwnerWhere(req.user.userId),
       },
       include: {
         Consultations_Prestation: true,
@@ -240,6 +262,15 @@ export async function updatePrestation(req, res) {
       });
     }
 
+    if (
+      proprietaire.ID_User !== req.user.userId ||
+      lieu.ID_User !== req.user.userId
+    ) {
+      return res.status(403).json({
+        error: "Access denied to this proprietor or location",
+      });
+    }
+    
     const remise =
       Remise_Prestation === undefined || Remise_Prestation === ""
         ? undefined
@@ -349,9 +380,10 @@ export async function deletePrestation(req, res) {
   try {
     const { id } = req.params;
 
-    const existingPrestation = await prisma.t_Prestations.findUnique({
+    const existingPrestation = await prisma.t_Prestations.findFirst({
       where: {
         ID_Prestation: id,
+        ...prestationOwnerWhere(req.user.userId),
       },
     });
 

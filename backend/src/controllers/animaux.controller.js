@@ -1,8 +1,19 @@
 import prisma from "../lib/prisma.js";
 
+function animalOwnerWhere(userId) {
+  return {
+    Proprietaire_Animal: {
+      is: {
+        ID_User: userId,
+      },
+    },
+  };
+}
+
 export async function getAnimals(req, res) {
   try {
     const animals = await prisma.t_Animaux.findMany({
+      where: animalOwnerWhere(req.user.userId),
       include: {
         Proprietaire_Animal: true,
       },
@@ -25,9 +36,10 @@ export async function getAnimal(req, res) {
   try {
     const { id } = req.params;
 
-    const animal = await prisma.t_Animaux.findUnique({
+    const animal = await prisma.t_Animaux.findFirst({
       where: {
         ID_Animal: id,
+        ...animalOwnerWhere(req.user.userId),
       },
       include: {
         Proprietaire_Animal: true,
@@ -85,9 +97,10 @@ export async function createAnimal(req, res) {
       });
     }
 
-    const proprietaire = await prisma.t_Proprietaires.findUnique({
+    const proprietaire = await prisma.t_Proprietaires.findFirst({
       where: {
         ID_Proprietaire,
+        ID_User: req.user.userId,
       },
     });
 
@@ -126,11 +139,6 @@ export async function createAnimal(req, res) {
       },
     });
 
-    if (animal.ID_Proprietaire !== ID_Proprietaire) {
-      return res.status(400).json({
-        error: "L'animal ne appartient pas au propriétaire sélectionné",
-      });
-    }
     return res.status(201).json(animal);
   } catch (error) {
     console.error("Create animal error:", error);
@@ -145,9 +153,10 @@ export async function updateAnimal(req, res) {
   try {
     const { id } = req.params;
 
-    const existingAnimal = await prisma.t_Animaux.findUnique({
+    const existingAnimal = await prisma.t_Animaux.findFirst({
       where: {
         ID_Animal: id,
+        ...animalOwnerWhere(req.user.userId),
       },
     });
 
@@ -184,9 +193,10 @@ export async function updateAnimal(req, res) {
       });
     }
 
-    const proprietaire = await prisma.t_Proprietaires.findUnique({
+    const proprietaire = await prisma.t_Proprietaires.findFirst({
       where: {
         ID_Proprietaire,
+        ID_User: req.user.userId,
       },
     });
 
@@ -243,9 +253,10 @@ export async function deleteAnimal(req, res) {
   try {
     const { id } = req.params;
 
-    const existingAnimal = await prisma.t_Animaux.findUnique({
+    const existingAnimal = await prisma.t_Animaux.findFirst({
       where: {
         ID_Animal: id,
+        ...animalOwnerWhere(req.user.userId),
       },
     });
 

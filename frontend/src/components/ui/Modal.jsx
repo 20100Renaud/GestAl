@@ -1,5 +1,7 @@
 import { X } from "lucide-react";
 import Button from "./Button";
+
+
 export default function Modal({ open, title, onClose, children }) {
   if (!open) {
     return null;

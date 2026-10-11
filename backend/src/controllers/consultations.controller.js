@@ -26,9 +26,24 @@ const consultationInclude = {
   },
 };
 
+function consultationOwnerWhere(userId) {
+  return {
+    Prestation_Consultation: {
+      is: {
+        Proprietaire_Prestation: {
+          is: {
+            ID_User: userId,
+          },
+        },
+      },
+    },
+  };
+}
+
 export async function getConsultations(req, res) {
   try {
     const consultations = await prisma.t_Consultations.findMany({
+      where: consultationOwnerWhere(req.user.userId),
       orderBy: {
         Prestation_Consultation: {
           Date_Prestation: "desc",
@@ -51,9 +66,10 @@ export async function getConsultation(req, res) {
   try {
     const { id } = req.params;
 
-    const consultation = await prisma.t_Consultations.findUnique({
+    const consultation = await prisma.t_Consultations.findFirst({
       where: {
         ID_Consultation: id,
+        ...consultationOwnerWhere(req.user.userId),
       },
       include: consultationInclude,
     });
@@ -114,25 +130,17 @@ export async function createConsultation(req, res) {
       });
     }
 
-    const [prestation, animal, tarif] = await Promise.all([
-      prisma.t_Prestations.findUnique({
-        where: {
-          ID_Prestation,
+    // Verify that the prestation belongs to the authenticated user.
+    const prestation = await prisma.t_Prestations.findFirst({
+      where: {
+        ID_Prestation,
+        Proprietaire_Prestation: {
+          is: {
+            ID_User: req.user.userId,
+          },
         },
-      }),
-
-      prisma.t_Animaux.findUnique({
-        where: {
-          ID_Animal,
-        },
-      }),
-
-      prisma.t_Tarifs.findUnique({
-        where: {
-          ID_Tarif,
-        },
-      }),
-    ]);
+      },
+    });
 
     if (!prestation) {
       return res.status(404).json({
@@ -140,11 +148,30 @@ export async function createConsultation(req, res) {
       });
     }
 
+    // Verify that the animal belongs to the authenticated user.
+    const animal = await prisma.t_Animaux.findFirst({
+      where: {
+        ID_Animal,
+        Proprietaire_Animal: {
+          is: {
+            ID_User: req.user.userId,
+          },
+        },
+      },
+    });
+
     if (!animal) {
       return res.status(404).json({
         error: "Animal non trouvé",
       });
     }
+
+    // Verify that the tariff exists.
+    const tarif = await prisma.t_Tarifs.findUnique({
+      where: {
+        ID_Tarif,
+      },
+    });
 
     if (!tarif) {
       return res.status(404).json({
@@ -152,10 +179,11 @@ export async function createConsultation(req, res) {
       });
     }
 
+    // The animal and prestation must have the same owner.
     if (animal.ID_Proprietaire !== prestation.ID_Proprietaire) {
       return res.status(400).json({
         error:
-          "L'animal ne peut pas être associé à cette prestation car il n'appartient pas au propriétaire selectionné",
+          "L'animal ne peut pas être associé à cette prestation car il n'appartient pas au propriétaire sélectionné",
       });
     }
 
@@ -192,9 +220,10 @@ export async function updateConsultation(req, res) {
   try {
     const { id } = req.params;
 
-    const existingConsultation = await prisma.t_Consultations.findUnique({
+    const existingConsultation = await prisma.t_Consultations.findFirst({
       where: {
         ID_Consultation: id,
+        ...consultationOwnerWhere(req.user.userId),
       },
     });
 
@@ -284,9 +313,14 @@ export async function updateConsultation(req, res) {
     const finalAnimal = ID_Animal ?? existingConsultation.ID_Animal;
 
     // Check prestation
-    const prestation = await prisma.t_Prestations.findUnique({
+    const prestation = await prisma.t_Prestations.findFirst({
       where: {
         ID_Prestation: finalPrestation,
+        Proprietaire_Prestation: {
+          is: {
+            ID_User: req.user.userId,
+          },
+        },
       },
     });
 
@@ -297,9 +331,14 @@ export async function updateConsultation(req, res) {
     }
 
     // Check animal
-    const animal = await prisma.t_Animaux.findUnique({
+    const animal = await prisma.t_Animaux.findFirst({
       where: {
         ID_Animal: finalAnimal,
+        Proprietaire_Animal: {
+          is: {
+            ID_User: req.user.userId,
+          },
+        },
       },
     });
 
@@ -405,9 +444,10 @@ export async function deleteConsultation(req, res) {
   try {
     const { id } = req.params;
 
-    const existingConsultation = await prisma.t_Consultations.findUnique({
+    const existingConsultation = await prisma.t_Consultations.findFirst({
       where: {
         ID_Consultation: id,
+        ...consultationOwnerWhere(req.user.userId),
       },
     });
 
@@ -430,7 +470,6 @@ export async function deleteConsultation(req, res) {
     return res.json({
       message: "Consultation supprimée",
     });
-
   } catch (error) {
     console.error("Delete consultation error:", error);
 

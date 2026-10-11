@@ -78,16 +78,19 @@ function normalizeData(body) {
   };
 }
 
+function proprietaireOwnerWhere(userId) {
+  return {
+    ID_User: userId,
+  };
+}
+
 export async function getProprietaires(req, res) {
   try {
     const proprietaires = await prisma.t_Proprietaires.findMany({
+      where: proprietaireOwnerWhere(req.user.userId),
       orderBy: [
-        {
-          Nom_Proprietaire: "asc",
-        },
-        {
-          Prenom_Proprietaire: "asc",
-        },
+        { Nom_Proprietaire: "asc" },
+        { Prenom_Proprietaire: "asc" }
       ],
     });
 
@@ -107,11 +110,12 @@ export async function getProprietaire(req, res) {
   try {
     const { id } = req.params;
 
-    const proprietaire = await prisma.t_Proprietaires.findUnique({
+    const proprietaire = await prisma.t_Proprietaires.findFirst({
       where: {
         ID_Proprietaire: id,
+        ...proprietaireOwnerWhere(req.user.userId),
       },
-    });
+    });;
 
     if (!proprietaire) {
       return res.status(404).json({
@@ -179,9 +183,10 @@ export async function updateProprietaire(req, res) {
       });
     }
 
-    const existing = await prisma.t_Proprietaires.findUnique({
+    const existing = await prisma.t_Proprietaires.findFirst({
       where: {
         ID_Proprietaire: id,
+        ...proprietaireOwnerWhere(req.user.userId),
       },
     });
 
@@ -216,9 +221,10 @@ export async function deleteProprietaire(req, res) {
   try {
     const { id } = req.params;
 
-    const existing = await prisma.t_Proprietaires.findUnique({
+    const existing = await prisma.t_Proprietaires.findFirst({
       where: {
         ID_Proprietaire: id,
+        ...proprietaireOwnerWhere(req.user.userId),
       },
     });
 

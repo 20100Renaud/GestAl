@@ -9,10 +9,11 @@ import {
 } from "../controllers/animaux.controller.js";
 
 import { authenticate } from "../middleware/auth.middleware.js";
+import { requireClient } from "../middleware/client.middleware.js";
 
 const router = Router();
 
-router.use(authenticate);
+router.use(authenticate, requireClient);
 
 router.get("/", getAnimals);
 router.get("/:id", getAnimal);

@@ -20,6 +20,20 @@ const paiementInclude = {
   },
 };
 
+function paiementOwnerWhere(userId) {
+  return {
+    Prestation_Paiement: {
+      is: {
+        Proprietaire_Prestation: {
+          is: {
+            ID_User: userId,
+          },
+        },
+      },
+    },
+  };
+}
+
 function parseDate(value, fieldName, { nullable = false } = {}) {
   if (value === undefined) {
     return undefined;
@@ -99,6 +113,7 @@ function parseAmount(value) {
 export async function getPaiements(req, res) {
   try {
     const paiements = await prisma.t_Paiements.findMany({
+      where: paiementOwnerWhere(req.user.userId),
       orderBy: {
         Date_Paiement: "desc",
       },
@@ -119,9 +134,10 @@ export async function getPaiement(req, res) {
   try {
     const { id } = req.params;
 
-    const paiement = await prisma.t_Paiements.findUnique({
+    const paiement = await prisma.t_Paiements.findFirst({
       where: {
         ID_Paiement: id,
+        ...paiementOwnerWhere(req.user.userId),
       },
       include: paiementInclude,
     });
@@ -160,9 +176,14 @@ export async function createPaiement(req, res) {
       });
     }
 
-    const prestation = await prisma.t_Prestations.findUnique({
+    const prestation = await prisma.t_Prestations.findFirst({
       where: {
         ID_Prestation,
+        Proprietaire_Prestation: {
+          is: {
+            ID_User: req.user.userId,
+          },
+        },
       },
     });
 
@@ -251,9 +272,10 @@ export async function updatePaiement(req, res) {
   try {
     const { id } = req.params;
 
-    const existingPaiement = await prisma.t_Paiements.findUnique({
+    const existingPaiement = await prisma.t_Paiements.findFirst({
       where: {
         ID_Paiement: id,
+        ...paiementOwnerWhere(req.user.userId),
       },
     });
 
@@ -280,9 +302,14 @@ export async function updatePaiement(req, res) {
       });
     }
 
-    const prestation = await prisma.t_Prestations.findUnique({
+    const prestation = await prisma.t_Prestations.findFirst({
       where: {
         ID_Prestation,
+        Proprietaire_Prestation: {
+          is: {
+            ID_User: req.user.userId,
+          },
+        },
       },
     });
 
@@ -390,9 +417,10 @@ export async function deletePaiement(req, res) {
   try {
     const { id } = req.params;
 
-    const existingPaiement = await prisma.t_Paiements.findUnique({
+    const existingPaiement = await prisma.t_Paiements.findFirst({
       where: {
         ID_Paiement: id,
+        ...paiementOwnerWhere(req.user.userId),
       },
     });
 

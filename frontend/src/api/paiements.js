@@ -60,9 +60,5 @@ export async function deletePaiement(id) {
     credentials: "include",
   });
 
-  if (!response.ok) {
-    return handleResponse(response);
-  }
-
-  return null;
+  return handleResponse(response);
 }

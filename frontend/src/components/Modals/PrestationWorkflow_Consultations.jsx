@@ -105,7 +105,7 @@ export default function PrestationWorkflowConsultations({
       ]);
 
       const filteredConsultations = consultationsData.filter(
-        (item) => item.ID_Prestation === prestationId,
+        (item) => String(item.ID_Prestation) === String(prestationId),
       );
 
       setConsultations(filteredConsultations);

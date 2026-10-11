@@ -86,9 +86,9 @@ export default function Prestations() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  async function loadData() {
+  async function loadData({ showLoading = true } = {}) {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       setError("");
 
       const [prestationsData, proprietairesData, deplacementsData] =
@@ -104,7 +104,7 @@ export default function Prestations() {
     } catch (err) {
       setError(err.message);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }
 
@@ -164,7 +164,7 @@ useEffect(() => {
     setWorkflowPrestation(null);
     setError("");
 
-    await loadData();
+    await loadData({ showLoading: false });
   }
 
   function closeForm() {
@@ -181,7 +181,8 @@ useEffect(() => {
     const proprietaire =
       prestation.Proprietaire_Prestation ??
       proprietaires.find(
-        (item) => item.ID_Proprietaire === prestation.ID_Proprietaire,
+        (item) =>
+          String(item.ID_Proprietaire) === String(prestation.ID_Proprietaire),
       );
 
     if (!proprietaire) {
@@ -320,7 +321,8 @@ useEffect(() => {
     const proprietaire =
       prestation.Proprietaire_Prestation ??
       proprietaires.find(
-        (item) => item.ID_Proprietaire === prestation.ID_Proprietaire,
+        (item) =>
+          String(item.ID_Proprietaire) === String(prestation.ID_Proprietaire),
       );
 
     if (!proprietaire) {
@@ -581,10 +583,7 @@ useEffect(() => {
       <PrestationWorkflowModal
         open={showWorkflow}
         prestation={workflowPrestation}
-        onClose={() => {
-          setShowWorkflow(false);
-          setWorkflowPrestation(null);
-        }}
+        onClose={closeWorkflow}
       />
 
       <PrestationsModal

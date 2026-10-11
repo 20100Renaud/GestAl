@@ -61,7 +61,9 @@ export default function PrestationWorkflowPaiements({
       const data = await getPaiements();
 
       setPaiements(
-        data.filter((paiement) => paiement.ID_Prestation === prestationId),
+        data.filter(
+          (paiement) => String(paiement.ID_Prestation) === String(prestationId),
+        ),
       );
     } catch (err) {
       onError?.(err.message);
@@ -149,7 +151,9 @@ export default function PrestationWorkflowPaiements({
       await deletePaiement(id);
 
       if (editingId === id) {
-        closeForm();
+        setShowForm(false);
+        setEditingId(null);
+        setForm(emptyForm);
       }
 
       await loadData();
