@@ -206,7 +206,7 @@ export default function DashboardLayout() {
       </div>
 
       {notification && (
-        <div className="fixed bottom-0 left-0 right-0 z-[70] bg-gray-900/10 px-4 py-5 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] md:left-[240px]">
+        <div className="fixed bottom-0 left-0 right-0 z-[70] bg-blue-100 px-4 py-5 shadow-[0_-8px_24px_rgba(0,0,0,0.08)] md:left-[240px]">
           <div className="mx-auto w-[min(90vw,600px)]">
             <Alert variant={notification.variant}>{notification.message}</Alert>
           </div>

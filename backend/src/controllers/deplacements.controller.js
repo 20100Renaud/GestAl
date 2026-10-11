@@ -3,13 +3,12 @@ import prisma from "../lib/prisma.js";
 export async function getDeplacements(req, res) {
   try {
     const deplacements = await prisma.t_Deplacements.findMany({
+      where: {
+        ID_User: req.user.userId,
+      },
       orderBy: [
-        {
-          Annee_Deplacement: "desc",
-        },
-        {
-          Denomination_Deplacement: "asc",
-        },
+        { Annee_Deplacement: "desc" },
+        { Denomination_Deplacement: "asc" },
       ],
     });
 
@@ -27,11 +26,10 @@ export async function getDeplacements(req, res) {
 
 export async function getDeplacement(req, res) {
   try {
-    const { id } = req.params;
-
-    const deplacement = await prisma.t_Deplacements.findUnique({
+    const deplacement = await prisma.t_Deplacements.findFirst({
       where: {
-        ID_Deplacement: id,
+        ID_Deplacement: req.params.id,
+        ID_User: req.user.userId,
       },
     });
 
@@ -83,11 +81,7 @@ export async function createDeplacement(req, res) {
         ? new Date().getFullYear()
         : Number(Annee_Deplacement);
 
-    if (
-      !Number.isInteger(annee) ||
-      annee < 2000 ||
-      annee > 2100
-    ) {
+    if (!Number.isInteger(annee) || annee < 2000 || annee > 2100) {
       return res.status(400).json({
         error: "Année invalide",
       });
@@ -95,6 +89,7 @@ export async function createDeplacement(req, res) {
 
     const deplacement = await prisma.t_Deplacements.create({
       data: {
+        ID_User: req.user.userId,
         Annee_Deplacement: annee,
         Denomination_Deplacement: Denomination_Deplacement.trim(),
         Montant_Deplacement: montant,
@@ -119,8 +114,9 @@ export async function updateDeplacement(req, res) {
       req.body;
 
     if (
-      typeof Annee_Deplacement !== "string" ||
-      !Annee_Deplacement.trim() ||
+      Annee_Deplacement === undefined ||
+      Annee_Deplacement === null ||
+      String(Annee_Deplacement).trim() === "" ||
       typeof Denomination_Deplacement !== "string" ||
       !Denomination_Deplacement.trim()
     ) {
@@ -134,15 +130,24 @@ export async function updateDeplacement(req, res) {
         ? 0
         : Number(Montant_Deplacement);
 
+    const annee = Number(Annee_Deplacement);
+
+    if (!Number.isInteger(annee) || annee < 2000 || annee > 2100) {
+      return res.status(400).json({
+        error: "Année invalide",
+      });
+    }
+
     if (!Number.isFinite(montant) || montant < 0) {
       return res.status(400).json({
         error: "Invalid amount",
       });
     }
 
-    const existingDeplacement = await prisma.t_Deplacements.findUnique({
+    const existingDeplacement = await prisma.t_Deplacements.findFirst({
       where: {
         ID_Deplacement: id,
+        ID_User: req.user.userId,
       },
     });
 
@@ -157,7 +162,7 @@ export async function updateDeplacement(req, res) {
         ID_Deplacement: id,
       },
       data: {
-        Annee_Deplacement: Number(Annee_Deplacement),
+        Annee_Deplacement: annee,
         Denomination_Deplacement: Denomination_Deplacement.trim(),
         Montant_Deplacement: montant,
       },
@@ -180,6 +185,7 @@ export async function deleteDeplacement(req, res) {
     const existingDeplacement = await prisma.t_Deplacements.findUnique({
       where: {
         ID_Deplacement: id,
+        ID_User: req.user.userId,
       },
     });
 

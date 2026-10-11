@@ -54,19 +54,6 @@ export default function UsersModal({
             <option value="Mme.">Mme.</option>
           </Select>
 
-          {/* PRENOM */}
-          <Input
-            id="Prenom_User"
-            name="Prenom_User"
-            label="Prénom"
-            icon={UserRound}
-            value={form.Prenom_User}
-            onChange={onChange}
-            onBlur={onBlur}
-            required
-            disabled={saving}
-          />
-
           {/* NOM */}
           <Input
             id="Nom_User"
@@ -74,6 +61,19 @@ export default function UsersModal({
             label="Nom"
             icon={UserRound}
             value={form.Nom_User}
+            onChange={onChange}
+            onBlur={onBlur}
+            required
+            disabled={saving}
+          />
+
+          {/* PRENOM */}
+          <Input
+            id="Prenom_User"
+            name="Prenom_User"
+            label="Prénom"
+            icon={UserRound}
+            value={form.Prenom_User}
             onChange={onChange}
             onBlur={onBlur}
             required
@@ -152,28 +152,27 @@ export default function UsersModal({
 
           {/* PASSWORD */}
 
-            <Input
-              id="password"
-              name="password"
-              label={
-                editingId ? "Nouveau mot de passe (facultatif)" : "Mot de passe"
-              }
-              icon={LockKeyhole}
-              type="password"
-              value={form.password}
-              onChange={onChange}
-              required={!editingId}
-              disabled={saving}
-              autoComplete="new-password"
-              minLength={6}
-            />
+          <Input
+            id="password"
+            name="password"
+            label={
+              editingId ? "Nouveau mot de passe (facultatif)" : "Mot de passe"
+            }
+            icon={LockKeyhole}
+            type="password"
+            value={form.password}
+            onChange={onChange}
+            required={!editingId}
+            disabled={saving}
+            autoComplete="new-password"
+            minLength={6}
+          />
 
-            {editingId && (
-              <p className="mt-1 text-xs text-blue-700">
-                Laissez ce champ vide pour conserver le mot de passe actuel.
-              </p>
-            )}
-
+          {editingId && (
+            <p className="mt-1 text-xs text-blue-700">
+              Laissez ce champ vide pour conserver le mot de passe actuel.
+            </p>
+          )}
         </div>
 
         {/* ACTIONS */}

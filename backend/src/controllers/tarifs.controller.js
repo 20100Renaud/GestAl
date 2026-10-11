@@ -3,13 +3,12 @@ import prisma from "../lib/prisma.js";
 export async function getTarifs(req, res) {
   try {
     const tarifs = await prisma.t_Tarifs.findMany({
+      where: {
+        ID_User: req.user.userId,
+      },
       orderBy: [
-        {
-          Annee_Tarif: "desc",
-        },
-        {
-          Denomination_Tarif: "asc",
-        },
+        { Annee_Tarif: "desc" },
+        { Denomination_Tarif: "asc" }
       ],
     });
 
@@ -27,11 +26,10 @@ export async function getTarifs(req, res) {
 
 export async function getTarif(req, res) {
   try {
-    const { id } = req.params;
-
-    const tarif = await prisma.t_Tarifs.findUnique({
+    const tarif = await prisma.t_Tarifs.findFirst({
       where: {
-        ID_Tarif: id,
+        ID_Tarif: req.params.id,
+        ID_User: req.user.userId,
       },
     });
 
@@ -66,6 +64,14 @@ export async function createTarif(req, res) {
       });
     }
 
+    const annee = Number(Annee_Tarif);
+
+    if (!Number.isInteger(annee) || annee < 2000 || annee > 2100) {
+      return res.status(400).json({
+        error: "Année invalide",
+      });
+    }
+
     const montant =
       Montant_Tarif === undefined || Montant_Tarif === ""
         ? 0
@@ -77,19 +83,9 @@ export async function createTarif(req, res) {
       });
     }
 
-    const annee =
-      Annee_Tarif === undefined || Annee_Tarif === ""
-        ? new Date().getFullYear()
-        : Number(Annee_Tarif);
-
-    if (!Number.isInteger(annee) || annee < 2000 || annee > 2100) {
-      return res.status(400).json({
-        error: "Année invalide",
-      });
-    }
-
     const tarif = await prisma.t_Tarifs.create({
       data: {
+        ID_User: req.user.userId,
         Annee_Tarif: annee,
         Denomination_Tarif: Denomination_Tarif.trim(),
         Montant_Tarif: montant,
@@ -108,13 +104,12 @@ export async function createTarif(req, res) {
 
 export async function updateTarif(req, res) {
   try {
-    const { id } = req.params;
-
     const { Annee_Tarif, Denomination_Tarif, Montant_Tarif } = req.body;
 
     if (
-      typeof Annee_Tarif !== "string" ||
-      !Annee_Tarif.trim() ||
+      Annee_Tarif === undefined ||
+      Annee_Tarif === null ||
+      String(Annee_Tarif).trim() === "" ||
       typeof Denomination_Tarif !== "string" ||
       !Denomination_Tarif.trim()
     ) {
@@ -128,6 +123,14 @@ export async function updateTarif(req, res) {
         ? 0
         : Number(Montant_Tarif);
 
+    const annee = Number(Annee_Tarif);
+
+    if (!Number.isInteger(annee) || annee < 2000 || annee > 2100) {
+      return res.status(400).json({
+        error: "Année invalide",
+      });
+    }
+
     if (!Number.isFinite(montant) || montant < 0) {
       return res.status(400).json({
         error: "Invalid amount",
@@ -136,7 +139,8 @@ export async function updateTarif(req, res) {
 
     const existingTarif = await prisma.t_Tarifs.findUnique({
       where: {
-        ID_Tarif: id,
+        ID_Tarif: req.params.id,
+        ID_User: req.user.userId,
       },
     });
 
@@ -148,10 +152,11 @@ export async function updateTarif(req, res) {
 
     const tarif = await prisma.t_Tarifs.update({
       where: {
-        ID_Tarif: id,
+        ID_Tarif: req.params.id,
+        ID_User: req.user.userId,
       },
       data: {
-        Annee_Tarif: Number(Annee_Tarif),
+        Annee_Tarif: annee,
         Denomination_Tarif: Denomination_Tarif.trim(),
         Montant_Tarif: montant,
       },
@@ -174,6 +179,7 @@ export async function deleteTarif(req, res) {
     const existingTarif = await prisma.t_Tarifs.findUnique({
       where: {
         ID_Tarif: id,
+        ID_User: req.user.userId,
       },
     });
 
