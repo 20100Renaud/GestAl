@@ -84,7 +84,6 @@ CREATE TABLE "T_Consultations" (
 -- CreateTable
 CREATE TABLE "T_Zonages" (
     "ID_Zonage" TEXT NOT NULL,
-    "Pratique_Zonage" TEXT NOT NULL,
     "Nom_Zonage" TEXT NOT NULL,
     "Position_Zonage" TEXT NOT NULL DEFAULT '',
     "Orientation_Zonage" TEXT NOT NULL DEFAULT '',
@@ -144,7 +143,7 @@ CREATE TABLE "T_Deplacements" (
 CREATE UNIQUE INDEX "T_Users_Email_User_key" ON "T_Users"("Email_User");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "T_Zonages_Pratique_Zonage_Nom_Zonage_Position_Zonage_Orient_key" ON "T_Zonages"("Pratique_Zonage", "Nom_Zonage", "Position_Zonage", "Orientation_Zonage", "Technique_Zonage");
+CREATE UNIQUE INDEX "T_Zonages_Nom_Zonage_Position_Zonage_Orientation_Zonage_Tec_key" ON "T_Zonages"("Nom_Zonage", "Position_Zonage", "Orientation_Zonage", "Technique_Zonage");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "T_Consultation_Zonages_ID_Consultation_ID_Zonage_key" ON "T_Consultation_Zonages"("ID_Consultation", "ID_Zonage");

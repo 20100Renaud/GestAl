@@ -5,7 +5,6 @@ import {
   LayoutArrowRight,
   Eye,
   Move3d,
-  Drone,
   GraduationCap,
   Crosshair,
 } from "lucide-react";
@@ -62,23 +61,13 @@ export default function ZonageModal({
           <Input
             id="Technique_Zonage"
             label="Technique"
-            icon={Drone}
+            icon={GraduationCap}
             type="text"
             name="Technique_Zonage"
             value={form.Technique_Zonage}
             onChange={onChange}
           />
 
-          <Input
-            id="Pratique_Zonage"
-            label="Pratique"
-            icon={GraduationCap}
-            type="text"
-            name="Pratique_Zonage"
-            value={form.Pratique_Zonage}
-            onChange={onChange}
-            required
-          />
         </div>
 
         {/* Aperçu */}
@@ -100,11 +89,6 @@ export default function ZonageModal({
               {form.Technique_Zonage && (
                 <span className="rounded-full bg-green-600 px-2 py-1 text-xs text-white">
                   {form.Technique_Zonage}
-                </span>
-              )}
-              {form.Pratique_Zonage && (
-                <span className="rounded-full bg-blue-500 px-2 py-1 text-xs text-white">
-                  {form.Pratique_Zonage}
                 </span>
               )}
             </span>

@@ -116,7 +116,6 @@ model T_Consultations {
 
 model T_Zonages {
   ID_Zonage          String @id @default(uuid())
-  Pratique_Zonage    String
   Nom_Zonage         String
   Position_Zonage    String @default("")
   Orientation_Zonage String @default("")
@@ -124,7 +123,7 @@ model T_Zonages {
 
   Consultations_Zonage T_Consultation_Zonages[]
 
-  @@unique([Pratique_Zonage, Nom_Zonage, Position_Zonage, Orientation_Zonage, Technique_Zonage])
+  @@unique([Nom_Zonage, Position_Zonage, Orientation_Zonage, Technique_Zonage])
 }
 
 model T_Consultation_Zonages {

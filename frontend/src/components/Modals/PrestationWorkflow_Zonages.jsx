@@ -203,11 +203,6 @@ export default function PrestationWorkflowZonages({
                         </span>
                       )}
 
-                      {zonage.Pratique_Zonage && (
-                        <span className="rounded-full bg-blue-500 px-2 py-1 text-xs text-white">
-                          {zonage.Pratique_Zonage}
-                        </span>
-                      )}
                     </span>
                   </label>
 

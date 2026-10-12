@@ -47,7 +47,6 @@ export async function getZonage(req, res) {
 export async function createZonage(req, res) {
   try {
     const {
-      Pratique_Zonage,
       Nom_Zonage,
       Position_Zonage,
       Orientation_Zonage,
@@ -55,19 +54,16 @@ export async function createZonage(req, res) {
     } = req.body;
 
     if (
-      typeof Pratique_Zonage !== "string" ||
-      !Pratique_Zonage.trim() ||
       typeof Nom_Zonage !== "string" ||
       !Nom_Zonage.trim()
     ) {
       return res.status(400).json({
-        error: "Pratique_Zonage and Nom_Zonage are required",
+        error: "Nom_Zonage is required",
       });
     }
 
     const zonage = await prisma.t_Zonages.create({
       data: {
-        Pratique_Zonage: Pratique_Zonage.trim(),
         Nom_Zonage: Nom_Zonage.trim(),
 
         Position_Zonage:
@@ -102,7 +98,6 @@ export async function updateZonage(req, res) {
     const { id } = req.params;
 
     const {
-      Pratique_Zonage,
       Nom_Zonage,
       Position_Zonage,
       Orientation_Zonage,
@@ -110,13 +105,11 @@ export async function updateZonage(req, res) {
     } = req.body;
 
     if (
-      typeof Pratique_Zonage !== "string" ||
-      !Pratique_Zonage.trim() ||
       typeof Nom_Zonage !== "string" ||
       !Nom_Zonage.trim()
     ) {
       return res.status(400).json({
-        error: "Pratique_Zonage and Nom_Zonage are required",
+        error: "Nom_Zonage is required",
       });
     }
 
@@ -137,7 +130,6 @@ export async function updateZonage(req, res) {
         ID_Zonage: id,
       },
       data: {
-        Pratique_Zonage: Pratique_Zonage.trim(),
         Nom_Zonage: Nom_Zonage.trim(),
 
         Position_Zonage:

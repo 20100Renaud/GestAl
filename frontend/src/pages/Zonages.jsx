@@ -17,7 +17,6 @@ import {
 } from "../api/zonages.js";
 
 const emptyForm = {
-  Pratique_Zonage: "",
   Nom_Zonage: "",
   Position_Zonage: "",
   Orientation_Zonage: "",
@@ -77,7 +76,6 @@ export default function Zonages() {
     setEditingId(zonage.ID_Zonage);
 
     setForm({
-      Pratique_Zonage: zonage.Pratique_Zonage ?? "",
       Nom_Zonage: zonage.Nom_Zonage ?? "",
       Position_Zonage: zonage.Position_Zonage ?? "",
       Orientation_Zonage: zonage.Orientation_Zonage ?? "",
@@ -107,7 +105,6 @@ export default function Zonages() {
 
     return zonages.filter((zonage) => {
       return [
-        zonage.Pratique_Zonage,
         zonage.Nom_Zonage,
         zonage.Position_Zonage,
         zonage.Orientation_Zonage,
@@ -216,14 +213,6 @@ export default function Zonages() {
                       {zonage.Technique_Zonage && (
                         <span className="rounded-full bg-green-600 px-2 py-1 text-xs text-white w-20">
                           {zonage.Technique_Zonage}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="hidden md:table-cell">
-                      {zonage.Pratique_Zonage && (
-                        <span className="rounded-full bg-blue-500 px-2 py-1 text-xs text-white w-20">
-                          {zonage.Pratique_Zonage}
                         </span>
                       )}
                     </div>
