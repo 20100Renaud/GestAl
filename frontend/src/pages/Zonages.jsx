@@ -23,6 +23,15 @@ const emptyForm = {
   Technique_Zonage: "",
 };
 
+const techniqueColors = {
+  Articulaire: "bg-green-600",
+  Tissulaire: "bg-blue-600",
+  Viscérale: "bg-purple-600",
+};
+
+const getTechniqueColor = (technique) =>
+  techniqueColors[technique] ?? "bg-gray-500";
+
 export default function Zonages() {
   const [zonages, setZonages] = useState([]);
 
@@ -96,6 +105,12 @@ export default function Zonages() {
     setForm(emptyForm);
   }
 
+  function getZonageLabel(zonage) {
+    return `${zonage.Nom_Zonage ?? ""}${
+      zonage.Position_Zonage ? `${zonage.Position_Zonage}` : ""
+    }${zonage.Orientation_Zonage ? `-${zonage.Orientation_Zonage}` : ""}`;
+  }
+
   const filteredZonages = useMemo(() => {
     const value = search.trim().toLowerCase();
 
@@ -105,6 +120,7 @@ export default function Zonages() {
 
     return zonages.filter((zonage) => {
       return [
+        getZonageLabel(zonage),
         zonage.Nom_Zonage,
         zonage.Position_Zonage,
         zonage.Orientation_Zonage,
@@ -159,8 +175,6 @@ export default function Zonages() {
 
   return (
     <div className="w-full">
-      {error && <Alert variant="error">{error}</Alert>}
-
       <PageHeader
         title={
           <>
@@ -175,6 +189,13 @@ export default function Zonages() {
         onAction={openCreateForm}
         className="mb-6"
       />
+
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="text-sm text-gray-500">
+          {filteredZonages.length} résultat
+          {filteredZonages.length > 1 ? "s" : ""}
+        </p>
+      </div>
 
       {loading ? (
         <p>Chargement...</p>
@@ -196,22 +217,15 @@ export default function Zonages() {
               >
                 <TableCell className="">
                   <div className="grid grid-cols-[7.5rem_5rem_5rem] md:grid-cols-[7.5rem_5rem_5rem_5rem] items-center text-md font-medium text-blue-900 ">
-                    <div className="text-left">
-                      {zonage.Nom_Zonage}
-                      {zonage.Position_Zonage && `-${zonage.Position_Zonage}`}
-                    </div>
-
-                    <div>
-                      {zonage.Orientation_Zonage && (
-                        <span className="rounded-full bg-yellow-400 px-2 py-1 text-xs text-blue-900 w-20">
-                          {zonage.Orientation_Zonage}
-                        </span>
-                      )}
-                    </div>
+                    <div className="text-left">{getZonageLabel(zonage)}</div>
 
                     <div>
                       {zonage.Technique_Zonage && (
-                        <span className="rounded-full bg-green-600 px-2 py-1 text-xs text-white w-20">
+                        <span
+                          className={`inline-block rounded-full px-2 py-1 text-xs text-white w-20 text-center ${getTechniqueColor(
+                            zonage.Technique_Zonage,
+                          )}`}
+                        >
                           {zonage.Technique_Zonage}
                         </span>
                       )}
@@ -231,6 +245,7 @@ export default function Zonages() {
         editingId={editingId}
         form={form}
         saving={saving}
+        error={error}
         onChange={handleChange}
         onSubmit={handleSubmit}
         onClose={closeForm}

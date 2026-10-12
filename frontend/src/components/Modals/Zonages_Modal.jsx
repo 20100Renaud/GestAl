@@ -1,6 +1,7 @@
 import Button from "../ui/Button.jsx";
 import Input from "../ui/Input.jsx";
 import Modal from "../ui/Modal";
+import Alert from "../ui/Alert.jsx";
 import {
   LayoutArrowRight,
   Eye,
@@ -14,6 +15,7 @@ export default function ZonageModal({
   editingId,
   form,
   saving,
+  error,
   onChange,
   onSubmit,
   onClose,
@@ -67,7 +69,6 @@ export default function ZonageModal({
             value={form.Technique_Zonage}
             onChange={onChange}
           />
-
         </div>
 
         {/* Aperçu */}
@@ -129,6 +130,12 @@ export default function ZonageModal({
             </Button>
           </div>
         </div>
+
+        {error && (
+          <div className="mt-4">
+            <Alert variant="error">{error}</Alert>
+          </div>
+        )}
       </form>
     </Modal>
   );

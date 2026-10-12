@@ -586,6 +586,13 @@ export default function Consultations() {
         className="mb-6"
       />
 
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="text-sm text-gray-500">
+          {filteredConsultations.length} consultation
+          {filteredConsultations.length > 1 ? "s" : ""}
+        </p>
+      </div>
+
       {loading ? (
         <p>Chargement...</p>
       ) : filteredConsultations.length === 0 ? (

@@ -171,6 +171,13 @@ export default function Deplacements() {
         className="mb-6"
       />
 
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="text-sm text-gray-500">
+          {filteredDeplacements.length} déplacement
+          {filteredDeplacements.length > 1 ? "s" : ""}
+        </p>
+      </div>
+
       {loading ? (
         <p>Chargement...</p>
       ) : filteredDeplacements.length === 0 ? (

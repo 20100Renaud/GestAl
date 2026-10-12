@@ -7,43 +7,52 @@ const navigation = [
     label: "Tableau de bord",
     path: "/dashboard",
     separator: true,
+    clientOnly: true,
   },
   {
     label: "Prestations",
     path: "/dashboard/prestations",
+    clientOnly: true,
   },
   {
     label: "Consultations",
     path: "/dashboard/consultations",
+    clientOnly: true,
   },
   {
     label: "Propriétaires",
     path: "/dashboard/proprietaires",
+    clientOnly: true,
   },
   {
     label: "Animaux",
     path: "/dashboard/animaux",
+    clientOnly: true,
   },
   {
     label: "Paiements",
     path: "/dashboard/paiements",
     separator: true,
+    clientOnly: true,
   },
   {
     label: "Tarifs",
     path: "/dashboard/tarifs",
+    clientOnly: true,
   },
   {
     label: "Déplacements",
     path: "/dashboard/deplacements",
-  },
-  {
-    label: "Zonage",
-    path: "/dashboard/zonages",
+    clientOnly: true,
   },
   {
     label: "Utilisateurs",
     path: "/dashboard/users",
+    adminOnly: true,
+  },
+  {
+    label: "Zonage",
+    path: "/dashboard/zonages",
     adminOnly: true,
   },
 ];
@@ -51,9 +60,18 @@ const navigation = [
 export default function Sidebar({ onNavigate, onOpenProfile }) {
   const { user, logout } = useAuth();
 
-  const visibleNavigation = navigation.filter(
-    (item) => !item.adminOnly || user?.role === "ADMIN",
-  );
+  const visibleNavigation = navigation.filter((item) => {
+    if (item.adminOnly) {
+      return user?.role === "ADMIN";
+    }
+
+    if (item.clientOnly) {
+      return user?.role === "CLIENT";
+    }
+
+    return true;
+  });
+
   async function handleLogout() {
     try {
       await logout();

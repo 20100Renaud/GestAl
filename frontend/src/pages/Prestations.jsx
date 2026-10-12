@@ -482,6 +482,13 @@ useEffect(() => {
         className="mb-6"
       />
 
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="text-sm text-gray-500">
+          {filteredPrestations.length} prestation
+          {filteredPrestations.length > 1 ? "s" : ""}
+        </p>
+      </div>
+
       {loading ? (
         <p>Chargement...</p>
       ) : filteredPrestations.length === 0 ? (

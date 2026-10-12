@@ -1,11 +1,42 @@
 import prisma from "../lib/prisma.js";
 
+function normalizeOptionalString(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function handleZonageError(error, res, action) {
+  if (error.code === "P2002") {
+    return res.status(409).json({
+      error:
+        "Un zonage identique existe déjà avec le même nom, la même position, la même orientation et la même technique.",
+    });
+  }
+
+  if (error.code === "P2003") {
+    return res.status(409).json({
+      error:
+        "Impossible de supprimer ce zonage car il est utilisé dans une ou plusieurs consultations.",
+    });
+  }
+
+  console.error(`${action}:`, error);
+
+  return res.status(500).json({
+    error: "Une erreur serveur est survenue.",
+  });
+}
+
 export async function getZonages(req, res) {
   try {
     const zonages = await prisma.t_Zonages.findMany({
-      orderBy: {
-        Nom_Zonage: "asc",
-      },
+      orderBy: [
+        {
+          Technique_Zonage: "asc",
+        },
+        {
+          Nom_Zonage: "asc",
+        },
+      ],
     });
 
     return res.json(zonages);
@@ -30,7 +61,7 @@ export async function getZonage(req, res) {
 
     if (!zonage) {
       return res.status(404).json({
-        error: "Zonage not found",
+        error: "Zonage non trouvé",
       });
     }
 
@@ -53,43 +84,30 @@ export async function createZonage(req, res) {
       Technique_Zonage,
     } = req.body;
 
-    if (
-      typeof Nom_Zonage !== "string" ||
-      !Nom_Zonage.trim()
-    ) {
+    if (typeof Nom_Zonage !== "string" || !Nom_Zonage.trim()) {
       return res.status(400).json({
-        error: "Nom_Zonage is required",
+        error: "Nom de zonage est manquant",
+      });
+    }
+
+    if (typeof Technique_Zonage !== "string" || !Technique_Zonage.trim()) {
+      return res.status(400).json({
+        error: "Technique est manquante",
       });
     }
 
     const zonage = await prisma.t_Zonages.create({
       data: {
         Nom_Zonage: Nom_Zonage.trim(),
-
-        Position_Zonage:
-          typeof Position_Zonage === "string" && Position_Zonage.trim()
-            ? Position_Zonage.trim()
-            : null,
-
-        Orientation_Zonage:
-          typeof Orientation_Zonage === "string" && Orientation_Zonage.trim()
-            ? Orientation_Zonage.trim()
-            : null,
-
-        Technique_Zonage:
-          typeof Technique_Zonage === "string" && Technique_Zonage.trim()
-            ? Technique_Zonage.trim()
-            : null,
+        Position_Zonage: normalizeOptionalString(Position_Zonage),
+        Orientation_Zonage: normalizeOptionalString(Orientation_Zonage),
+        Technique_Zonage: Technique_Zonage.trim(),
       },
     });
 
     return res.status(201).json(zonage);
   } catch (error) {
-    console.error("Create zonage error:", error);
-
-    return res.status(500).json({
-      error: "Internal server error",
-    });
+    return handleZonageError(error, res, "Erreur de création du zonage");
   }
 }
 
@@ -104,12 +122,15 @@ export async function updateZonage(req, res) {
       Technique_Zonage,
     } = req.body;
 
-    if (
-      typeof Nom_Zonage !== "string" ||
-      !Nom_Zonage.trim()
-    ) {
+    if (typeof Nom_Zonage !== "string" || !Nom_Zonage.trim()) {
       return res.status(400).json({
-        error: "Nom_Zonage is required",
+        error: "Nom de zonage est manquant",
+      });
+    }
+
+    if (typeof Technique_Zonage !== "string" || !Technique_Zonage.trim()) {
+      return res.status(400).json({
+        error: "Technique est manquante",
       });
     }
 
@@ -121,7 +142,7 @@ export async function updateZonage(req, res) {
 
     if (!existingZonage) {
       return res.status(404).json({
-        error: "Zonage not found",
+        error: "Zonage non trouvé",
       });
     }
 
@@ -131,31 +152,15 @@ export async function updateZonage(req, res) {
       },
       data: {
         Nom_Zonage: Nom_Zonage.trim(),
-
-        Position_Zonage:
-          typeof Position_Zonage === "string" && Position_Zonage.trim()
-            ? Position_Zonage.trim()
-            : null,
-
-        Orientation_Zonage:
-          typeof Orientation_Zonage === "string" && Orientation_Zonage.trim()
-            ? Orientation_Zonage.trim()
-            : null,
-
-        Technique_Zonage:
-          typeof Technique_Zonage === "string" && Technique_Zonage.trim()
-            ? Technique_Zonage.trim()
-            : null,
+        Position_Zonage: normalizeOptionalString(Position_Zonage),
+        Orientation_Zonage: normalizeOptionalString(Orientation_Zonage),
+        Technique_Zonage: Technique_Zonage.trim(),
       },
     });
 
     return res.json(zonage);
   } catch (error) {
-    console.error("Update zonage error:", error);
-
-    return res.status(500).json({
-      error: "Internal server error",
-    });
+    return handleZonageError(error, res, "Erreur de mise à jour du zonage");
   }
 }
 
@@ -171,7 +176,7 @@ export async function deleteZonage(req, res) {
 
     if (!existingZonage) {
       return res.status(404).json({
-        error: "Zonage not found",
+        error: "Zonage non trouvé",
       });
     }
 
@@ -183,10 +188,6 @@ export async function deleteZonage(req, res) {
 
     return res.status(204).send();
   } catch (error) {
-    console.error("Delete zonage error:", error);
-
-    return res.status(500).json({
-      error: "Internal server error",
-    });
+    return handleZonageError(error, res, "Erreur de suppression du zonage");
   }
 }

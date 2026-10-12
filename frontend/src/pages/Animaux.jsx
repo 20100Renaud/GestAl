@@ -234,6 +234,13 @@ export default function Animaux() {
         className="mb-6"
       />
 
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="text-sm text-gray-500">
+          {filteredAnimaux.length}
+          {filteredAnimaux.length > 1 ? " animaux" : " animal"}
+        </p>
+      </div>
+
       {loading ? (
         <p>Chargement...</p>
       ) : filteredAnimaux.length === 0 ? (

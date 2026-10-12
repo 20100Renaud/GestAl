@@ -201,6 +201,13 @@ export default function Proprietaires() {
         className="mb-6"
       />
 
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="text-sm text-gray-500">
+          {filteredProprietaires.length} propriétaire
+          {filteredProprietaires.length > 1 ? "s" : ""}
+        </p>
+      </div>
+
       {loading ? (
         <p>Chargement...</p>
       ) : filteredProprietaires.length === 0 ? (
