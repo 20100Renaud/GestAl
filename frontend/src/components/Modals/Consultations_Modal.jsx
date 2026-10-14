@@ -23,7 +23,8 @@ import {
   Crosshair,
   Check,
   X,
-  FileText,
+  Eye,
+  Download,
 } from "lucide-react";
 
 export default function ConsultationsModal({
@@ -35,6 +36,7 @@ export default function ConsultationsModal({
   tarifs,
   saving,
   selectedZonages = [],
+  onDraftZonagesChange,
   onZonagesUpdated,
   onClose,
   onSubmit,
@@ -112,15 +114,16 @@ export default function ConsultationsModal({
             <div className="shrink-0">
               <PrestationHeader
                 prestation={prestation}
-                className="!border-none"
+                className="!rounded-b-none"
                 onClick={onOpenPrestation}
               />
             </div>
 
             {/* SCROLLABLE FORM */}
             <form
+              id="consultation-form"
               onSubmit={onSubmit}
-              className="flex min-h-0 flex-1 flex-col overflow-hidden"
+              className="flex border-x border-blue-100 min-h-0 flex-1 flex-col overflow-hidden"
             >
               {/* ONLY THIS SECTION SCROLLS */}
               <div className="min-h-0 flex-1 overflow-y-auto p-6">
@@ -253,131 +256,126 @@ export default function ConsultationsModal({
                 </div>
 
                 {/* ZONAGES SÉLECTIONNÉS */}
-                {editingId && (
-                  <div className="mt-6">
-                    <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-blue-700">
-                      <Crosshair size={18} />
-                      <h3 className="text-sm font-semibold text-blue-700">
-                        Zonages sélectionnés ({selectedZonages.length})
-                      </h3>
-                    </div>
 
-                    <div className="flex flex-wrap justify-center gap-4 px-1 py-2">
-                      {/* Add zonage card — first position */}
-                      <button
-                        type="button"
-                        onClick={() => onOpenZonages?.(editingId)}
-                        disabled={saving}
-                        className="relative flex min-h-18 w-28 flex-col items-center justify-center gap-1 rounded-3xl border-2 border-dashed border-blue-300 bg-blue-50/50 p-3 text-blue-600 transition-colors hover:border-blue-500 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
-                      >
-                        <Crosshair size={22} />
-                        <span className="text-xs font-medium">AJOUTER</span>
+                <div className="mt-6">
+                  <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-blue-700">
+                    <Crosshair size={18} />
+                    <h3 className="text-sm font-semibold text-blue-700">
+                      Zonages sélectionnés ({selectedZonages.length})
+                    </h3>
+                  </div>
 
-                        {/* Fake badge */}
-                        <span className="absolute -bottom-2 left-1/2 z-10 flex h-5 -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full border border-blue-300 bg-blue-50 px-1.5 text-xs text-blue-500">
-                          <Check
-                            size={15}
-                            strokeWidth={3}
-                            className="shrink-0"
+                  <div className="flex flex-wrap justify-center gap-4 px-1 py-2">
+                    {/* Add zonage card — first position */}
+                    <button
+                      type="button"
+                      onClick={() => onOpenZonages?.(editingId ?? null)}
+                      disabled={saving}
+                      className="relative flex min-h-18 w-28 flex-col items-center justify-center gap-1 rounded-3xl border-2 border-dashed border-t-4 border-green [border-top-style:solid] bg-green-50/50 p-3 text-green-600 transition-colors hover:border-green-500 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                    >
+                      <Crosshair size={22} />
+                      <span className="text-xs font-medium">AJOUTER</span>
+
+                      {/* Fake badge */}
+                      <span className="absolute -bottom-2 left-1/2 z-10 flex h-5 -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full border border-green-300 bg-green-50 px-1.5 text-xs text-green-500">
+                        <Check size={15} strokeWidth={3} className="shrink-0" />
+                        <span>...</span>
+                      </span>
+                    </button>
+
+                    {/* Selected zonage cards */}
+                    {selectedZonages.map((item) => {
+                      const zonage = {
+                        ...(item.Zonage ?? {}),
+                        ...item,
+                        ...(item.Zonage ?? {}),
+                      };
+
+                      const title = `${zonage.Nom_Zonage ?? ""}${
+                        zonage.Position_Zonage ?? ""
+                      }${
+                        zonage.Orientation_Zonage
+                          ? `-${zonage.Orientation_Zonage}`
+                          : ""
+                      }`;
+
+                      const colors = techniqueCardColors[
+                        zonage.Technique_Zonage
+                      ] ?? {
+                        badge: "text-gray-500",
+                        commentBorder: "border-gray-500",
+                        commentBg: "bg-gray-50",
+                      };
+
+                      return (
+                        <div
+                          key={zonage.ID_Zonage}
+                          className="relative flex flex-col items-center"
+                        >
+                          <CardZonage
+                            title={title}
+                            technique={zonage.Technique_Zonage}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openCommentModal(zonage);
+                            }}
                           />
-                          <span>...</span>
-                        </span>
-                      </button>
 
-                      {/* Selected zonage cards */}
-                      {selectedZonages.map((item) => {
-                        const zonage = {
-                          ...(item.Zonage ?? {}),
-                          ...item,
-                          ...(item.Zonage ?? {}),
-                        };
-
-                        const title = `${zonage.Nom_Zonage ?? ""}${
-                          zonage.Position_Zonage ?? ""
-                        }${
-                          zonage.Orientation_Zonage
-                            ? `-${zonage.Orientation_Zonage}`
-                            : ""
-                        }`;
-
-                        const colors = techniqueCardColors[
-                          zonage.Technique_Zonage
-                        ] ?? {
-                          badge: "text-gray-500",
-                          commentBorder: "border-gray-500",
-                          commentBg: "bg-gray-50",
-                        };
-
-                        return (
-                          <div
-                            key={zonage.ID_Zonage}
-                            className="relative flex flex-col items-center"
-                          >
-                            <CardZonage
-                              title={title}
-                              technique={zonage.Technique_Zonage}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                openCommentModal(zonage);
-                              }}
-                            />
-
-                            {/* Comment badge */}
-                            <div className="absolute -bottom-2 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  openCommentModal(zonage);
-                                }}
-                                disabled={saving || savingComment}
-                                aria-label={`Commentaire du zonage ${title}`}
-                                title={
-                                  zonage.Commentaire_Zonage
-                                    ? `Commentaire : ${zonage.Commentaire_Zonage}`
-                                    : "Ajouter un commentaire"
-                                }
-                                className={`flex h-5 max-w-24 cursor-pointer items-center gap-1 rounded-full border px-1.5 hover:brightness-95 disabled:cursor-not-allowed ${colors.commentBorder} ${colors.commentBg}`}
-                              >
-                                <Check
-                                  size={15}
-                                  strokeWidth={3}
-                                  className={`shrink-0 ${colors.badge}`}
-                                />
-
-                                <span
-                                  className={`truncate text-xs ${colors.badge}`}
-                                >
-                                  {zonage.Commentaire_Zonage || "..."}
-                                </span>
-                              </button>
-                            </div>
-
-                            {/* Deselect button */}
+                          {/* Comment badge */}
+                          <div className="absolute -bottom-2 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1">
                             <button
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
-                                removeSelectedZonage(zonage);
+                                openCommentModal(zonage);
                               }}
                               disabled={saving || savingComment}
-                              aria-label={`Désélectionner le zonage ${title}`}
-                              title="Désélectionner ce zonage"
-                              className="absolute -right-1 -top-1 z-20 flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-red-300 bg-red-50 text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                              aria-label={`Commentaire du zonage ${title}`}
+                              title={
+                                zonage.Commentaire_Zonage
+                                  ? `Commentaire : ${zonage.Commentaire_Zonage}`
+                                  : "Ajouter un commentaire"
+                              }
+                              className={`flex h-5 max-w-24 cursor-pointer items-center gap-1 rounded-full border px-1.5 hover:brightness-95 disabled:cursor-not-allowed ${colors.commentBorder} ${colors.commentBg}`}
                             >
-                              <X size={13} strokeWidth={3} />
+                              <Check
+                                size={15}
+                                strokeWidth={3}
+                                className={`shrink-0 ${colors.badge}`}
+                              />
+
+                              <span
+                                className={`truncate text-xs ${colors.badge}`}
+                              >
+                                {zonage.Commentaire_Zonage || "..."}
+                              </span>
                             </button>
                           </div>
-                        );
-                      })}
-                    </div>
+
+                          {/* Deselect button */}
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              removeSelectedZonage(zonage);
+                            }}
+                            disabled={saving || savingComment}
+                            aria-label={`Désélectionner le zonage ${title}`}
+                            title="Désélectionner ce zonage"
+                            className="absolute -right-1 -top-1 z-20 flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-red-300 bg-red-50 text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <X size={13} strokeWidth={3} />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
-                )}
+                </div>
               </div>
             </form>
 
             {/* FIXED ACTIONS — OUTSIDE THE SCROLLABLE DIV */}
-            <div className="flex shrink-0 items-center justify-around gap-3 border-t border-gray-200 bg-white px-6 py-4">
+            <div className="flex shrink-0 items-center justify-between gap-3 border-t border-blue-100 bg-blue-50 rounded-b-2xl px-6 py-4">
               <div className="flex gap-3">
                 {editingId && (
                   <Button
@@ -391,6 +389,34 @@ export default function ConsultationsModal({
                 )}
               </div>
 
+              <div className="flex gap-2">
+                {editingId && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="clear_green"
+                      onClick={() => onOpenPdf("preview")}
+                      disabled={saving}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Eye size={16} />
+                      </span>
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="clear_purple"
+                      onClick={() => onOpenPdf("download")}
+                      disabled={saving}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Download size={16} />
+                      </span>
+                    </Button>
+                  </>
+                )}
+              </div>
+
               <div className="flex gap-3">
                 <Button
                   type="button"
@@ -401,24 +427,16 @@ export default function ConsultationsModal({
                   Annuler
                 </Button>
 
-                <Button type="submit" disabled={saving}>
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  form="consultation-form"
+                >
                   {saving
                     ? "Enregistrement..."
                     : editingId
                       ? "Modifier"
                       : "Ajouter"}
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={onOpenPdf}
-                  disabled={saving}
-                >
-                  <span className="flex items-center gap-2">
-                    <FileText size={16} />
-                    PDF
-                  </span>
                 </Button>
               </div>
             </div>

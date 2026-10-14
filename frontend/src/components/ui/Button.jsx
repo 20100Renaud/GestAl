@@ -1,6 +1,12 @@
 const variants = {
   primary: "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer",
   secondary: "bg-blue-200 text-blue-800 hover:bg-blue-300 cursor-pointer",
+  clear_blue:
+    "bg-white border border-blue-300 text-blue-700 transition hover:bg-blue-50 cursor-pointer",
+  clear_green:
+    "bg-white border border-green-300 text-green-700 transition hover:bg-green-50 cursor-pointer",
+  clear_purple:
+    "bg-white border border-purple-300 text-purple-700 transition hover:bg-purple-50 cursor-pointer",
   danger: "bg-red-600 text-white hover:bg-red-700 cursor-pointer",
   ghost: "bg-transparent text-blue-300 hover:text-blue-100 cursor-pointer",
   zonage:

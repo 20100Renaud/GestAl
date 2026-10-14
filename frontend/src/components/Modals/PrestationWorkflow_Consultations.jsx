@@ -3,14 +3,18 @@ import { useEffect, useState } from "react";
 import ConsultationsModal from "./Consultations_Modal.jsx";
 import PrestationHeader from "../PrestationHeader.jsx";
 import PrestationWorkflowZonages from "./PrestationWorkflow_Zonages.jsx";
-import { Crosshair, Plus } from "lucide-react";
+import { Eye, Download, Plus } from "lucide-react";
+import Button from "../ui/Button.jsx";
 import { getProprietaires } from "../../api/proprietaires.js";
 import {
   getConsultations,
   createConsultation,
   updateConsultation,
 } from "../../api/consultations.js";
-import { getConsultationZonages } from "../../api/consultation-zonages.js";
+import {
+  getConsultationZonages,
+  createConsultationZonage,
+} from "../../api/consultation-zonages.js";
 import { getAnimaux } from "../../api/animaux.js";
 import { getTarifs } from "../../api/tarifs.js";
 import { getZonages } from "../../api/zonages.js";
@@ -55,6 +59,7 @@ export default function PrestationWorkflowConsultations({
   const [zonageConsultationId, setZonageConsultationId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [zonagesByConsultation, setZonagesByConsultation] = useState({});
+  const [draftZonages, setDraftZonages] = useState([]);
 
   async function loadData() {
     try {
@@ -173,7 +178,7 @@ export default function PrestationWorkflowConsultations({
   // Add a consultation
   function openCreateForm() {
     setEditingId(null);
-
+    setDraftZonages([]);
     setForm({
       ...emptyForm,
       ID_Prestation: prestationId,
@@ -238,20 +243,39 @@ export default function PrestationWorkflowConsultations({
         consultation = await updateConsultation(editingId, form);
       } else {
         consultation = await createConsultation(form);
+
+        const newConsultationId = consultation.ID_Consultation;
+        if (!newConsultationId) {
+          throw new Error(
+            "La consultation a été créée, mais son identifiant est introuvable.",
+          );
+        }
+        await Promise.all(
+          draftZonages.map((zonage) =>
+            createConsultationZonage(newConsultationId, {
+              ID_Zonage: zonage.ID_Zonage,
+              Commentaire_Zonage: zonage.Commentaire_Zonage || "",
+            }),
+          ),
+        );
+
+        setDraftZonages([]);
       }
 
       await loadData();
       await onPrestationUpdated?.();
       closeForm();
     } catch (err) {
+      console.error("Erreur lors de l'enregistrement :", err);
       onError?.(err.message);
     } finally {
       setSaving(false);
     }
   }
+
   // Zonages
   function openZonages(consultationId) {
-    setZonageConsultationId(consultationId);
+    setZonageConsultationId(consultationId ?? null);
     setShowZonages(true);
   }
 
@@ -277,9 +301,9 @@ export default function PrestationWorkflowConsultations({
       (item) => String(item.ID_Proprietaire) === String(prestation?.ID_Lieu),
     ) ?? null;
 
-  function handleOpenPdf() {
+  function handleOpenPdf(mode = "preview", consultationId = editingId) {
     try {
-      if (!editingId) {
+      if (!consultationId) {
         onError?.(
           "Enregistrez la consultation avant de générer son compte rendu.",
         );
@@ -287,7 +311,7 @@ export default function PrestationWorkflowConsultations({
       }
 
       const consultation = consultations.find(
-        (item) => String(item.ID_Consultation) === String(editingId),
+        (item) => String(item.ID_Consultation) === String(consultationId),
       );
 
       if (!consultation) {
@@ -303,7 +327,7 @@ export default function PrestationWorkflowConsultations({
         (item) => String(item.ID_Tarif) === String(consultation.ID_Tarif),
       );
 
-      const zonages = zonagesByConsultation[editingId] ?? [];
+      const zonages = zonagesByConsultation[consultation.ID_Consultation] ?? [];
 
       openConsultationPdf({
         user: currentUser,
@@ -314,6 +338,7 @@ export default function PrestationWorkflowConsultations({
         proprietaire: prestation?.Proprietaire_Prestation ?? null,
         lieu,
         zonages,
+        mode,
       });
     } catch (err) {
       onError?.(err.message);
@@ -331,7 +356,7 @@ export default function PrestationWorkflowConsultations({
             type="button"
             onClick={openCreateForm}
             disabled={saving}
-            className="flex w-full max-w-[220px] min-h-[100px] items-center justify-center rounded-md border-2 border-dashed border-blue-300 p-4 text-blue-600 transition hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-lg"
+            className="flex w-full max-w-[220px] min-h-[100px] items-center justify-center rounded-md border-2 border-dashed border-green-300 p-4 text-green-600 transition hover:border-green-500 hover:bg-green-50 hover:text-green-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-lg"
           >
             <span className="flex flex-col items-center text-sm">
               <Plus size={58} strokeWidth={1} />
@@ -348,9 +373,6 @@ export default function PrestationWorkflowConsultations({
               (item) => item.ID_Tarif === consultation.ID_Tarif,
             );
 
-            const selectedZonages =
-              zonagesByConsultation[consultation.ID_Consultation] ?? [];
-
             return (
               <div
                 key={consultation.ID_Consultation}
@@ -360,14 +382,14 @@ export default function PrestationWorkflowConsultations({
                   type="button"
                   onClick={() => openEditForm(consultation)}
                   disabled={saving}
-                  className="w-full min-h-[100px] rounded-md border border-blue-200 p-4 pt-6 text-left transition hover:border-blue-400 hover:bg-blue-50 cursor-pointer"
+                  className="w-full min-h-[100px] rounded-md border border-blue-200 p-4 pt-8 text-left transition hover:border-blue-400 hover:bg-blue-50 cursor-pointer"
                 >
                   <div className="flex flex-col gap-1">
-                    <div className="font-medium text-blue-900">
+                    <div className="truncate font-medium text-blue-900">
                       {animal?.Nom_Animal ?? "Animal inconnu"}
                     </div>
 
-                    <div className="text-sm text-blue-700">
+                    <div className="truncate text-sm text-blue-700">
                       {tarif
                         ? `${tarif.Denomination_Tarif} (${tarif.Montant_Tarif} €)`
                         : "-"}
@@ -377,18 +399,35 @@ export default function PrestationWorkflowConsultations({
                       {consultation.Motif_Consultation || "Sans motif"}
                     </div>
                   </div>
-
-                  {/* Zonages */}
-                  <div className="absolute right-0 top-0 rounded-tr-md rounded-bl-md border border-blue-200 bg-green-100 px-2 py-1 text-green-700">
-                    <Crosshair size={20} />
-
-                    {selectedZonages.length > 0 && (
-                      <span className="absolute w-6 h-6 left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full bg-green-100 border-[3.5px] border-green-700 border-double text-sm font-semibold text-green-900">
-                        {selectedZonages.length}
-                      </span>
-                    )}
-                  </div>
                 </button>
+
+                <div className="absolute flex right-2 top-2 gap-2 h-6">
+                  <Button
+                    type="button"
+                    variant="clear_green"
+                    onClick={() =>
+                      handleOpenPdf("preview", consultation.ID_Consultation)
+                    }
+                    disabled={saving}
+                    aria-label="Prévisualiser le compte rendu"
+                    title="Prévisualiser le compte rendu"
+                  >
+                    <Eye size={16} />
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="clear_purple"
+                    onClick={() =>
+                      handleOpenPdf("download", consultation.ID_Consultation)
+                    }
+                    disabled={saving}
+                    aria-label="Télécharger le compte rendu"
+                    title="Télécharger le compte rendu"
+                  >
+                    <Download size={16} />
+                  </Button>
+                </div>
               </div>
             );
           })}
@@ -405,8 +444,9 @@ export default function PrestationWorkflowConsultations({
         tarifs={tarifs}
         saving={saving}
         selectedZonages={
-          editingId ? (zonagesByConsultation[editingId] ?? []) : []
+          editingId ? (zonagesByConsultation[editingId] ?? []) : draftZonages
         }
+        onDraftZonagesChange={setDraftZonages}
         onZonagesUpdated={loadData}
         onClose={closeForm}
         onSubmit={handleSubmit}
@@ -422,6 +462,8 @@ export default function PrestationWorkflowConsultations({
       <PrestationWorkflowZonages
         open={showZonages}
         consultationId={zonageConsultationId}
+        draftZonages={draftZonages}
+        onDraftZonagesChange={setDraftZonages}
         onClose={closeZonages}
         onSaved={loadData}
         onError={onError}

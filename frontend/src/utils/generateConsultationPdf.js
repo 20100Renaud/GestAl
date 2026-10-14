@@ -87,12 +87,17 @@ function drawInfoBlock(doc, title, record, x, y, width) {
   // First row: Pratique or company information
   if (isPrestataire) {
     if (record.practice) {
-      currentY = drawRow([record.practice], currentY);
+      currentY = drawRow([String(record.practice).toUpperCase()], currentY);
     }
   } else if (record.Raison_sociale && record.Raison_sociale !== "Particulier") {
-    currentY = drawRow([record.Raison_sociale, record.Etablissement], currentY);
+    currentY = drawRow(
+      [record.Raison_sociale, record.Etablissement]
+        .filter(Boolean)
+        .map((value) => String(value).toUpperCase()),
+      currentY,
+    );
   } else if (record.Etablissement) {
-    currentY = drawRow([record.Etablissement], currentY);
+    currentY = drawRow([String(record.Etablissement).toUpperCase()], currentY);
   }
 
   // Second row: Civilité, nom, prénom
@@ -167,7 +172,8 @@ function ensureSpace(doc, y, requiredHeight) {
 function drawSectionTitle(doc, title, y, suffix = "") {
   const marginTop = 4.23;
   const pageWidth = doc.internal.pageSize.getWidth();
-  const maxWidth = pageWidth - 28;
+  const marginX = 14;
+  const maxWidth = pageWidth - marginX * 2;
 
   y += marginTop;
   y = ensureSpace(doc, y, 20);
@@ -177,7 +183,7 @@ function drawSectionTitle(doc, title, y, suffix = "") {
   doc.setFontSize(12);
   doc.setTextColor(30, 64, 175);
 
-  doc.text(title, 14, y);
+  doc.text(title, marginX, y);
 
   const titleWidth = doc.getTextWidth(title);
 
@@ -186,14 +192,19 @@ function drawSectionTitle(doc, title, y, suffix = "") {
   doc.setFontSize(10);
   doc.setTextColor(30, 58, 138);
 
-  const suffixLines = doc.splitTextToSize(suffix, maxWidth - titleWidth);
+  const suffixX = marginX + titleWidth;
+  const remainingWidth = pageWidth - marginX - suffixX;
+
+  const suffixLines = suffix ? doc.splitTextToSize(suffix, remainingWidth) : [];
 
   if (suffixLines.length > 0) {
-    doc.text(suffixLines[0], 14 + titleWidth, y);
+    doc.text(suffixLines[0], suffixX + remainingWidth / 2, y, {
+      align: "center",
+    });
 
-    // If the suffix wraps, continue on the next line
+    // Continue to next line
     if (suffixLines.length > 1) {
-      doc.text(suffixLines.slice(1), 14, y + 5);
+      doc.text(suffixLines.slice(1), marginX, y + 5);
     }
   }
 
@@ -201,7 +212,7 @@ function drawSectionTitle(doc, title, y, suffix = "") {
 
   doc.setDrawColor(191, 219, 254);
   doc.setLineWidth(0.3);
-  doc.line(14, lineY, 196, lineY);
+  doc.line(marginX, lineY, pageWidth - marginX, lineY);
 
   return lineY + 7;
 }
@@ -223,7 +234,8 @@ function drawZonageCards(doc, zonages, startY) {
   const marginX = 14;
   const gapX = 5;
   const gapY = 12;
-  const cardWidth = (pageWidth - marginX * 2 - gapX * 2) / 6;
+  const columns = 5;
+  const cardWidth = (pageWidth - marginX * 2 - gapX * (columns - 1)) / columns;
   const cardHeight = 20;
 
   const colorsByTechnique = {
@@ -251,28 +263,36 @@ function drawZonageCards(doc, zonages, startY) {
   };
 
   let rowY = y;
+  let pageOffsetY = 0;
 
   zonages.forEach((zonage, index) => {
-    const column = index % 5;
+    const column = index % columns;
+    const row = Math.floor(index / columns);
 
     if (column === 0) {
-      rowY = y + Math.floor(index / 5) * (cardHeight + gapY);
+      rowY = y + row * (cardHeight + gapY) + pageOffsetY;
 
       if (rowY + cardHeight > pageHeight - 15) {
         doc.addPage();
-        y = 20;
-        rowY = y;
+        pageOffsetY = 20 - rowY;
+        rowY = 20;
       }
     }
 
-    const x = marginX + column * (cardWidth + gapX);
+    const cardsInRow = Math.min(columns, zonages.length - row * columns);
+
+    const rowWidth = cardsInRow * cardWidth + (cardsInRow - 1) * gapX;
+
+    const rowStartX = (pageWidth - rowWidth) / 2;
+    const x = rowStartX + column * (cardWidth + gapX);
+
     const colors = colorsByTechnique[zonage.Technique_Zonage] ?? fallbackColors;
 
-    // Zonage card
+    // Card
     doc.setFillColor(255, 255, 255);
     doc.setDrawColor(...colors.top);
     doc.setLineWidth(0.25);
-    doc.roundedRect(x, rowY, cardWidth, cardHeight, 6, 6, "FD");
+    doc.roundedRect(x, rowY, cardWidth, cardHeight, 3, 3, "FD");
 
     // Technique badge
     const technique = zonage.Technique_Zonage || "Technique non renseignée";
@@ -280,13 +300,13 @@ function drawZonageCards(doc, zonages, startY) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
 
-    const pillWidth = Math.min(cardWidth - 8, doc.getTextWidth(technique) + 8);
+    const pillWidth = Math.min(cardWidth - 4, doc.getTextWidth(technique) + 8);
+
     const pillX = x + (cardWidth - pillWidth) / 2;
-    const pillY = rowY - 2;
+    const pillY = rowY - 3;
 
     doc.setFillColor(...colors.badgeBg);
     doc.setDrawColor(...colors.badge);
-    doc.setLineWidth(0.25);
     doc.roundedRect(pillX, pillY, pillWidth, 6, 3, 3, "FD");
 
     doc.setTextColor(...colors.badge);
@@ -309,33 +329,45 @@ function drawZonageCards(doc, zonages, startY) {
     doc.setTextColor(30, 58, 138);
 
     const titleLines = doc.splitTextToSize(title, cardWidth - 8);
-    doc.text(titleLines.slice(0, 2), x + cardWidth / 2, rowY + cardHeight / 2, {
+
+    const hasComment =
+      zonage.Commentaire_Zonage &&
+      String(zonage.Commentaire_Zonage).trim() !== "";
+
+    const titleY = rowY + cardHeight / 2 + (hasComment ? 0 : 2);
+
+    doc.text(titleLines.slice(0, 2), x + cardWidth / 2, titleY, {
       align: "center",
     });
 
     // Comment badge
-    const comment = zonage.Commentaire_Zonage || "...";
-    const badgeText = `${comment}`;
+    const comment = zonage.Commentaire_Zonage;
 
-    doc.setFontSize(6.5);
-    const badgeWidth = cardWidth;
-    const badgeX = x + (cardWidth - badgeWidth) / 2;
-    const badgeY = rowY + cardHeight - 5;
+    if (comment && String(comment).trim() !== "") {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6.5);
 
-    doc.setFillColor(...colors.badgeBg);
-    doc.setDrawColor(...colors.badge);
-    doc.roundedRect(badgeX, badgeY, badgeWidth, 6, 3, 3, "FD");
+      const badgeY = rowY + cardHeight / 2 + 3;
 
-    doc.setTextColor(...colors.badge);
+      doc.setFillColor(...colors.badgeBg);
+      doc.setDrawColor(...colors.badge);
+      doc.roundedRect(x + 2, badgeY, cardWidth - 4, 6, 3, 3, "FD");
 
-    const maxCommentWidth = badgeWidth - 4;
-    const commentLines = doc.splitTextToSize(badgeText, maxCommentWidth);
-    doc.text(commentLines[0], x + cardWidth / 2, badgeY + 4, {
-      align: "center",
-    });
+      doc.setTextColor(...colors.badge);
+
+      const commentLines = doc.splitTextToSize(
+        String(comment).trim(),
+        cardWidth - 8,
+      );
+
+      doc.text(commentLines[0], x + cardWidth / 2, badgeY + 4, {
+        align: "center",
+      });
+    }
   });
 
-  const rowCount = Math.ceil(zonages.length / 5);
+  const rowCount = Math.ceil(zonages.length / columns);
+
   return y + rowCount * (cardHeight + gapY);
 }
 
@@ -347,6 +379,7 @@ export function openConsultationPdf({
   proprietaire,
   lieu,
   zonages = [],
+  mode = "preview",
 }) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -451,18 +484,17 @@ export function openConsultationPdf({
   const boxPaddingY = 4;
   const lineHeight = 4.5;
 
-  // 1. Title
+  // Description title
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(30, 58, 138);
 
   doc.text("Description :", leftX, contentY);
 
-  // Vertical gap between title and content
   const titleGap = 3;
   contentY += titleGap;
 
-  // 2. Content
+  // Description content
   const description =
     displayValue(consultation?.Description_Consultation) || "-";
 
@@ -475,12 +507,10 @@ export function openConsultationPdf({
 
   const boxHeight = descriptionLines.length * lineHeight + boxPaddingY * 2;
 
-  // 3. Keep the whole box on the same page
   if (contentY + boxHeight > 275) {
     doc.addPage();
     contentY = 20;
 
-    // Repeat the title on the new page
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.text("Description :", leftX, contentY);
@@ -490,24 +520,51 @@ export function openConsultationPdf({
     doc.setFont("helvetica", "normal");
   }
 
-  // 4. Rounded content box
   doc.setDrawColor(191, 219, 254);
   doc.setLineWidth(0.4);
   doc.setFillColor(255, 255, 255);
 
   doc.roundedRect(boxX, contentY, boxWidth, boxHeight, 3, 3, "FD");
 
-  // 5. Text inside the box
   doc.text(descriptionLines, boxX + boxPaddingX, contentY + boxPaddingY + 3);
 
-  // 6. Space after the block (like margin-bottom)
   contentY += boxHeight + 8;
 
   // Zonage
   drawZonageCards(doc, zonages, contentY);
 
+  // File
   const blob = doc.output("blob");
   const url = URL.createObjectURL(blob);
+
+  // File name
+  const sanitize = (value) =>
+    String(value ?? "")
+      .trim()
+      .replace(/[<>:"/\\|?*\x00-\x1F]/g, "-");
+
+  const animalName = sanitize(animal?.Nom_Animal || "Animal");
+  const ownerName = sanitize(proprietaire?.Nom_Proprietaire || "Proprietaire");
+  const prestationDate = formatDate(prestation?.Date_Prestation).replace(
+    /\//g,
+    "-",
+  );
+
+  const filename = `CR_${animalName}_${ownerName}_${prestationDate}.pdf`;
+
+  if (mode === "download") {
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return;
+  }
+
+  // Preview in a new tab
   const tab = window.open(url, "_blank");
 
   if (!tab) {

@@ -20,6 +20,8 @@ export default function PrestationWorkflowZonages({
   onClose,
   onSaved,
   onError,
+  draftZonages = [],
+  onDraftZonagesChange,
 }) {
   const [search, setSearch] = useState("");
   const [zonages, setZonages] = useState([]);
@@ -30,32 +32,34 @@ export default function PrestationWorkflowZonages({
   const [commentDraft, setCommentDraft] = useState("");
 
   useEffect(() => {
-    if (!open || !consultationId) {
-      return;
+    if (!open) return;
+
+    async function loadData() {
+      try {
+        setLoading(true);
+        onError?.("");
+
+        const zonagesData = await getZonages();
+        setZonages(Array.isArray(zonagesData) ? zonagesData : []);
+
+        if (consultationId) {
+          const selected = await getConsultationZonages(consultationId);
+          setConsultationZonages(Array.isArray(selected) ? selected : []);
+        } else {
+          setConsultationZonages(draftZonages);
+        }
+
+        setSearch("");
+      } catch (err) {
+        console.error(err);
+        onError?.(err.message);
+      } finally {
+        setLoading(false);
+      }
     }
 
     loadData();
   }, [open, consultationId]);
-
-  async function loadData() {
-    try {
-      setLoading(true);
-      onError?.("");
-
-      const [zonagesData, consultationZonagesData] = await Promise.all([
-        getZonages(),
-        getConsultationZonages(consultationId),
-      ]);
-
-      setZonages(zonagesData);
-      setConsultationZonages(consultationZonagesData);
-      setSearch("");
-    } catch (err) {
-      onError?.(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   function getZonageLabel(zonage) {
     return `${zonage.Nom_Zonage ?? ""}${zonage.Position_Zonage ?? ""}${
@@ -128,6 +132,12 @@ export default function PrestationWorkflowZonages({
   }
 
   async function handleSave() {
+    if (!consultationId) {
+      onDraftZonagesChange?.(consultationZonages);
+      onClose?.();
+      return;
+    }
+    
     try {
       setSaving(true);
       onError?.("");
@@ -224,8 +234,6 @@ export default function PrestationWorkflowZonages({
         <div className="flex h-[min(600px,80vh)] flex-col p-6">
           {loading ? (
             <p className="text-sm text-blue-700">Chargement...</p>
-          ) : zonages.length === 0 ? (
-            <p className="text-sm text-blue-900">Aucun zonage disponible.</p>
           ) : (
             <>
               {/* Search + result count */}
@@ -342,7 +350,7 @@ export default function PrestationWorkflowZonages({
             <Button
               type="button"
               onClick={handleSave}
-              disabled={saving || loading || !consultationId}
+              disabled={saving || loading}
             >
               {saving ? "Enregistrement..." : "Enregistrer"}
             </Button>
