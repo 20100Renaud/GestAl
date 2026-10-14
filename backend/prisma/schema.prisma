@@ -146,6 +146,7 @@ model T_Paiements {
 
   Date_Paiement     DateTime  @default(now())
   Date_Encaissement DateTime?
+  Date_Declaration  DateTime?
   Montant_Paiement  Decimal   @default(0)
   Moyen_Paiement    String?
 

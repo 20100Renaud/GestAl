@@ -1,6 +1,5 @@
 import {
   fieldClasses,
-  fieldLabelClasses,
   fieldWrapperClasses,
 } from "./fieldStyles";
 

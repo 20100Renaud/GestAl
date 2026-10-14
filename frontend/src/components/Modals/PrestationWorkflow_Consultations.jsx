@@ -4,14 +4,17 @@ import ConsultationsModal from "./Consultations_Modal.jsx";
 import PrestationHeader from "../PrestationHeader.jsx";
 import PrestationWorkflowZonages from "./PrestationWorkflow_Zonages.jsx";
 import { Crosshair, Plus } from "lucide-react";
+import { getProprietaires } from "../../api/proprietaires.js";
 import {
   getConsultations,
   createConsultation,
   updateConsultation,
 } from "../../api/consultations.js";
-
+import { getConsultationZonages } from "../../api/consultation-zonages.js";
 import { getAnimaux } from "../../api/animaux.js";
 import { getTarifs } from "../../api/tarifs.js";
+import { getZonages } from "../../api/zonages.js";
+import { openConsultationPdf } from "../../utils/generateConsultationPdf.js";
 
 const emptyForm = {
   ID_Prestation: "",
@@ -26,6 +29,7 @@ const emptyForm = {
 export default function PrestationWorkflowConsultations({
   prestationId,
   prestation,
+  currentUser,
   onError,
   onConsultationsChange,
   onAddAnimal,
@@ -35,6 +39,7 @@ export default function PrestationWorkflowConsultations({
   onPrestationUpdated,
   onOpenPrestation,
 }) {
+  const [proprietaires, setProprietaires] = useState([]);
   const [consultations, setConsultations] = useState([]);
   const [animaux, setAnimaux] = useState([]);
   const [tarifs, setTarifs] = useState([]);
@@ -49,6 +54,65 @@ export default function PrestationWorkflowConsultations({
   const [showZonages, setShowZonages] = useState(false);
   const [zonageConsultationId, setZonageConsultationId] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [zonagesByConsultation, setZonagesByConsultation] = useState({});
+
+  async function loadData() {
+    try {
+      const [
+        proprietairesData,
+        consultationsData,
+        animauxData,
+        tarifsData,
+        zonagesData,
+      ] = await Promise.all([
+        getProprietaires(),
+        getConsultations(),
+        getAnimaux(),
+        getTarifs(),
+        getZonages(),
+      ]);
+
+      setProprietaires(proprietairesData);
+
+      const filteredConsultations = consultationsData.filter(
+        (item) => String(item.ID_Prestation) === String(prestationId),
+      );
+
+      const associations = await Promise.all(
+        filteredConsultations.map(async (consultation) => {
+          const selected = await getConsultationZonages(
+            consultation.ID_Consultation,
+          );
+
+          const matchedZonages = selected
+            .map((item) => {
+              const zonage = zonagesData.find(
+                (z) => String(z.ID_Zonage) === String(item.ID_Zonage),
+              );
+
+              return zonage
+                ? {
+                    ...zonage,
+                    Commentaire_Zonage: item.Commentaire_Zonage ?? "",
+                  }
+                : null;
+            })
+            .filter(Boolean);
+
+          return [consultation.ID_Consultation, matchedZonages];
+        }),
+      );
+
+      setConsultations(filteredConsultations);
+      setAnimaux(animauxData);
+      setTarifs(tarifsData);
+      setZonagesByConsultation(Object.fromEntries(associations));
+
+      onConsultationsChange?.(filteredConsultations);
+    } catch (err) {
+      onError?.(err.message);
+    }
+  }
 
   // Initialize prestation
   useEffect(() => {
@@ -95,28 +159,6 @@ export default function PrestationWorkflowConsultations({
       ID_Tarif: String(createdTarif.ID_Tarif),
     }));
   }, [createdTarif]);
-
-  async function loadData() {
-    try {
-      const [consultationsData, animauxData, tarifsData] = await Promise.all([
-        getConsultations(),
-        getAnimaux(),
-        getTarifs(),
-      ]);
-
-      const filteredConsultations = consultationsData.filter(
-        (item) => String(item.ID_Prestation) === String(prestationId),
-      );
-
-      setConsultations(filteredConsultations);
-      setAnimaux(animauxData);
-      setTarifs(tarifsData);
-
-      onConsultationsChange?.(filteredConsultations);
-    } catch (err) {
-      onError?.(err.message);
-    }
-  }
 
   // Update
   function handleChange(event) {
@@ -230,6 +272,54 @@ export default function PrestationWorkflowConsultations({
       )
     : [];
 
+  const lieu =
+    proprietaires.find(
+      (item) => String(item.ID_Proprietaire) === String(prestation?.ID_Lieu),
+    ) ?? null;
+
+  function handleOpenPdf() {
+    try {
+      if (!editingId) {
+        onError?.(
+          "Enregistrez la consultation avant de générer son compte rendu.",
+        );
+        return;
+      }
+
+      const consultation = consultations.find(
+        (item) => String(item.ID_Consultation) === String(editingId),
+      );
+
+      if (!consultation) {
+        onError?.("Consultation introuvable.");
+        return;
+      }
+
+      const animal = animaux.find(
+        (item) => String(item.ID_Animal) === String(consultation.ID_Animal),
+      );
+
+      const tarif = tarifs.find(
+        (item) => String(item.ID_Tarif) === String(consultation.ID_Tarif),
+      );
+
+      const zonages = zonagesByConsultation[editingId] ?? [];
+
+      openConsultationPdf({
+        user: currentUser,
+        prestation,
+        consultation,
+        animal,
+        tarif,
+        proprietaire: prestation?.Proprietaire_Prestation ?? null,
+        lieu,
+        zonages,
+      });
+    } catch (err) {
+      onError?.(err.message);
+    }
+  }
+
   return (
     <>
       <div className="space-y-6">
@@ -258,6 +348,9 @@ export default function PrestationWorkflowConsultations({
               (item) => item.ID_Tarif === consultation.ID_Tarif,
             );
 
+            const selectedZonages =
+              zonagesByConsultation[consultation.ID_Consultation] ?? [];
+
             return (
               <div
                 key={consultation.ID_Consultation}
@@ -284,19 +377,18 @@ export default function PrestationWorkflowConsultations({
                       {consultation.Motif_Consultation || "Sans motif"}
                     </div>
                   </div>
-                </button>
 
-                {/* Zonages */}
-                <div className="absolute right-0 top-0">
-                  <button
-                    type="button"
-                    onClick={() => openZonages(consultation.ID_Consultation)}
-                    disabled={saving}
-                    className="rounded-tr-md rounded-bl-md border-t border-r border-blue-200 bg-green-100 px-2 py-0.5 text-green-700 hover:bg-green-200 cursor-pointer"
-                  >
-                    <Crosshair size={18} />
-                  </button>
-                </div>
+                  {/* Zonages */}
+                  <div className="absolute right-0 top-0 rounded-tr-md rounded-bl-md border border-blue-200 bg-green-100 px-2 py-1 text-green-700">
+                    <Crosshair size={20} />
+
+                    {selectedZonages.length > 0 && (
+                      <span className="absolute w-6 h-6 left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full bg-green-100 border-[3.5px] border-green-700 border-double text-sm font-semibold text-green-900">
+                        {selectedZonages.length}
+                      </span>
+                    )}
+                  </div>
+                </button>
               </div>
             );
           })}
@@ -312,6 +404,10 @@ export default function PrestationWorkflowConsultations({
         animaux={filteredAnimaux}
         tarifs={tarifs}
         saving={saving}
+        selectedZonages={
+          editingId ? (zonagesByConsultation[editingId] ?? []) : []
+        }
+        onZonagesUpdated={loadData}
         onClose={closeForm}
         onSubmit={handleSubmit}
         onChange={handleChange}
@@ -320,6 +416,7 @@ export default function PrestationWorkflowConsultations({
         onAddAnimal={handleAddAnimal}
         onAddTarif={() => onAddTarif?.()}
         onOpenPrestation={onOpenPrestation}
+        onOpenPdf={handleOpenPdf}
       />
 
       <PrestationWorkflowZonages

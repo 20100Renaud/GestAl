@@ -77,7 +77,9 @@ export default function Input({
           {...props}
           type={type}
           required={required}
-          className={`${fieldClasses} ${suffix ? "pr-10" : ""}`}
+          className={`${fieldClasses} ${suffix ? "pr-10" : ""} ${
+            type === "search" ? "custom-search-input" : ""
+          }`}
         />
 
         {suffix && (

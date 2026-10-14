@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import PageHeader from "../components/ui/PageHeader.jsx";
-import { formatDate } from "../utils/formatDate";
+import { formatDateShort } from "../utils/formatDate";
 import PaiementsModal from "../components/Modals/Paiements_Modal.jsx";
 import Alert from "../components/ui/Alert.jsx";
 import Table, {
@@ -34,17 +34,15 @@ const emptyForm = {
 
 export default function Paiements() {
   const navigate = useNavigate();
-
+  const location = useLocation();
   const [paiements, setPaiements] = useState([]);
   const [prestations, setPrestations] = useState([]);
-
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
-
   const [showForm, setShowForm] = useState(false);
   const [selectedPrestation, setSelectedPrestation] = useState(null);
   const [search, setSearch] = useState("");
-
+  const [filterCurrentYear, setFilterCurrentYear] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -72,6 +70,34 @@ export default function Paiements() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const statut = params.get("statut");
+
+    if (statut === "a-encaisser") {
+      setSearch("À encaisser");
+      setFilterCurrentYear(false);
+    } else if (statut === "encaissements") {
+      setSearch(String(new Date().getFullYear()));
+      setFilterCurrentYear(true);
+    }
+
+    if (statut) {
+      navigate(location.pathname, {
+        replace: true,
+        state: location.state,
+      });
+    }
+  }, [location.search, location.pathname, location.state, navigate]);
+
+  function handleSearchChange(value) {
+    setSearch(value);
+
+    if (!value.trim()) {
+      setFilterCurrentYear(false);
+    }
+  }
+
   function isPaiementComplete(form) {
     const hasMoyen = Boolean(form.Moyen_Paiement?.trim());
 
@@ -81,14 +107,6 @@ export default function Paiements() {
       form.E_Other_Paiement;
 
     return hasMoyen && hasType;
-  }
-
-  function openCreateForm() {
-    setEditingId(null);
-    setSelectedPrestation(null);
-    setForm(emptyForm);
-    setError("");
-    setShowForm(true);
   }
 
   function openEditForm(paiement) {
@@ -182,37 +200,63 @@ export default function Paiements() {
 
   const filteredPaiements = useMemo(() => {
     const value = search.trim().toLowerCase();
-
-    if (!value) {
-      return paiements;
-    }
+    const currentYear = new Date().getFullYear();
 
     return paiements.filter((paiement) => {
       const prestation = paiement.Prestation_Paiement;
       const proprietaire = prestation?.Proprietaire_Prestation;
 
-      const fields = [
-        paiement.Date_Paiement
-          ? new Date(paiement.Date_Paiement).toLocaleDateString("fr-FR")
-          : "",
+      if (filterCurrentYear) {
+        if (!paiement.Date_Encaissement) {
+          return false;
+        }
 
+        const date = new Date(paiement.Date_Encaissement);
+
+        if (
+          Number.isNaN(date.getTime()) ||
+          date.getFullYear() !== currentYear
+        ) {
+          return false;
+        }
+      }
+
+      const typePaiement = paiement.E_Reporting_Paiement
+        ? "e-reporting"
+        : paiement.E_Facture_Paiement
+          ? "e-facture"
+          : paiement.E_Other_Paiement
+            ? "e-other"
+            : "";
+
+      const fields = [
         paiement.Date_Encaissement
           ? new Date(paiement.Date_Encaissement).toLocaleDateString("fr-FR")
+          : "À encaisser",
+        paiement.Date_Encaissement
+          ? new Date(paiement.Date_Encaissement).getFullYear()
           : "",
-
         paiement.Montant_Paiement,
         paiement.Moyen_Paiement,
-
+        typePaiement,
         proprietaire?.Nom_Proprietaire,
         proprietaire?.Prenom_Proprietaire,
         proprietaire?.Etablissement,
+        proprietaire?.Raison_sociale,
       ];
 
       return fields
         .filter((field) => field !== null && field !== undefined)
         .some((field) => String(field).toLowerCase().includes(value));
     });
-  }, [paiements, search]);
+  }, [paiements, search, filterCurrentYear]);
+
+const totalMontant = useMemo(() => {
+  return filteredPaiements.reduce(
+    (total, paiement) => total + (Number(paiement.Montant_Paiement) || 0),
+    0,
+  );
+}, [filteredPaiements]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -279,15 +323,23 @@ export default function Paiements() {
           </>
         }
         search={search}
-        onSearchChange={setSearch}
+        onSearchChange={handleSearchChange}
         searchPlaceholder="Rechercher un paiement..."
         className="mb-6"
       />
 
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-sm text-gray-500">
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <p className="text-sm text-blue-900">
           {filteredPaiements.length} paiement
           {filteredPaiements.length > 1 ? "s" : ""}
+        </p>
+
+        <p className="text-sm font-semibold text-blue-900 pr-2">
+          Total :{" "}
+          {totalMontant.toLocaleString("fr-FR", {
+            style: "currency",
+            currency: "EUR",
+          })}
         </p>
       </div>
 
@@ -313,7 +365,11 @@ export default function Paiements() {
                 key={paiement.ID_Paiement}
                 onClick={() => openEditForm(paiement)}
               >
-                <TableCell>{formatDate(paiement.Date_Encaissement)}</TableCell>
+                <TableCell>
+                  {paiement.Date_Encaissement
+                    ? formatDateShort(paiement.Date_Encaissement)
+                    : "À encaisser"}
+                </TableCell>
 
                 <TableCell>
                   {paiement.Prestation_Paiement

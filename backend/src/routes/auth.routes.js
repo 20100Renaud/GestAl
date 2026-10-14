@@ -26,6 +26,12 @@ router.get("/me", authenticate, async (req, res) => {
         Email_User: true,
         Prenom_User: true,
         Nom_User: true,
+        Pratique: true,
+        Civilite_User: true,
+        Adresse_User: true,
+        Ville_User: true,
+        CP_User: true,
+        Tel_User: true,
       },
     });
 
@@ -42,6 +48,12 @@ router.get("/me", authenticate, async (req, res) => {
         email: user.Email_User,
         firstName: user.Prenom_User,
         lastName: user.Nom_User,
+        practice: user.Pratique,
+        civility: user.Civilite_User,
+        address: user.Adresse_User,
+        city: user.Ville_User,
+        postalCode: user.CP_User,
+        phone: user.Tel_User,
       },
     });
   } catch (error) {

@@ -1,14 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import ZonageModal from "../components/Modals/Zonages_Modal.jsx";
-import Alert from "../components/ui/Alert.jsx";
-import Table, {
-  Vide,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableCell,
-} from "../components/ui/Table.jsx";
+import { CardZonage } from "../components/ui/Card.jsx";
 import {
   getZonages,
   createZonage,
@@ -191,53 +184,34 @@ export default function Zonages() {
       />
 
       <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-blue-900">
           {filteredZonages.length} résultat
           {filteredZonages.length > 1 ? "s" : ""}
         </p>
       </div>
 
       {loading ? (
-        <p>Chargement...</p>
+        <p className="py-8 text-center text-blue-700">
+          Chargement des zonages...
+        </p>
       ) : filteredZonages.length === 0 ? (
         <Vide search={search} />
       ) : (
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableHeader>Intitulé</TableHeader>
-            </TableRow>
-          </TableHead>
-
-          <tbody>
-            {filteredZonages.map((zonage) => (
-              <TableRow
-                key={zonage.ID_Zonage}
-                onClick={() => openEditForm(zonage)}
-              >
-                <TableCell className="">
-                  <div className="grid grid-cols-[7.5rem_5rem_5rem] md:grid-cols-[7.5rem_5rem_5rem_5rem] items-center text-md font-medium text-blue-900 ">
-                    <div className="text-left">{getZonageLabel(zonage)}</div>
-
-                    <div>
-                      {zonage.Technique_Zonage && (
-                        <span
-                          className={`inline-block rounded-full px-2 py-1 text-xs text-white w-20 text-center ${getTechniqueColor(
-                            zonage.Technique_Zonage,
-                          )}`}
-                        >
-                          {zonage.Technique_Zonage}
-                        </span>
-                      )}
-                    </div>
-
-                    <div />
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </tbody>
-        </Table>
+        <div
+          className="flex
+            flex-wrap w-full justify-center
+            gap-1
+          "
+        >
+          {filteredZonages.map((zonage) => (
+            <CardZonage
+              key={zonage.ID_Zonage}
+              title={getZonageLabel(zonage)}
+              technique={zonage.Technique_Zonage}
+              onClick={() => openEditForm(zonage)}
+            />
+          ))}
+        </div>
       )}
 
       <ZonageModal

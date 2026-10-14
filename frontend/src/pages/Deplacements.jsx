@@ -172,7 +172,7 @@ export default function Deplacements() {
       />
 
       <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-blue-900">
           {filteredDeplacements.length} déplacement
           {filteredDeplacements.length > 1 ? "s" : ""}
         </p>

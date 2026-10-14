@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import Alert from "../components/ui/Alert.jsx";
-import { formatDate } from "../utils/formatDate";
+import { formatDateShort } from "../utils/formatDate";
+import PrestationWorkflowZonages from "../components/Modals/PrestationWorkflow_Zonages.jsx";
 import Table, {
   Vide,
   TableHead,
@@ -52,6 +53,8 @@ export default function Consultations() {
   const [animaux, setAnimaux] = useState([]);
   const [proprietaires, setProprietaires] = useState([]);
   const [zonages, setZonages] = useState([]);
+  const [showZonages, setShowZonages] = useState(false);
+  const [zonageConsultationId, setZonageConsultationId] = useState(null);
   const [tarifs, setTarifs] = useState([]);
   const [consultationZonages, setConsultationZonages] = useState([]);
   const [prestations, setPrestations] = useState([]);
@@ -83,7 +86,8 @@ export default function Consultations() {
   });
 
   const [savingTarif, setSavingTarif] = useState(false);
-  const [search, setSearch] = useState("");
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get("search") ?? "");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -128,6 +132,10 @@ export default function Consultations() {
   }, []);
 
   useEffect(() => {
+  setSearch(searchParams.get("search") ?? "");
+}, [searchParams]);
+
+  useEffect(() => {
     const state = location.state;
 
     if (!state?.openPrestationId) {
@@ -160,6 +168,23 @@ export default function Consultations() {
       ...current,
       [name]: value,
     }));
+  }
+
+  function openZonages(consultationId) {
+    setZonageConsultationId(consultationId);
+    setShowZonages(true);
+  }
+
+  function closeZonages() {
+    setShowZonages(false);
+    setZonageConsultationId(null);
+  }
+
+  async function refreshConsultationZonages() {
+    if (!editingId) return;
+
+    const data = await getConsultationZonages(editingId);
+    setConsultationZonages(data);
   }
 
   function openPrestation(prestation) {
@@ -462,7 +487,9 @@ export default function Consultations() {
         getAnimalName(consultation),
         getProprietaireName(consultation),
         getTarifName(consultation),
-        formatDate(getPrestationDate(consultation)),
+        getPrestationDate(consultation)
+          ? String(getPrestationDate(consultation)).slice(0, 10)
+          : "",
         consultation.Motif_Consultation,
       ];
 
@@ -587,7 +614,7 @@ export default function Consultations() {
       />
 
       <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-blue-900">
           {filteredConsultations.length} consultation
           {filteredConsultations.length > 1 ? "s" : ""}
         </p>
@@ -616,7 +643,7 @@ export default function Consultations() {
                 onClick={() => openEditForm(consultation)}
               >
                 <TableCell>
-                  {formatDate(getPrestationDate(consultation))}
+                  {formatDateShort(getPrestationDate(consultation))}
                 </TableCell>
 
                 <TableCell>{getAnimalName(consultation)}</TableCell>
@@ -646,7 +673,9 @@ export default function Consultations() {
         proprietaires={proprietaires}
         tarifs={tarifs}
         zonages={zonages}
-        consultationZonages={consultationZonages}
+        selectedZonages={consultationZonages}
+        onOpenZonages={openZonages}
+        onZonagesUpdated={refreshConsultationZonages}
         saving={saving}
         onClose={closeForm}
         onSubmit={handleSubmit}
@@ -659,6 +688,14 @@ export default function Consultations() {
         onAddAnimal={openAnimalForm}
       />
 
+      <PrestationWorkflowZonages
+        consultationId={zonageConsultationId}
+        open={showZonages}
+        onClose={closeZonages}
+        onSaved={refreshConsultationZonages}
+        onError={setError}
+      />
+      
       <TarifsModal
         open={showTarifForm}
         editingId={null}

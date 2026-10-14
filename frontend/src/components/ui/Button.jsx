@@ -1,12 +1,10 @@
 const variants = {
-  primary:
-    "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer",
-  secondary:
-    "bg-blue-200 text-blue-800 hover:bg-blue-300 cursor-pointer",
-  danger:
-    "bg-red-600 text-white hover:bg-red-700 cursor-pointer",
-  ghost:
-    "bg-transparent text-blue-300 hover:text-blue-100 cursor-pointer",
+  primary: "bg-blue-600 text-white hover:bg-blue-700 cursor-pointer",
+  secondary: "bg-blue-200 text-blue-800 hover:bg-blue-300 cursor-pointer",
+  danger: "bg-red-600 text-white hover:bg-red-700 cursor-pointer",
+  ghost: "bg-transparent text-blue-300 hover:text-blue-100 cursor-pointer",
+  zonage:
+    "bg-green-100 px-2 py-1 text-green-700 hover:bg-green-200 cursor-pointer",
 };
 
 export default function Button({

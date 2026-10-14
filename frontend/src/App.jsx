@@ -14,18 +14,19 @@ import Paiements from "./pages/Paiements.jsx";
 import Tarifs from "./pages/Tarifs.jsx";
 import Deplacements from "./pages/Deplacements.jsx";
 import Zonages from "./pages/Zonages.jsx";
-import Prestaions from "./pages/Prestations.jsx";
-
+import Prestations from "./pages/Prestations.jsx";
 
 export default function App() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const defaultPath =
+    user?.role === "ADMIN" ? "/dashboard/users" : "/dashboard";
 
   return (
     <Routes>
       <Route
         path="/login"
         element={
-          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
+          isAuthenticated ? <Navigate to={defaultPath} replace /> : <Login />
         }
       />
 
@@ -33,7 +34,7 @@ export default function App() {
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/dashboard/consultations" element={<Consultations />} />
-          <Route path="/dashboard/prestations" element={<Prestaions />} />
+          <Route path="/dashboard/prestations" element={<Prestations />} />
 
           <Route path="/dashboard/proprietaires" element={<Proprietaires />} />
 
@@ -53,7 +54,7 @@ export default function App() {
       <Route
         path="*"
         element={
-          <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />
+          <Navigate to={isAuthenticated ? defaultPath : "/login"} replace />
         }
       />
     </Routes>

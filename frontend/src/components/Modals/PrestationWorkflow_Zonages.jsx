@@ -1,13 +1,12 @@
-import { useEffect, useState } from "react";
-
+import { useEffect, useMemo, useState } from "react";
+import { techniqueCardColors } from "../ui/Card.jsx";
 import Button from "../ui/Button.jsx";
-import Input from "../ui/Input.jsx";
 import Modal from "../ui/Modal.jsx";
-
-import { Crosshair } from "lucide-react";
-
+import PageHeader from "../ui/PageHeader.jsx";
+import { CardZonage } from "../ui/Card.jsx";
 import { getZonages } from "../../api/zonages.js";
-
+import CommentaireZonageModal from "./CommentaireZonageModal.jsx";
+import { Check } from "lucide-react";
 import {
   getConsultationZonages,
   createConsultationZonage,
@@ -22,10 +21,13 @@ export default function PrestationWorkflowZonages({
   onSaved,
   onError,
 }) {
+  const [search, setSearch] = useState("");
   const [zonages, setZonages] = useState([]);
   const [consultationZonages, setConsultationZonages] = useState([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [commentModalZonageId, setCommentModalZonageId] = useState(null);
+  const [commentDraft, setCommentDraft] = useState("");
 
   useEffect(() => {
     if (!open || !consultationId) {
@@ -47,12 +49,39 @@ export default function PrestationWorkflowZonages({
 
       setZonages(zonagesData);
       setConsultationZonages(consultationZonagesData);
+      setSearch("");
     } catch (err) {
       onError?.(err.message);
     } finally {
       setLoading(false);
     }
   }
+
+  function getZonageLabel(zonage) {
+    return `${zonage.Nom_Zonage ?? ""}${zonage.Position_Zonage ?? ""}${
+      zonage.Orientation_Zonage ? `-${zonage.Orientation_Zonage}` : ""
+    }`;
+  }
+
+  const filteredZonages = useMemo(() => {
+    const value = search.trim().toLowerCase();
+
+    if (!value) {
+      return zonages;
+    }
+
+    return zonages.filter((zonage) =>
+      [
+        getZonageLabel(zonage),
+        zonage.Nom_Zonage,
+        zonage.Position_Zonage,
+        zonage.Orientation_Zonage,
+        zonage.Technique_Zonage,
+      ]
+        .filter(Boolean)
+        .some((field) => String(field).toLowerCase().includes(value)),
+    );
+  }, [zonages, search]);
 
   function handleToggle(zonageId) {
     const existing = consultationZonages.find(
@@ -159,93 +188,182 @@ export default function PrestationWorkflowZonages({
     }
   }
 
+  function openCommentModal(zonage) {
+    const selected = consultationZonages.find(
+      (item) => item.ID_Zonage === zonage.ID_Zonage,
+    );
+
+    if (!selected) return;
+
+    setCommentDraft(selected.Commentaire_Zonage ?? "");
+    setCommentModalZonageId(zonage.ID_Zonage);
+  }
+
+  function saveCommentDraft() {
+    if (commentModalZonageId === null) return;
+
+    setConsultationZonages((current) =>
+      current.map((item) =>
+        item.ID_Zonage === commentModalZonageId
+          ? { ...item, Commentaire_Zonage: commentDraft }
+          : item,
+      ),
+    );
+
+    closeCommentModal();
+  }
+
+  function closeCommentModal() {
+    setCommentModalZonageId(null);
+    setCommentDraft("");
+  }
+
   return (
-    <Modal open={open} title="Zonages associés" onClose={onClose}>
-      <div className="p-6">
-        {loading ? (
-          <p className="text-sm text-blue-700">Chargement...</p>
-        ) : zonages.length === 0 ? (
-          <p className="text-sm text-blue-900">Aucun zonage disponible.</p>
-        ) : (
-          <div className="space-y-3 rounded border border-blue-300 p-3">
-            {zonages.map((zonage) => {
-              const selected = consultationZonages.find(
-                (item) => item.ID_Zonage === zonage.ID_Zonage,
-              );
+    <>
+      <Modal open={open} title="Zonages associés" onClose={onClose}>
+        <div className="flex h-[min(600px,80vh)] flex-col p-6">
+          {loading ? (
+            <p className="text-sm text-blue-700">Chargement...</p>
+          ) : zonages.length === 0 ? (
+            <p className="text-sm text-blue-900">Aucun zonage disponible.</p>
+          ) : (
+            <>
+              {/* Search + result count */}
+              <div className="shrink-0">
+                <PageHeader
+                  search={search}
+                  onSearchChange={setSearch}
+                  searchPlaceholder="Rechercher un zonage..."
+                  className="mb-4"
+                />
 
-              return (
-                <div
-                  key={zonage.ID_Zonage}
-                  className="flex flex-col gap-3 rounded border border-blue-400 px-3 md:flex-row md:items-center"
-                >
-                  <label className="flex h-12 cursor-pointer items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(selected)}
-                      onChange={() => handleToggle(zonage.ID_Zonage)}
-                      disabled={saving}
-                    />
-
-                    <span className="flex items-center gap-1 text-md font-medium text-blue-900">
-                      {zonage.Nom_Zonage}
-
-                      {zonage.Position_Zonage && `-${zonage.Position_Zonage}`}
-
-                      {zonage.Orientation_Zonage && (
-                        <span className="rounded-full bg-yellow-400 px-2 py-1 text-xs text-blue-900">
-                          {zonage.Orientation_Zonage}
-                        </span>
-                      )}
-
-                      {zonage.Technique_Zonage && (
-                        <span className="rounded-full bg-green-600 px-2 py-1 text-xs text-white">
-                          {zonage.Technique_Zonage}
-                        </span>
-                      )}
-
-                    </span>
-                  </label>
-
-                  {selected && (
-                    <Input
-                      id={`Commentaire_Zonage_${zonage.ID_Zonage}`}
-                      label=""
-                      type="text"
-                      value={selected.Commentaire_Zonage ?? ""}
-                      onChange={(event) =>
-                        handleCommentChange(
-                          zonage.ID_Zonage,
-                          event.target.value,
-                        )
-                      }
-                      disabled={saving}
-                    />
-                  )}
+                <div className="mb-3 text-sm text-blue-900">
+                  {filteredZonages.length} résultat
+                  {filteredZonages.length > 1 ? "s" : ""}
                 </div>
-              );
-            })}
+              </div>
+
+              {/* Cards */}
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                {filteredZonages.length === 0 ? (
+                  <p className="p-6 text-center text-sm text-red-500 border bg-red-50 rounded-2xl w-fit">
+                    Aucun zonage ne correspond à la recherche.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap justify-center gap-2 px-1 py-2">
+                    {filteredZonages.map((zonage) => {
+                      const selected = consultationZonages.find(
+                        (item) => item.ID_Zonage === zonage.ID_Zonage,
+                      );
+
+                      const title = `${zonage.Nom_Zonage ?? ""}${
+                        zonage.Position_Zonage ?? ""
+                      }${
+                        zonage.Orientation_Zonage
+                          ? `-${zonage.Orientation_Zonage}`
+                          : ""
+                      }`;
+
+                      const colors = techniqueCardColors[
+                        zonage.Technique_Zonage
+                      ] ?? {
+                        badge: "text-gray-500",
+                        commentBorder: "border-gray-500",
+                        commentBg: "bg-gray-50",
+                      };
+
+                      return (
+                        <div
+                          key={zonage.ID_Zonage}
+                          className="relative flex flex-col items-center gap-2"
+                        >
+                          <CardZonage
+                            title={title}
+                            technique={zonage.Technique_Zonage}
+                            onClick={() => {
+                              if (!saving) {
+                                handleToggle(zonage.ID_Zonage);
+                              }
+                            }}
+                          />
+
+                          {selected && (
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+
+                                if (!saving) {
+                                  openCommentModal(zonage);
+                                }
+                              }}
+                              disabled={saving}
+                              aria-label={`Commentaire du zonage ${title}`}
+                              title={
+                                selected.Commentaire_Zonage
+                                  ? `Commentaire : ${selected.Commentaire_Zonage}`
+                                  : "Ajouter un commentaire"
+                              }
+                              className={`absolute left-1/2 -bottom-1 z-10 flex h-5 max-w-24 -translate-x-1/2 items-center gap-1 rounded-full border px-1.5 cursor-pointer hover:brightness-95 disabled:cursor-not-allowed ${colors.commentBorder} ${colors.commentBg}`}
+                            >
+                              <Check
+                                size={15}
+                                strokeWidth={3}
+                                className={`shrink-0 ${colors.badge}`}
+                              />
+
+                              <span
+                                className={`truncate text-xs ${colors.badge}`}
+                              >
+                                {selected.Commentaire_Zonage || "..."}
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Buttons */}
+          <div className="mt-auto flex shrink-0 justify-end gap-3 border-t border-blue-100 pt-4">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onClose}
+              disabled={saving}
+            >
+              Annuler
+            </Button>
+
+            <Button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || loading || !consultationId}
+            >
+              {saving ? "Enregistrement..." : "Enregistrer"}
+            </Button>
           </div>
-        )}
-
-        <div className="mt-6 flex justify-end gap-3">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onClose}
-            disabled={saving}
-          >
-            Annuler
-          </Button>
-
-          <Button
-            type="button"
-            onClick={handleSave}
-            disabled={saving || loading || !consultationId}
-          >
-            {saving ? "Enregistrement..." : "Enregistrer"}
-          </Button>
         </div>
-      </div>
-    </Modal>
+      </Modal>
+
+      <CommentaireZonageModal
+        open={commentModalZonageId !== null}
+        zonage={zonages.find((item) => item.ID_Zonage === commentModalZonageId)}
+        comment={commentDraft}
+        onCommentChange={setCommentDraft}
+        onSave={saveCommentDraft}
+        onClose={closeCommentModal}
+        saving={saving}
+        mode="input"
+        onDeselect={() => {
+          handleToggle(commentModalZonageId);
+          closeCommentModal();
+        }}
+      />
+    </>
   );
 }

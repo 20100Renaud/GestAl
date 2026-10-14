@@ -11,6 +11,8 @@ import {
   Phone,
   LockKeyhole,
   Contact,
+  MapPinned,
+  Hash,
 } from "lucide-react";
 
 export default function UsersModal({
@@ -134,6 +136,7 @@ export default function UsersModal({
             id="CP_User"
             name="CP_User"
             label="Code postal"
+            icon={Hash}
             value={form.CP_User}
             onChange={onChange}
             disabled={saving}
@@ -144,6 +147,7 @@ export default function UsersModal({
             id="Ville_User"
             name="Ville_User"
             label="Ville"
+            icon={MapPinned}
             value={form.Ville_User}
             onChange={onChange}
             onBlur={onBlur}
@@ -152,27 +156,29 @@ export default function UsersModal({
 
           {/* PASSWORD */}
 
-          <Input
-            id="password"
-            name="password"
-            label={
-              editingId ? "Nouveau mot de passe (facultatif)" : "Mot de passe"
-            }
-            icon={LockKeyhole}
-            type="password"
-            value={form.password}
-            onChange={onChange}
-            required={!editingId}
-            disabled={saving}
-            autoComplete="new-password"
-            minLength={6}
-          />
+          <div className="space-y-1">
+            <Input
+              id="password"
+              name="password"
+              label={
+                editingId ? "Nouveau mot de passe (facultatif)" : "Mot de passe"
+              }
+              icon={LockKeyhole}
+              type="password"
+              value={form.password}
+              onChange={onChange}
+              required={!editingId}
+              disabled={saving}
+              autoComplete="new-password"
+              minLength={6}
+            />
 
-          {editingId && (
-            <p className="mt-1 text-xs text-blue-700">
-              Laissez ce champ vide pour conserver le mot de passe actuel.
-            </p>
-          )}
+            {editingId && (
+              <p className="text-xs text-blue-700">
+                Laissez ce champ vide pour conserver le mot de passe actuel.
+              </p>
+            )}
+          </div>
         </div>
 
         {/* ACTIONS */}

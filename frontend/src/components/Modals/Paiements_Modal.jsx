@@ -209,7 +209,7 @@ export default function PaiementsModal({
                   Date d'encaissement
                 </label>
 
-                <div className="flex items-center rounded-md border border-blue-200 bg-gray-100 px-3 py-2.5 text-sm text-blue-900 cursor-not-allowed">
+                <div className="flex items-center rounded-md border border-blue-200 bg-blue-100 px-3 py-2.5 text-sm text-blue-900 cursor-not-allowed">
                   Renseigner montant, moyen et/ou type.
                 </div>
               </div>

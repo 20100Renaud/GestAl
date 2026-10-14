@@ -171,7 +171,7 @@ export default function Tarifs() {
       />
 
       <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-blue-900">
           {filteredTarifs.length} tarif
           {filteredTarifs.length > 1 ? "s" : ""}
         </p>

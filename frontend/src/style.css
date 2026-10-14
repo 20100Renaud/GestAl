@@ -1,1 +1,13 @@
 @import "tailwindcss";
+
+/* Hide the native search clear button */
+.custom-search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Hide native search decorations in WebKit browsers */
+.custom-search-input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}

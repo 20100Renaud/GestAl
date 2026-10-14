@@ -262,15 +262,7 @@ export async function updatePrestation(req, res) {
       });
     }
 
-    if (
-      proprietaire.ID_User !== req.user.userId ||
-      lieu.ID_User !== req.user.userId
-    ) {
-      return res.status(403).json({
-        error: "Access denied to this proprietor or location",
-      });
-    }
-    
+
     const remise =
       Remise_Prestation === undefined || Remise_Prestation === ""
         ? undefined
@@ -328,6 +320,15 @@ export async function updatePrestation(req, res) {
       });
     }
 
+    if (
+      proprietaire.ID_User !== req.user.userId ||
+      lieu.ID_User !== req.user.userId
+    ) {
+      return res.status(403).json({
+        error: "Access denied to this proprietor or location",
+      });
+    }
+
     let datePrestation;
 
     if (Date_Prestation !== undefined) {
@@ -368,7 +369,7 @@ export async function updatePrestation(req, res) {
 
     return res.json(prestation);
   } catch (error) {
-    console.error("Update prestation error:", error);
+    console.error("Erreur de la mise à jour de la prestation:", error);
 
     return res.status(500).json({
       error: "Internal server error",

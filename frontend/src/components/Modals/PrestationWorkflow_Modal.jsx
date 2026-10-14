@@ -6,6 +6,7 @@ import Alert from "../ui/Alert.jsx";
 import PrestationWorkflowPrestation from "./PrestationWorkflow_Prestation.jsx";
 import PrestationWorkflowConsultations from "./PrestationWorkflow_Consultations.jsx";
 import PrestationWorkflowPaiements from "./PrestationWorkflow_Paiements.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 import { getPrestation } from "../../api/prestations.js";
 import { createAnimal } from "../../api/animaux.js";
 import { createTarif } from "../../api/tarifs.js";
@@ -34,6 +35,7 @@ export default function PrestationWorkflowModal({
   prestation: initialPrestation = null,
   onClose,
 }) {
+  const { user: currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState("prestation");
   const [prestationId, setPrestationId] = useState(null);
   const [prestation, setPrestation] = useState(null);
@@ -273,6 +275,7 @@ export default function PrestationWorkflowModal({
           {prestationId && (
             <div hidden={activeTab !== "consultations"}>
               <PrestationWorkflowConsultations
+                currentUser={currentUser}
                 prestationId={prestationId}
                 prestation={prestation}
                 onError={handleError}

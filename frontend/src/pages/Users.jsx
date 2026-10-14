@@ -240,14 +240,14 @@ export default function Users() {
       />
 
       <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-blue-900">
           {filteredUsers.length} utilisateur
           {filteredUsers.length > 1 ? "s" : ""}
         </p>
       </div>
 
       {loading ? (
-        <p className="py-8 text-center text-sm text-gray-500">
+        <p className="py-8 text-center text-sm text-blue-900">
           Chargement des utilisateurs...
         </p>
       ) : filteredUsers.length === 0 ? (
@@ -272,11 +272,11 @@ export default function Users() {
               <TableRow key={user.ID_User} onClick={() => openEditForm(user)}>
                 <TableCell className="w-[50%] md:w-auto min-w-0">
                   <div className="flex min-w-0 flex-col text-left">
-                    <span className="truncate font-medium text-gray-900">
+                    <span className="truncate font-medium text-blue-900">
                       {user.Prenom_User} {user.Nom_User}
                     </span>
 
-                    <span className="truncate text-xs text-gray-500">
+                    <span className="truncate text-xs text-blue-700">
                       {user.CP_User} - {user.Ville_User}
                     </span>
                   </div>

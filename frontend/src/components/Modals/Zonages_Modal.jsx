@@ -1,7 +1,9 @@
 import Button from "../ui/Button.jsx";
 import Input from "../ui/Input.jsx";
+import Select from "../ui/Select.jsx";
 import Modal from "../ui/Modal";
 import Alert from "../ui/Alert.jsx";
+import { CardZonage } from "../ui/Card.jsx";
 import {
   LayoutArrowRight,
   Eye,
@@ -28,71 +30,66 @@ export default function ZonageModal({
       onClose={onClose}
     >
       <form onSubmit={onSubmit} className="p-6">
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-          <Input
-            id="Nom_Zonage"
-            label="Nom"
-            icon={Crosshair}
-            type="text"
-            name="Nom_Zonage"
-            value={form.Nom_Zonage}
-            onChange={onChange}
-            required
-          />
+        <div className="flex justify-around gap-2">
+          {/* Fields */}
+          <div className="grid sm:grid-cols-2 gap-2">
+            <Input
+              id="Nom_Zonage"
+              label="Nom"
+              icon={Crosshair}
+              type="text"
+              name="Nom_Zonage"
+              value={form.Nom_Zonage}
+              onChange={onChange}
+              required
+            />
+            <Input
+              id="Position_Zonage"
+              label="Position"
+              icon={LayoutArrowRight}
+              type="text"
+              name="Position_Zonage"
+              value={form.Position_Zonage}
+              onChange={onChange}
+            />
+            <Input
+              id="Orientation_Zonage"
+              label="Orientation"
+              icon={Move3d}
+              type="text"
+              name="Orientation_Zonage"
+              value={form.Orientation_Zonage}
+              onChange={onChange}
+            />
+            <Select
+              id="Technique_Zonage"
+              label="Technique"
+              icon={GraduationCap}
+              name="Technique_Zonage"
+              value={form.Technique_Zonage ?? ""}
+              onChange={onChange}
+            >
+              <option value="">Sélectionner une technique</option>
+              <option value="Articulaire">Articulaire</option>
+              <option value="Tissulaire">Tissulaire</option>
+              <option value="Viscérale">Viscérale</option>
+            </Select>
+          </div>
 
-          <Input
-            id="Position_Zonage"
-            label="Position"
-            icon={LayoutArrowRight}
-            type="text"
-            name="Position_Zonage"
-            value={form.Position_Zonage}
-            onChange={onChange}
-          />
-
-          <Input
-            id="Orientation_Zonage"
-            label="Orientation"
-            icon={Move3d}
-            type="text"
-            name="Orientation_Zonage"
-            value={form.Orientation_Zonage}
-            onChange={onChange}
-          />
-
-          <Input
-            id="Technique_Zonage"
-            label="Technique"
-            icon={GraduationCap}
-            type="text"
-            name="Technique_Zonage"
-            value={form.Technique_Zonage}
-            onChange={onChange}
-          />
-        </div>
-
-        {/* Aperçu */}
-        <div className="mt-6">
-          <p className="flex items-center gap-2 mb-2 text-sm font-medium text-blue-700">
-            <Eye size={18} />
-            Aperçu
-          </p>
-
-          <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
-            <span className="text-md font-medium text-blue-900  flex flex-wrap gap-1">
-              {form.Nom_Zonage || "Nom du zonage"}
-              {form.Position_Zonage && `-${form.Position_Zonage}`}{" "}
-              {form.Orientation_Zonage && (
-                <span className="rounded-full bg-yellow-400 px-2 py-1 text-xs text-blue-900">
-                  {form.Orientation_Zonage}
-                </span>
-              )}
-              {form.Technique_Zonage && (
-                <span className="rounded-full bg-green-600 px-2 py-1 text-xs text-white">
-                  {form.Technique_Zonage}
-                </span>
-              )}
-            </span>
+          {/* Aperçu */}
+          <div className="flex flex-col">
+            <p className="mb-3 flex flex-start items-center gap-2 text-sm font-medium text-blue-700">
+              <Eye size={18} />
+              Aperçu
+            </p>
+            <div className="flex sm:my-auto">
+              <CardZonage
+                title={`${form.Nom_Zonage || "Nom du zonage"}${
+                  form.Position_Zonage ? form.Position_Zonage : ""
+                }${form.Orientation_Zonage ? `-${form.Orientation_Zonage}` : ""}`}
+                technique={form.Technique_Zonage}
+              />
+            </div>
           </div>
         </div>
 

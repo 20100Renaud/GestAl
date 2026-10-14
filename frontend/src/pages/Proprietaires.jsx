@@ -202,7 +202,7 @@ export default function Proprietaires() {
       />
 
       <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-blue-900">
           {filteredProprietaires.length} propriétaire
           {filteredProprietaires.length > 1 ? "s" : ""}
         </p>
