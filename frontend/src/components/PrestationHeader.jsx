@@ -56,11 +56,13 @@ export default function PrestationHeader({
         <button
           type="button"
           onClick={onClick}
-          className="group absolute inset-0 rounded-md text-blue-600 transition hover:bg-blue-200 hover:text-blue-800 cursor-pointer"
+          className="group absolute inset-0 rounded-md text-blue-600 transition hover:text-blue-800 cursor-pointer"
           title="Ouvrir la prestation"
         >
-          <span className="flex h-full w-full items-center justify-center text-sm font-medium opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-            Ouvrir la prestation
+          <span className="absolute inset-0 rounded-md transition-all duration-200 group-hover:bg-white/30 group-hover:backdrop-blur-xs" />
+
+          <span className="relative flex h-full w-full items-center justify-center text-sm font-medium opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+            Naviguer vers la prestation
           </span>
 
           <ExternalLink size={18} className="absolute right-2 top-2" />

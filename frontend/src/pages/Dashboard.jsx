@@ -163,15 +163,22 @@ export default function Dashboard() {
     isInMonth(getConsultationDate(consultation), currentYear, currentMonth),
   );
 
-  const prestationsAvecReste = prestations
+  const prestationsAvecCreances = prestations
     .map((prestation) => ({
       prestation,
       statut: getStatutPaiement(prestation),
     }))
-    .filter(({ statut }) => statut.type === "reste");
+    .filter(
+      ({ statut }) =>
+        statut.type === "reste" || statut.type === "aucun-paiement",
+    );
 
-  const montantCreances = prestationsAvecReste.reduce(
-    (total, { statut }) => total + statut.montant,
+  const montantCreances = prestationsAvecCreances.reduce(
+    (total, { statut }) =>
+      total +
+      (statut.type === "reste"
+        ? Number(statut.montant) || 0
+        : Number(statut.montantPrestation) || 0),
     0,
   );
 
@@ -223,49 +230,61 @@ export default function Dashboard() {
       </div>
 
       <div className="flex flex-wrap justify-center gap-2 sm:gap-8">
-        <div
-          onClick={() =>
-            navigate(`/dashboard/consultations?search=${currentYear}`)
-          }
-          className="cursor-pointer transition-transform hover:-translate-y-2 hover:bg-blue-50 rounded-3xl"
-        >
+        <div className="transition-transform hover:-translate-y-2">
           <CardDashboard
             title="CONSULTATIONS"
             value={loading ? "…" : consultationsThisYear.length}
             subtitle={`en ${currentYear}`}
             secondaryValue={loading ? "…" : consultationsThisMonth.length}
             secondarySubtitle={`en ${currentMonthName}`}
+            onValueClick={() =>
+              navigate("/dashboard/consultations?statut=consultations-annee")
+            }
+            onSecondaryValueClick={() =>
+              navigate("/dashboard/consultations?statut=consultations-mois")
+            }
+            borderColor="border-t-blue-600"
+            titleColor="text-blue-700"
+            valueColor="text-blue-900"
+            subtitleColor="text-blue-500"
+            secondaryValueColor="text-blue-700"
+            secondarySubtitleColor="text-blue-400"
+            HoverColor="hover:bg-blue-50"
           />
         </div>
 
-        <div
-          onClick={() => navigate(`/dashboard/paiements?statut=encaissements`)}
-          className="cursor-pointer transition-transform hover:-translate-y-2 hover:bg-green-50 rounded-3xl"
-        >
+        <div className="transition-transform hover:-translate-y-2">
           <CardDashboard
-            title="ENCAISSEMENTS"
+            title="CHIFFRE D'AFFAIRES"
             value={loading ? "…" : formatCurrency(montantEncaisseThisYear)}
             subtitle={`en ${currentYear}`}
             secondaryValue={
               loading ? "…" : formatCurrency(montantEncaisseThisMonth)
             }
             secondarySubtitle={`en ${currentMonthName}`}
+            onValueClick={() =>
+              navigate("/dashboard/paiements?statut=encaissements")
+            }
+            onSecondaryValueClick={() =>
+              navigate("/dashboard/paiements?statut=encaissements-mois")
+            }
             borderColor="border-t-green-600"
             titleColor="text-green-700"
             valueColor="text-green-900"
             subtitleColor="text-green-500"
             secondaryValueColor="text-green-700"
             secondarySubtitleColor="text-green-400"
+            HoverColor="hover:bg-green-50"
           />
         </div>
 
         <div
-          onClick={() => navigate("/dashboard/prestations?statut=reste")}
+          onClick={() => navigate("/dashboard/prestations?statut=creances")}
           className="cursor-pointer transition-transform hover:-translate-y-2 hover:bg-red-50 rounded-3xl"
         >
           <CardDashboard
             title="CRÉANCES"
-            value={loading ? "…" : prestationsAvecReste.length}
+            value={loading ? "…" : prestationsAvecCreances.length}
             subtitle={`en ${currentYear}`}
             secondaryValue={loading ? "…" : formatCurrency(montantCreances)}
             secondarySubtitle="reste à payer"

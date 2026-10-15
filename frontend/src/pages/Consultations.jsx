@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
+import { createConsultationPdfHandler } from "../utils/consultationPdfHandler.js";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import Alert from "../components/ui/Alert.jsx";
+import { CardFilter } from "../components/ui/Card.jsx";
 import { formatDateShort } from "../utils/formatDate";
 import PrestationWorkflowZonages from "../components/Modals/PrestationWorkflow_Zonages.jsx";
 import Table, {
@@ -46,6 +49,7 @@ const emptyForm = {
 };
 
 export default function Consultations() {
+  const { user: currentUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -86,9 +90,10 @@ export default function Consultations() {
   });
 
   const [savingTarif, setSavingTarif] = useState(false);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(() => searchParams.get("search") ?? "");
-
+  const [filterCurrentYear, setFilterCurrentYear] = useState(false);
+  const [filterCurrentMonth, setFilterCurrentMonth] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -132,8 +137,25 @@ export default function Consultations() {
   }, []);
 
   useEffect(() => {
-  setSearch(searchParams.get("search") ?? "");
-}, [searchParams]);
+    if (searchParams.has("statut")) return;
+
+    setSearch(searchParams.get("search") ?? "");
+  }, [searchParams]);
+
+  useEffect(() => {
+    const statut = searchParams.get("statut");
+    const currentYear = new Date().getFullYear();
+
+    if (statut === "consultations-annee") {
+      setFilterCurrentYear(true);
+      setFilterCurrentMonth(false);
+      setSearch(String(currentYear));
+    } else if (statut === "consultations-mois") {
+      setFilterCurrentYear(false);
+      setFilterCurrentMonth(true);
+      setSearch(getCurrentMonthSearch());
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const state = location.state;
@@ -475,29 +497,82 @@ export default function Consultations() {
     return consultation.Prestation_Consultation?.Date_Prestation ?? null;
   }
 
+  function isInCurrentYear(dateValue) {
+    if (!dateValue) return false;
+
+    const date = new Date(dateValue);
+    const now = new Date();
+
+    return (
+      !Number.isNaN(date.getTime()) && date.getFullYear() === now.getFullYear()
+    );
+  }
+
+  function isInCurrentMonth(dateValue) {
+    if (!dateValue) return false;
+
+    const date = new Date(dateValue);
+    const now = new Date();
+
+    return (
+      !Number.isNaN(date.getTime()) &&
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth()
+    );
+  }
+
+  function getCurrentMonthSearch() {
+    return new Date().toLocaleDateString("fr-FR", {
+      month: "long",
+      year: "numeric",
+    });
+  }
+
   const filteredConsultations = useMemo(() => {
     const value = search.trim().toLowerCase();
-
-    if (!value) {
-      return consultations;
-    }
+    const currentYear = new Date().getFullYear();
 
     return consultations.filter((consultation) => {
+      const prestationDate = getPrestationDate(consultation);
+
+      if (filterCurrentYear && !isInCurrentYear(prestationDate)) {
+        return false;
+      }
+
+      if (filterCurrentMonth && !isInCurrentMonth(prestationDate)) {
+        return false;
+      }
+
       const searchableFields = [
         getAnimalName(consultation),
         getProprietaireName(consultation),
         getTarifName(consultation),
-        getPrestationDate(consultation)
-          ? String(getPrestationDate(consultation)).slice(0, 10)
+        prestationDate ? String(prestationDate).slice(0, 10) : "",
+        prestationDate ? new Date(prestationDate).getFullYear().toString() : "",
+        prestationDate
+          ? new Date(prestationDate).toLocaleDateString("fr-FR", {
+              month: "long",
+              year: "numeric",
+            })
           : "",
         consultation.Motif_Consultation,
       ];
 
-      return searchableFields
-        .filter(Boolean)
-        .some((field) => String(field).toLowerCase().includes(value));
+      return (
+        !value ||
+        searchableFields
+          .filter(Boolean)
+          .some((field) => String(field).toLowerCase().includes(value))
+      );
     });
-  }, [consultations, animaux, tarifs, search]);
+  }, [
+    consultations,
+    animaux,
+    tarifs,
+    search,
+    filterCurrentYear,
+    filterCurrentMonth,
+  ]);
 
   async function saveConsultationZonages(consultationId) {
     const existing = await getConsultationZonages(consultationId);
@@ -596,6 +671,30 @@ export default function Consultations() {
     }
   }
 
+  const zonagesByConsultation = useMemo(
+    () =>
+      editingId
+        ? {
+            [editingId]: consultationZonages.map((item) => ({
+              ...(item.Zonage ?? {}),
+              ...item,
+            })),
+          }
+        : {},
+    [editingId, consultationZonages],
+  );
+
+  const handleOpenPdf = createConsultationPdfHandler({
+    consultations,
+    animaux,
+    tarifs,
+    zonagesByConsultation,
+    prestations,
+    proprietaires,
+    currentUser,
+    onError: setError,
+  });
+
   return (
     <div className="w-full">
       {error && <Alert variant="error">{error}</Alert>}
@@ -613,6 +712,70 @@ export default function Consultations() {
         className="mb-6"
       />
 
+      {/* Filter cards */}
+      <div className="mb-5 flex flex-wrap justify-center gap-2">
+        <CardFilter
+          title={String(new Date().getFullYear())}
+          value={
+            consultations.filter((c) => isInCurrentYear(getPrestationDate(c)))
+              .length
+          }
+          color="blue"
+          active={filterCurrentYear}
+          onClick={() => {
+            const next = !filterCurrentYear;
+
+            setFilterCurrentYear(next);
+            setFilterCurrentMonth(false);
+
+            const params = new URLSearchParams(searchParams);
+
+            if (next) {
+              params.set("statut", "consultations-annee");
+              setSearch(String(new Date().getFullYear()));
+            } else {
+              params.delete("statut");
+              setSearch("");
+            }
+
+            setSearchParams(params, { replace: true });
+          }}
+          className="min-w-24"
+        />
+
+        <CardFilter
+          title={new Date()
+            .toLocaleDateString("fr-FR", { month: "long" })
+            .replace(/^./, (char) => char.toUpperCase())}
+          value={
+            consultations.filter((c) => isInCurrentMonth(getPrestationDate(c)))
+              .length
+          }
+          color="blue"
+          active={filterCurrentMonth}
+          onClick={() => {
+            const next = !filterCurrentMonth;
+
+            setFilterCurrentMonth(next);
+            setFilterCurrentYear(false);
+
+            const params = new URLSearchParams(searchParams);
+
+            if (next) {
+              params.set("statut", "consultations-mois");
+              setSearch(getCurrentMonthSearch());
+            } else {
+              params.delete("statut");
+              setSearch("");
+            }
+
+            setSearchParams(params, { replace: true });
+          }}
+          className="min-w-24"
+        />
+      </div>
+
+      {/* Count */}
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-sm text-blue-900">
           {filteredConsultations.length} consultation
@@ -686,6 +849,7 @@ export default function Consultations() {
         onOpenPrestation={() => openPrestation(selectedPrestation)}
         onAddTarif={openTarifForm}
         onAddAnimal={openAnimalForm}
+        onOpenPdf={(mode) => handleOpenPdf(mode, editingId)}
       />
 
       <PrestationWorkflowZonages
@@ -695,7 +859,7 @@ export default function Consultations() {
         onSaved={refreshConsultationZonages}
         onError={setError}
       />
-      
+
       <TarifsModal
         open={showTarifForm}
         editingId={null}

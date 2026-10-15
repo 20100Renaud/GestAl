@@ -25,6 +25,19 @@ export default function ProprietairesModal({
   onChange,
   onDelete,
 }) {
+  const onRaisonChange = (event) => {
+  const { name, value } = event.target;
+
+  onChange(event);
+  if (name === "raisonSociale" && value === "Particulier") {
+    onChange({
+      target: {
+        name: "etablissement",
+        value: "",
+      },
+    });
+  }
+  };
   return (
     <Modal
       open={open}
@@ -39,7 +52,7 @@ export default function ProprietairesModal({
             icon={BuildingComplex}
             name="raisonSociale"
             value={form.raisonSociale}
-            onChange={onChange}
+            onChange={onRaisonChange}
             required
           >
             <option value="Particulier">Particulier</option>
@@ -55,6 +68,7 @@ export default function ProprietairesModal({
             name="etablissement"
             value={form.etablissement}
             onChange={onChange}
+            disabled={form.raisonSociale === "Particulier"}
           />
 
           <Select

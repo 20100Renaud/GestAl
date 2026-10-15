@@ -49,16 +49,16 @@ export function TabButton ({
       disabled={disabled}
       onClick={() => setActiveTab(tab)}
       className={`
-        whitespace-nowrap border-b-2 px-2 md:px-4 py-3 text-sm font-medium
+        whitespace-nowrap border-b-2 px-2 md:px-4 py-3 text-sm font-medium rounded-t-xl
         ${
           isActive
-            ? "border-blue-600 text-blue-700 bg-blue-50 rounded-t-xl"
+            ? "border-blue-600 text-blue-700 bg-blue-50 "
             : "border-transparent text-blue-500"
         }
         ${
           disabled
             ? "cursor-not-allowed opacity-40"
-            : "hover:text-blue-700 cursor-pointer"
+            : "hover:text-blue-700 hover:bg-blue-50 cursor-pointer"
         }
       `}
     >

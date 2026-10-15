@@ -36,7 +36,6 @@ export default function ConsultationsModal({
   tarifs,
   saving,
   selectedZonages = [],
-  onDraftZonagesChange,
   onZonagesUpdated,
   onClose,
   onSubmit,
@@ -126,7 +125,7 @@ export default function ConsultationsModal({
               className="flex border-x border-blue-100 min-h-0 flex-1 flex-col overflow-hidden"
             >
               {/* ONLY THIS SECTION SCROLLS */}
-              <div className="min-h-0 flex-1 overflow-y-auto p-6">
+              <div className="min-h-0 flex-1 overflow-y-auto p-6 shadow-[inset_6px_0_10px_-6px_rgba(0,0,0,0.2)]">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {/* ANIMAL */}
                   <div className="relative">
@@ -375,7 +374,7 @@ export default function ConsultationsModal({
             </form>
 
             {/* FIXED ACTIONS — OUTSIDE THE SCROLLABLE DIV */}
-            <div className="flex shrink-0 items-center justify-between gap-3 border-t border-blue-100 bg-blue-50 rounded-b-2xl px-6 py-4">
+            <div className="flex shrink-0 items-center justify-between gap-3 border border-blue-200 bg-blue-100 rounded-b-2xl px-6 py-4 shadow-[0_-4px_10px_rgba(0,0,0,0.12)]">
               <div className="flex gap-3">
                 {editingId && (
                   <Button
@@ -395,23 +394,23 @@ export default function ConsultationsModal({
                     <Button
                       type="button"
                       variant="clear_green"
-                      onClick={() => onOpenPdf("preview")}
+                      onClick={() => onOpenPdf?.("preview")}
                       disabled={saving}
+                      aria-label="Prévisualiser le compte rendu"
+                      title="Prévisualiser le compte rendu"
                     >
-                      <span className="flex items-center gap-2">
-                        <Eye size={16} />
-                      </span>
+                      <Eye size={16} />
                     </Button>
 
                     <Button
                       type="button"
                       variant="clear_purple"
-                      onClick={() => onOpenPdf("download")}
+                      onClick={() => onOpenPdf?.("download")}
                       disabled={saving}
+                      aria-label="Télécharger le compte rendu"
+                      title="Télécharger le compte rendu"
                     >
-                      <span className="flex items-center gap-2">
-                        <Download size={16} />
-                      </span>
+                      <Download size={16} />
                     </Button>
                   </>
                 )}

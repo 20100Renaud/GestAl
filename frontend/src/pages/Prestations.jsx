@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import DeplacementsModal from "../components/Modals/Deplacements_Modal.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import PrestationsModal from "../components/Modals/Prestations_Modal.jsx";
 import ProprietairesModal from "../components/Modals/Proprietaires_Modal.jsx";
 import PrestationWorkflowModal from "../components/Modals/PrestationWorkflow_Modal.jsx";
 import Alert from "../components/ui/Alert.jsx";
+import { CardFilter } from "../components/ui/Card.jsx";
 import { House } from "lucide-react";
 import { formatDate } from "../utils/formatDate";
 import {
@@ -40,10 +41,20 @@ const emptyForm = {
   Remise_Prestation: "0",
 };
 
+const currencyFormatter = new Intl.NumberFormat("fr-FR", {
+  style: "currency",
+  currency: "EUR",
+  maximumFractionDigits: 0,
+});
+
+function formatCurrency(value) {
+  return currencyFormatter.format(value);
+}
+
 export default function Prestations() {
   const navigate = useNavigate();
   const location = useLocation();
-
+  const [searchParams] = useSearchParams();
   const [prestations, setPrestations] = useState([]);
   const [proprietaires, setProprietaires] = useState([]);
   const [deplacements, setDeplacements] = useState([]);
@@ -82,6 +93,7 @@ export default function Prestations() {
 
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState(null);
+  const [filterCreances, setFilterCreances] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -111,6 +123,29 @@ export default function Prestations() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    const statut = searchParams.get("statut");
+
+    const filters = {
+      reste: "Reste",
+      "trop-percu": "Trop perçu",
+      "aucun-paiement": "Aucun paiement",
+    };
+
+    if (statut === "creances") {
+      setFilterStatut(null);
+      setFilterCreances(true);
+      setSearch("Créances");
+      return;
+    }
+
+    if (statut && filters[statut]) {
+      setFilterStatut(statut);
+      setSearch(filters[statut]);
+      setFilterCreances(false);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const prestationId = location.state?.openPrestationId;
@@ -396,11 +431,15 @@ export default function Prestations() {
     return prestations.filter((prestation) => {
       const statut = getStatutPaiement(prestation);
 
-      if (filterStatut && statut.type !== filterStatut) {
+      if (filterCreances) {
+        if (statut.type !== "reste" && statut.type !== "aucun-paiement") {
+          return false;
+        }
+      } else if (filterStatut && statut.type !== filterStatut) {
         return false;
       }
 
-      if (!value) {
+      if (!value || value === "créances") {
         return true;
       }
 
@@ -422,7 +461,7 @@ export default function Prestations() {
         .filter(Boolean)
         .some((field) => String(field).toLowerCase().includes(value));
     });
-  }, [prestations, proprietaires, search, filterStatut]);
+  }, [prestations, proprietaires, search, filterStatut, filterCreances]);
 
   const totalsPrestations = useMemo(() => {
     return filteredPrestations.reduce(
@@ -437,6 +476,8 @@ export default function Prestations() {
           totals.aucunPaiement += Number(statut.montantPrestation) || 0;
         }
 
+        totals.creances = totals.reste + totals.aucunPaiement;
+
         return totals;
       },
       {
@@ -444,6 +485,7 @@ export default function Prestations() {
         reste: 0,
         tropPercu: 0,
         aucunPaiement: 0,
+        creances: 0,
       },
     );
   }, [filteredPrestations]);
@@ -507,6 +549,10 @@ export default function Prestations() {
 
           if (!value.trim()) {
             setFilterStatut(null);
+            setFilterCreances(false);
+          } else {
+            setFilterCreances(false);
+            setFilterStatut(null);
           }
         }}
         searchPlaceholder="Rechercher une prestation..."
@@ -515,85 +561,67 @@ export default function Prestations() {
         className="mb-6"
       />
 
-      <div className="mb-4 flex flex-col gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <CardFilter
+          title="Créances"
+          value={formatCurrency(totalsPrestations.creances)}
+          color="red"
+          active={filterCreances}
+          onClick={() => {
+            const next = !filterCreances;
+            setFilterCreances(next);
+            setFilterStatut(null);
+            setSearch(next ? "Créances" : "");
+          }}
+        />
+
+        <CardFilter
+          title="Aucun paiement"
+          value={formatCurrency(totalsPrestations.aucunPaiement)}
+          color="blue"
+          active={filterStatut === "aucun-paiement"}
+          onClick={() => {
+            const next =
+              filterStatut === "aucun-paiement" ? null : "aucun-paiement";
+            setFilterCreances(false);
+            setFilterStatut(next);
+            setSearch(next === "aucun-paiement" ? "Aucun paiement" : "");
+          }}
+        />
+
+        <CardFilter
+          title="Reste à payer"
+          value={formatCurrency(totalsPrestations.reste)}
+          color="blue"
+          active={filterStatut === "reste"}
+          onClick={() => {
+            const next = filterStatut === "reste" ? null : "reste";
+            setFilterCreances(false);
+            setFilterStatut(next);
+            setSearch(next === "reste" ? "Reste" : "");
+          }}
+        />
+
+        <CardFilter
+          title="Trop-perçu"
+          value={formatCurrency(totalsPrestations.tropPercu)}
+          color="blue"
+          active={filterStatut === "trop-percu"}
+          onClick={() => {
+            const next = filterStatut === "trop-percu" ? null : "trop-percu";
+            setFilterCreances(false);
+            setFilterStatut(next);
+            setSearch(next ? "Trop perçu" : "");
+          }}
+        />
+      </div>
+
+      {/* Count */}
+      <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-sm text-blue-900">
           {filteredPrestations.length} prestation
           {filteredPrestations.length > 1 ? "s" : ""}
         </p>
-
-        <div className="grid grid-cols-3 gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              const next = filterStatut === "reste" ? null : "reste";
-              setFilterStatut(next);
-              setSearch(next === "reste" ? "Reste" : "");
-            }}
-            aria-pressed={filterStatut === "reste"}
-            className={`flex h-24 sm:h-18 flex-col justify-between rounded-lg border p-3 text-left transition cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:bg-red-50 ${
-              filterStatut === "reste"
-                ? "border-red-500 bg-red-50 ring-1 ring-red-500"
-                : "border-red-200 hover:border-red-400"
-            }`}
-          >
-            <p className="text-sm text-red-500">Reste à payer</p>
-            <p className="text-lg font-semibold text-red-600">
-              {totalsPrestations.reste.toLocaleString("fr-FR", {
-                style: "currency",
-                currency: "EUR",
-              })}
-            </p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              const next = filterStatut === "trop-percu" ? null : "trop-percu";
-              setFilterStatut(next);
-              setSearch(next === "trop-percu" ? "Trop perçu" : "");
-            }}
-            aria-pressed={filterStatut === "trop-percu"}
-            className={`flex h-24 sm:h-18 flex-col justify-between rounded-lg border p-3 text-left transition cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:bg-orange-50 ${
-              filterStatut === "trop-percu"
-                ? "border-orange-500 bg-orange-50 ring-1 ring-orange-500"
-                : "border-orange-200 hover:border-orange-400"
-            }`}
-          >
-            <p className="text-sm text-orange-500">Trop-perçu</p>
-            <p className="text-lg font-semibold text-orange-600">
-              {totalsPrestations.tropPercu.toLocaleString("fr-FR", {
-                style: "currency",
-                currency: "EUR",
-              })}
-            </p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              const next =
-                filterStatut === "aucun-paiement" ? null : "aucun-paiement";
-
-              setFilterStatut(next);
-              setSearch(next === "aucun-paiement" ? "Aucun paiement" : "");
-            }}
-            aria-pressed={filterStatut === "aucun-paiement"}
-            className={`flex h-24 sm:h-18 flex-col justify-between rounded-lg border p-3 text-left transition cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:bg-purple-100 ${
-              filterStatut === "aucun-paiement"
-                ? "border-purple-500 bg-purple-100 ring-1 ring-purple-500"
-                : "border-purple-200 hover:border-purple-400"
-            }`}
-          >
-            <p className="text-sm text-purple-500">Aucun paiement</p>
-
-            <p className="text-lg font-semibold text-purple-600">
-              {totalsPrestations.aucunPaiement.toLocaleString("fr-FR", {
-                style: "currency",
-                currency: "EUR",
-              })}
-            </p>
-          </button>
-        </div>
       </div>
 
       {loading ? (
@@ -666,9 +694,9 @@ export default function Prestations() {
 
                       const statusColor = {
                         reste: "text-red-600",
-                        "trop-percu": "text-orange-600",
+                        "trop-percu": "text-blue-600",
                         soldee: "text-green-600",
-                        "aucun-paiement": "text-purple-500",
+                        "aucun-paiement": "text-red-500",
                       }[statut.type];
 
                       return (

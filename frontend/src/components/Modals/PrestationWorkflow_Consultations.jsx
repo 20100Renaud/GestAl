@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createConsultationPdfHandler } from "../../utils/consultationPdfHandler.js";
 
 import ConsultationsModal from "./Consultations_Modal.jsx";
 import PrestationHeader from "../PrestationHeader.jsx";
@@ -301,49 +302,16 @@ export default function PrestationWorkflowConsultations({
       (item) => String(item.ID_Proprietaire) === String(prestation?.ID_Lieu),
     ) ?? null;
 
-  function handleOpenPdf(mode = "preview", consultationId = editingId) {
-    try {
-      if (!consultationId) {
-        onError?.(
-          "Enregistrez la consultation avant de générer son compte rendu.",
-        );
-        return;
-      }
-
-      const consultation = consultations.find(
-        (item) => String(item.ID_Consultation) === String(consultationId),
-      );
-
-      if (!consultation) {
-        onError?.("Consultation introuvable.");
-        return;
-      }
-
-      const animal = animaux.find(
-        (item) => String(item.ID_Animal) === String(consultation.ID_Animal),
-      );
-
-      const tarif = tarifs.find(
-        (item) => String(item.ID_Tarif) === String(consultation.ID_Tarif),
-      );
-
-      const zonages = zonagesByConsultation[consultation.ID_Consultation] ?? [];
-
-      openConsultationPdf({
-        user: currentUser,
-        prestation,
-        consultation,
-        animal,
-        tarif,
-        proprietaire: prestation?.Proprietaire_Prestation ?? null,
-        lieu,
-        zonages,
-        mode,
-      });
-    } catch (err) {
-      onError?.(err.message);
-    }
-  }
+  const handleOpenPdf = createConsultationPdfHandler({
+    consultations,
+    animaux,
+    tarifs,
+    zonagesByConsultation,
+    prestations: prestation ? [prestation] : [],
+    proprietaires,
+    currentUser,
+    onError,
+  });
 
   return (
     <>
@@ -356,7 +324,7 @@ export default function PrestationWorkflowConsultations({
             type="button"
             onClick={openCreateForm}
             disabled={saving}
-            className="flex w-full max-w-[220px] min-h-[100px] items-center justify-center rounded-md border-2 border-dashed border-green-300 p-4 text-green-600 transition hover:border-green-500 hover:bg-green-50 hover:text-green-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-lg"
+            className="flex w-full max-w-[220px] min-h-[100px] items-center justify-center rounded-md border-2 border-dashed border-blue-300 p-4 text-blue-600 transition hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-lg"
           >
             <span className="flex flex-col items-center text-sm">
               <Plus size={58} strokeWidth={1} />

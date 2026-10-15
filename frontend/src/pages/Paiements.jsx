@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import PageHeader from "../components/ui/PageHeader.jsx";
+import { CardFilter } from "../components/ui/Card.jsx";
 import { formatDateShort } from "../utils/formatDate";
 import PaiementsModal from "../components/Modals/Paiements_Modal.jsx";
 import Alert from "../components/ui/Alert.jsx";
@@ -43,6 +45,9 @@ export default function Paiements() {
   const [selectedPrestation, setSelectedPrestation] = useState(null);
   const [search, setSearch] = useState("");
   const [filterCurrentYear, setFilterCurrentYear] = useState(false);
+  const [filterCurrentMonth, setFilterCurrentMonth] = useState(false);
+  const [filterPaiement, setFilterPaiement] = useState(null);
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -75,11 +80,25 @@ export default function Paiements() {
     const statut = params.get("statut");
 
     if (statut === "a-encaisser") {
+      setFilterPaiement("a-encaisser");
       setSearch("À encaisser");
       setFilterCurrentYear(false);
+      setFilterCurrentMonth(false);
     } else if (statut === "encaissements") {
-      setSearch(String(new Date().getFullYear()));
+      setFilterPaiement(null);
       setFilterCurrentYear(true);
+      setFilterCurrentMonth(false);
+      setSearch(String(new Date().getFullYear()));
+    } else if (statut === "encaissements-mois") {
+      setFilterPaiement(null);
+      setFilterCurrentYear(false);
+      setFilterCurrentMonth(true);
+      setSearch(
+        new Date().toLocaleDateString("fr-FR", {
+          month: "long",
+          year: "numeric",
+        }),
+      );
     }
 
     if (statut) {
@@ -95,6 +114,8 @@ export default function Paiements() {
 
     if (!value.trim()) {
       setFilterCurrentYear(false);
+      setFilterCurrentMonth(false);
+      setFilterPaiement(null);
     }
   }
 
@@ -133,13 +154,9 @@ export default function Paiements() {
         : "",
 
       Montant_Paiement: paiement.Montant_Paiement ?? "",
-
       Moyen_Paiement: paiement.Moyen_Paiement || "",
-
       E_Reporting_Paiement: paiement.E_Reporting_Paiement ?? false,
-
       E_Facture_Paiement: paiement.E_Facture_Paiement ?? false,
-
       E_Other_Paiement: paiement.E_Other_Paiement ?? false,
     });
 
@@ -198,6 +215,47 @@ export default function Paiements() {
     );
   }
 
+  function togglePaymentFilter(filter) {
+    const labels = {
+      "a-encaisser": "À encaisser",
+      "e-reporting": "E-Reporting",
+      "e-facture": "E-Facture",
+      "e-autre": "E-Autre",
+      cheque: "Chèque",
+      especes: "Espèces",
+      virement: "Virement",
+    };
+
+    setFilterPaiement((current) => {
+      const next = current === filter ? null : filter;
+      setSearch(next ? labels[next] : "");
+      setFilterCurrentYear(false);
+      setFilterCurrentMonth(false);
+      return next;
+    });
+  }
+
+  function normalizeText(value) {
+    return String(value ?? "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+  }
+
+  function isInCurrentMonth(dateValue) {
+    if (!dateValue) return false;
+
+    const date = new Date(dateValue);
+    const now = new Date();
+
+    return (
+      !Number.isNaN(date.getTime()) &&
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth()
+    );
+  }
+
   const filteredPaiements = useMemo(() => {
     const value = search.trim().toLowerCase();
     const currentYear = new Date().getFullYear();
@@ -205,6 +263,29 @@ export default function Paiements() {
     return paiements.filter((paiement) => {
       const prestation = paiement.Prestation_Paiement;
       const proprietaire = prestation?.Proprietaire_Prestation;
+
+      if (filterPaiement === "a-encaisser" && paiement.Date_Encaissement) {
+        return false;
+      }
+
+      if (filterPaiement === "e-reporting" && !paiement.E_Reporting_Paiement) {
+        return false;
+      }
+
+      if (filterPaiement === "e-facture" && !paiement.E_Facture_Paiement) {
+        return false;
+      }
+
+      if (filterPaiement === "e-autre" && !paiement.E_Other_Paiement) {
+        return false;
+      }
+
+      if (
+        ["cheque", "especes", "virement"].includes(filterPaiement) &&
+        normalizeText(paiement.Moyen_Paiement) !== filterPaiement
+      ) {
+        return false;
+      }
 
       if (filterCurrentYear) {
         if (!paiement.Date_Encaissement) {
@@ -221,21 +302,34 @@ export default function Paiements() {
         }
       }
 
+      if (filterCurrentMonth && !isInCurrentMonth(paiement.Date_Encaissement)) {
+        return false;
+      }
+
       const typePaiement = paiement.E_Reporting_Paiement
         ? "e-reporting"
         : paiement.E_Facture_Paiement
           ? "e-facture"
           : paiement.E_Other_Paiement
-            ? "e-other"
+            ? "e-autre"
             : "";
 
       const fields = [
         paiement.Date_Encaissement
           ? new Date(paiement.Date_Encaissement).toLocaleDateString("fr-FR")
           : "À encaisser",
+
         paiement.Date_Encaissement
           ? new Date(paiement.Date_Encaissement).getFullYear()
           : "",
+
+        paiement.Date_Encaissement
+          ? new Date(paiement.Date_Encaissement).toLocaleDateString("fr-FR", {
+              month: "long",
+              year: "numeric",
+            })
+          : "",
+
         paiement.Montant_Paiement,
         paiement.Moyen_Paiement,
         typePaiement,
@@ -249,14 +343,20 @@ export default function Paiements() {
         .filter((field) => field !== null && field !== undefined)
         .some((field) => String(field).toLowerCase().includes(value));
     });
-  }, [paiements, search, filterCurrentYear]);
+  }, [
+    paiements,
+    search,
+    filterCurrentYear,
+    filterCurrentMonth,
+    filterPaiement,
+  ]);
 
-const totalMontant = useMemo(() => {
-  return filteredPaiements.reduce(
-    (total, paiement) => total + (Number(paiement.Montant_Paiement) || 0),
-    0,
-  );
-}, [filteredPaiements]);
+  const totalMontant = useMemo(() => {
+    return filteredPaiements.reduce(
+      (total, paiement) => total + (Number(paiement.Montant_Paiement) || 0),
+      0,
+    );
+  }, [filteredPaiements]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -328,12 +428,215 @@ const totalMontant = useMemo(() => {
         className="mb-6"
       />
 
+      <div className="mb-5 grid gap-1 xl:grid-cols-3">
+        {/* Year, Month and uncashed */}
+        <div className="flex flex-wrap justify-center gap-1">
+          <CardFilter
+            title={`${new Date().getFullYear()}`}
+            value={
+              paiements.filter((p) => {
+                if (!p.Date_Encaissement) return false;
+                const date = new Date(p.Date_Encaissement);
+                return (
+                  !Number.isNaN(date.getTime()) &&
+                  date.getFullYear() === new Date().getFullYear()
+                );
+              }).length
+            }
+            color="green"
+            active={filterCurrentYear}
+            onClick={() => {
+              const next = !filterCurrentYear;
+              setFilterCurrentYear(next);
+              setFilterCurrentMonth(false);
+              setFilterPaiement(null);
+              setSearch(next ? String(new Date().getFullYear()) : "");
+            }}
+            className="min-w-24"
+          />
+
+          <CardFilter
+            title={new Date()
+              .toLocaleDateString("fr-FR", { month: "long" })
+              .replace(/^./, (char) => char.toUpperCase())}
+            value={
+              paiements.filter((p) => isInCurrentMonth(p.Date_Encaissement))
+                .length
+            }
+            color="green"
+            active={filterCurrentMonth}
+            onClick={() => {
+              const next = !filterCurrentMonth;
+              setFilterCurrentMonth(next);
+              setFilterCurrentYear(false);
+              setFilterPaiement(null);
+              setSearch(
+                next
+                  ? new Date().toLocaleDateString("fr-FR", {
+                      month: "long",
+                      year: "numeric",
+                    })
+                  : "",
+              );
+            }}
+            className="min-w-24"
+          />
+
+          <CardFilter
+            title="À encaisser"
+            value={paiements.filter((p) => !p.Date_Encaissement).length}
+            color="purple"
+            active={filterPaiement === "a-encaisser"}
+            onClick={() => {
+              setFilterCurrentYear(false);
+              setFilterCurrentMonth(false);
+              togglePaymentFilter("a-encaisser");
+            }}
+            className="min-w-24"
+          />
+        </div>
+
+        {/* Moyen de paiements */}
+        <div
+          className={`
+            flex flex-wrap justify-center gap-1 transition-all duration-300 ease-in-out
+            ${
+              showMoreFilters
+                ? "max-h-40 opacity-100 translate-y-0"
+                : "max-h-0 opacity-0 -translate-y-2 pointer-events-none xl:max-h-40 xl:opacity-100 xl:translate-y-0"
+            }
+          `}
+        >
+          <CardFilter
+            title="Chèque"
+            value={
+              paiements.filter(
+                (p) => normalizeText(p.Moyen_Paiement) === "cheque",
+              ).length
+            }
+            color="blue"
+            active={filterPaiement === "cheque"}
+            onClick={() => {
+              setFilterCurrentMonth(false);
+              togglePaymentFilter("cheque");
+            }}
+            className="min-w-24"
+          />
+
+          <CardFilter
+            title="Espèces"
+            value={
+              paiements.filter(
+                (p) => normalizeText(p.Moyen_Paiement) === "especes",
+              ).length
+            }
+            color="blue"
+            active={filterPaiement === "especes"}
+            onClick={() => {
+              setFilterCurrentMonth(false);
+              togglePaymentFilter("especes");
+            }}
+            className="min-w-24"
+          />
+
+          <CardFilter
+            title="Virement"
+            value={
+              paiements.filter(
+                (p) => normalizeText(p.Moyen_Paiement) === "virement",
+              ).length
+            }
+            color="blue"
+            active={filterPaiement === "virement"}
+            onClick={() => {
+              setFilterCurrentMonth(false);
+              togglePaymentFilter("virement");
+            }}
+            className="min-w-24"
+          />
+        </div>
+
+        {/* Types */}
+        <div
+          className={`
+            flex flex-wrap justify-center gap-1
+            transition-all duration-300 ease-in-out
+            ${
+              showMoreFilters
+                ? "max-h-40 opacity-100 translate-y-0"
+                : "max-h-0 opacity-0 -translate-y-2 pointer-events-none xl:max-h-40 xl:opacity-100 xl:translate-y-0"
+            }
+          `}
+        >
+          <CardFilter
+            title="E-Reporting"
+            value={paiements.filter((p) => p.E_Reporting_Paiement).length}
+            color="blue"
+            active={filterPaiement === "e-reporting"}
+            onClick={() => {
+              setFilterCurrentMonth(false);
+              togglePaymentFilter("e-reporting");
+            }}
+            className="min-w-24"
+          />
+
+          <CardFilter
+            title="E-Facture"
+            value={paiements.filter((p) => p.E_Facture_Paiement).length}
+            color="blue"
+            active={filterPaiement === "e-facture"}
+            onClick={() => {
+              setFilterCurrentMonth(false);
+              togglePaymentFilter("e-facture");
+            }}
+            className="min-w-24"
+          />
+
+          <CardFilter
+            title="E-Autre"
+            value={paiements.filter((p) => p.E_Other_Paiement).length}
+            color="blue"
+            active={filterPaiement === "e-autre"}
+            onClick={() => {
+              setFilterCurrentMonth(false);
+              togglePaymentFilter("e-autre");
+            }}
+            className="min-w-24"
+          />
+        </div>
+      </div>
+
+      {/* Infos bar */}
       <div className="mb-4 flex items-center justify-between gap-2">
+        {/* Count */}
         <p className="text-sm text-blue-900">
           {filteredPaiements.length} paiement
           {filteredPaiements.length > 1 ? "s" : ""}
         </p>
 
+        {/* More filters */}
+        <button
+          type="button"
+          onClick={() => setShowMoreFilters((prev) => !prev)}
+          className="xl:hidden flex items-center justify-center gap-1 mx-auto cursor-pointer text-blue-900 hover:font-medium"
+          aria-expanded={showMoreFilters}
+          aria-label={
+            showMoreFilters
+              ? "Masquer les filtres supplémentaires"
+              : "Afficher les filtres supplémentaires"
+          }
+        >
+          <span className="text-sm">
+            {showMoreFilters ? "Moins de filtres" : "Plus de filtres"}
+          </span>
+          <ChevronDown
+            className={`h-4 w-4 transition-transform duration-200 ${
+              showMoreFilters ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {/* Total */}
         <p className="text-sm font-semibold text-blue-900 pr-2">
           Total :{" "}
           {totalMontant.toLocaleString("fr-FR", {

@@ -9,7 +9,7 @@ export default function Modal({ open, title, onClose, children }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black p-4">
-      <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+      <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-blue-50 shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 bg-blue-950 text-blue-300 select-none">
           <h2 className="m-0 text-lg font-semibold">{title}</h2>
 
@@ -42,7 +42,7 @@ export function WorkflowModal({ open, title, onClose, tabs, children }) {
           flex-col
           overflow-hidden
           rounded-xl
-          bg-white
+          bg-blue-50
           shadow-2xl
           md:h-[85vh]
           md:min-h-[500px]
@@ -58,7 +58,7 @@ export function WorkflowModal({ open, title, onClose, tabs, children }) {
         </div>
 
         {/* TABS */}
-        <div className="shrink-0 px-4 md:px-6 border-b border-blue-200 shadow-[0_4px_8px_-4px_rgba(30,64,175,0.25)]">
+        <div className="shrink-0 px-4 md:px-6 border-b border-blue-200 shadow-[0_4px_8px_-4px_rgba(30,64,175,0.25)] bg-white">
           {tabs}
         </div>
 

@@ -30,7 +30,7 @@ export default function Input({
             {...props}
             type="checkbox"
             required={required}
-            className={`${checkboxClasses} ${className}`}
+            className={`${checkboxClasses} ${className} bg-white`}
           />
 
           <span className="pointer-events-none absolute inset-0 mt-0.5 flex justify-center text-xs font-bold text-white">
@@ -49,7 +49,7 @@ export default function Input({
   }
 
   return (
-    <div className={`${fieldWrapperClasses} ${className}`}>
+    <div className={`${fieldWrapperClasses}`}>
       {label && (
         <label
           htmlFor={props.id}
@@ -79,7 +79,9 @@ export default function Input({
           required={required}
           className={`${fieldClasses} ${suffix ? "pr-10" : ""} ${
             type === "search" ? "custom-search-input" : ""
-          }`}
+          }${
+            props.disabled ? "cursor-not-allowed bg-gray-100 text-gray-400" : ""
+          } ${className}`}
         />
 
         {suffix && (

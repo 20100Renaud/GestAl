@@ -73,6 +73,7 @@ export default function ZonageModal({
               <option value="Articulaire">Articulaire</option>
               <option value="Tissulaire">Tissulaire</option>
               <option value="Viscérale">Viscérale</option>
+              <option value="Fascia">Fascia</option>
             </Select>
           </div>
 

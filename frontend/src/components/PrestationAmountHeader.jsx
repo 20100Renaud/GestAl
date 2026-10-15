@@ -155,7 +155,7 @@ export default function PrestationAmountHeader({ prestation }) {
           {/* TOTAL */}
           <div className="my-3 border-b border-blue-200 pb-3">
             <div className="flex justify-between gap-4 text-base text-blue-900">
-              <span className="font-semibold">Total :</span>
+              <span className="font-semibold">TOTAL :</span>
               <span className="font-semibold border-t border-blue-700 pl-4">
                 {formatAmount(prestation?.Montant_Prestation)}
               </span>
