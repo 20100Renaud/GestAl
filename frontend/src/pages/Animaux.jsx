@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import AnimauxModal from "../components/Modals/Animaux_Modal.jsx";
+import ErrorModal from "../components/Modals/ErrorModal.jsx";
 import { normalizeUpper, normalizeCamel } from "../utils/normalizeField.js";
 import Alert from "../components/ui/Alert.jsx";
 import { formatDate } from "../utils/formatDate";
@@ -46,6 +47,7 @@ export default function Animaux() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   async function loadData() {
     try {
@@ -61,6 +63,7 @@ export default function Animaux() {
       setProprietaires(proprietairesData);
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
@@ -168,6 +171,7 @@ export default function Animaux() {
       closeForm();
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     } finally {
       setSaving(false);
     }
@@ -190,6 +194,7 @@ export default function Animaux() {
       await loadData();
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     }
   }
 
@@ -297,6 +302,15 @@ export default function Animaux() {
         onSubmit={handleSubmit}
         onChange={handleChange}
         onDelete={handleDelete}
+      />
+
+      <ErrorModal
+        open={showErrorModal}
+        message={error}
+        onClose={() => {
+          setShowErrorModal(false);
+          setError("");
+        }}
       />
     </div>
   );

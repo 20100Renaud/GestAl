@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { WorkflowModal } from "../ui/Modal.jsx";
 import Alert from "../ui/Alert.jsx";
-
+import ErrorModal from "../Modals/ErrorModal.jsx";
 import PrestationWorkflowPrestation from "./PrestationWorkflow_Prestation.jsx";
 import PrestationWorkflowConsultations from "./PrestationWorkflow_Consultations.jsx";
 import PrestationWorkflowPaiements from "./PrestationWorkflow_Paiements.jsx";
@@ -37,6 +37,7 @@ export default function PrestationWorkflowModal({
   onDeleted,
 }) {
   const [error, setError] = useState("");
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   const { user: currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState("prestation");
@@ -136,6 +137,7 @@ export default function PrestationWorkflowModal({
       );
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     }
   }
 
@@ -180,7 +182,6 @@ export default function PrestationWorkflowModal({
     setCreatedAnimal(null);
     setShowAnimalModal(true);
   }
-
 
   // Add tarif
   function handleAddTarif() {
@@ -251,6 +252,7 @@ export default function PrestationWorkflowModal({
       setEditingAnimalId(null);
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     } finally {
       setAnimalSaving(false);
     }
@@ -412,6 +414,15 @@ export default function PrestationWorkflowModal({
         onSubmit={handleTarifSubmit}
         onChange={handleTarifChange}
         onDelete={() => {}}
+      />
+
+      <ErrorModal
+        open={showErrorModal}
+        message={error}
+        onClose={() => {
+          setShowErrorModal(false);
+          setError("");
+        }}
       />
     </>
   );

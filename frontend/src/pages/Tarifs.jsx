@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import TarifsModal from "../components/Modals/Tarifs_Modal.jsx";
 import TarifsCopyModal from "../components/Modals/TarifsCopyModal.jsx";
+import ErrorModal from "../components/Modals/ErrorModal.jsx"; // add
 import Alert from "../components/ui/Alert.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
 import { Trash2 } from "lucide-react";
@@ -49,6 +50,7 @@ export default function Tarifs() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showErrorModal, setShowErrorModal] = useState(false); // add
 
   async function loadTarifs() {
     try {
@@ -60,6 +62,7 @@ export default function Tarifs() {
       setTarifs(data);
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true); // add
     } finally {
       setLoading(false);
     }
@@ -362,6 +365,15 @@ export default function Tarifs() {
           }
         }}
         onSubmit={handleCopyTarifs}
+      />
+
+      <ErrorModal // add
+        open={showErrorModal}
+        message={error}
+        onClose={() => {
+          setShowErrorModal(false);
+          setError("");
+        }}
       />
     </div>
   );

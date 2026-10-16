@@ -2,6 +2,7 @@ import Modal from "../ui/Modal.jsx";
 import Input from "../ui/Input.jsx";
 import Select from "../ui/Select.jsx";
 import Button from "../ui/Button.jsx";
+import { FileOutput } from "lucide-react";
 
 export default function DeplacementsCopyModal({
   open,
@@ -49,7 +50,7 @@ export default function DeplacementsCopyModal({
           </div>
         )}
 
-        <div className="flex justify-around gap-4">
+        <div className="flex justify-around gap-4 items-end">
           <div className="min-w-0 flex-1">
             <Select
               id="sourceDeplacementYear"
@@ -67,6 +68,10 @@ export default function DeplacementsCopyModal({
             </Select>
           </div>
 
+          <div className="mb-2 text-blue-700">
+            <FileOutput strokeWidth={1.5} style={{ transform: "scaleX(-1)" }} />
+          </div>
+
           <div className="min-w-0 flex-1">
             <Input
               id="targetDeplacementYear"
@@ -82,17 +87,16 @@ export default function DeplacementsCopyModal({
           </div>
         </div>
 
-        {targetYearExists && (
-          <p role="alert" className="text-sm text-red-600">
-            L'année de destination contient déjà des déplacements.
-          </p>
-        )}
-
-        {invalidTargetYear && targetYear !== "" && (
-          <p role="alert" className="text-sm text-red-600">
-            L'année doit être comprise entre 2000 et 2100.
-          </p>
-        )}
+        <div className="h-2 text-right text-sm text-red-600">
+          {targetYearExists && (
+            <p role="alert">
+              L'année de destination contient déjà des déplacements.
+            </p>
+          )}
+          {invalidTargetYear && targetYear !== "" && (
+            <p role="alert">L'année doit être comprise entre 2000 et 2100.</p>
+          )}
+        </div>
 
         <div className="flex justify-end gap-3 pt-3">
           <Button

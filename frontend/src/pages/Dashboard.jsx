@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import Button from "../components/ui/Button.jsx";
 import Alert from "../components/ui/Alert.jsx";
+import ErrorModal from "../components/Modals/ErrorModal.jsx";
 import { CardDashboard } from "../components/ui/Card.jsx";
 import PrestationWorkflowModal from "../components/Modals/PrestationWorkflow_Modal.jsx";
 import { getConsultations } from "../api/consultations.js";
@@ -121,6 +122,7 @@ export default function Dashboard() {
   const [paiements, setPaiements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   async function loadData() {
     try {

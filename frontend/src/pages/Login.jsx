@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
-
+import ErrorModal from "../components/Modals/ErrorModal.jsx";
 import Button from "../components/ui/Button.jsx";
 import Input from "../components/ui/Input.jsx";
 
@@ -10,6 +10,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [showErrorModal, setShowErrorModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(event) {
@@ -22,6 +23,7 @@ export default function Login() {
       await login(email, password);
     } catch (error) {
       setError(error.message);
+      setShowErrorModal(true);
     } finally {
       setSubmitting(false);
     }
@@ -85,6 +87,14 @@ export default function Login() {
 
         <p className="mt-6 text-center text-xs text-blue-400 cursor-pointer">CGU · Lun-e · Création de compte</p>
       </div>
+      <ErrorModal
+              open={showErrorModal}
+              message={error}
+              onClose={() => {
+                setShowErrorModal(false);
+                setError("");
+              }}
+            />
     </main>
   );
 }

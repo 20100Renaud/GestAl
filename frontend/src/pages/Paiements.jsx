@@ -6,6 +6,7 @@ import { CardFilter } from "../components/ui/Card.jsx";
 import { formatDateShort } from "../utils/formatDate";
 import PaiementsModal from "../components/Modals/Paiements_Modal.jsx";
 import Alert from "../components/ui/Alert.jsx";
+import ErrorModal from "../components/Modals/ErrorModal.jsx";
 import Table, {
   Vide,
   TableHead,
@@ -51,6 +52,7 @@ export default function Paiements() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   async function loadData() {
     try {
@@ -66,6 +68,7 @@ export default function Paiements() {
       setPrestations(prestationsData);
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
@@ -385,6 +388,7 @@ export default function Paiements() {
       closeForm();
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     } finally {
       setSaving(false);
     }
@@ -407,6 +411,7 @@ export default function Paiements() {
       await loadData();
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     }
   }
 
@@ -713,6 +718,15 @@ export default function Paiements() {
         onSubmit={handleSubmit}
         onDelete={handleDelete}
         onOpenPrestation={() => openPrestation(selectedPrestation)}
+      />
+
+      <ErrorModal
+        open={showErrorModal}
+        message={error}
+        onClose={() => {
+          setShowErrorModal(false);
+          setError("");
+        }}
       />
     </div>
   );

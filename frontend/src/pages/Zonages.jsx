@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import ZonageModal from "../components/Modals/Zonages_Modal.jsx";
+import ErrorModal from "../components/Modals/ErrorModal.jsx";
 import { CardZonage } from "../components/ui/Card.jsx";
 import {
   getZonages,
@@ -22,9 +23,6 @@ const techniqueColors = {
   Viscérale: "bg-purple-600",
 };
 
-const getTechniqueColor = (technique) =>
-  techniqueColors[technique] ?? "bg-gray-500";
-
 export default function Zonages() {
   const [zonages, setZonages] = useState([]);
 
@@ -38,6 +36,7 @@ export default function Zonages() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   async function loadZonages() {
     try {
@@ -49,6 +48,7 @@ export default function Zonages() {
       setZonages(data);
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
@@ -141,6 +141,7 @@ export default function Zonages() {
       closeForm();
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     } finally {
       setSaving(false);
     }
@@ -163,6 +164,7 @@ export default function Zonages() {
       await loadZonages();
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     }
   }
 
@@ -224,6 +226,15 @@ export default function Zonages() {
         onSubmit={handleSubmit}
         onClose={closeForm}
         onDelete={handleDelete}
+      />
+
+      <ErrorModal
+        open={showErrorModal}
+        message={error}
+        onClose={() => {
+          setShowErrorModal(false);
+          setError("");
+        }}
       />
     </div>
   );

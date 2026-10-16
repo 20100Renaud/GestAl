@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { createConsultationPdfHandler } from "../utils/consultationPdfHandler.js";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import Alert from "../components/ui/Alert.jsx";
+import ErrorModal from "../components/Modals/ErrorModal.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
 import { formatDateShort } from "../utils/formatDate";
 import PrestationWorkflowZonages from "../components/Modals/PrestationWorkflow_Zonages.jsx";
@@ -97,6 +98,7 @@ export default function Consultations() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   async function loadData() {
     try {
@@ -127,6 +129,8 @@ export default function Consultations() {
       setTarifs(tarifsData);
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
@@ -300,6 +304,8 @@ export default function Consultations() {
       setConsultationZonages(data);
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
+      setShowErrorModal(true);
     }
   }
 
@@ -362,6 +368,8 @@ export default function Consultations() {
       setShowTarifForm(false);
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
+      setShowErrorModal(true);
     } finally {
       setSavingTarif(false);
     }
@@ -468,6 +476,8 @@ export default function Consultations() {
       setShowAnimalForm(false);
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
+      setShowErrorModal(true);
     } finally {
       setSavingAnimal(false);
     }
@@ -692,6 +702,8 @@ export default function Consultations() {
       closeForm();
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
+      setShowErrorModal(true);
     } finally {
       setSaving(false);
     }
@@ -714,6 +726,8 @@ export default function Consultations() {
       await loadData();
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
+      setShowErrorModal(true);
     }
   }
 
@@ -929,6 +943,15 @@ export default function Consultations() {
         onSubmit={handleAnimalSubmit}
         onChange={handleAnimalChange}
         onDelete={() => {}}
+      />
+
+      <ErrorModal
+        open={showErrorModal}
+        message={error}
+        onClose={() => {
+          setShowErrorModal(false);
+          setError("");
+        }}
       />
     </div>
   );

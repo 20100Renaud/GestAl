@@ -3,6 +3,7 @@ import PageHeader from "../components/ui/PageHeader.jsx";
 import ProprietairesModal from "../components/Modals/Proprietaires_Modal.jsx";
 import { normalizeUpper, normalizeCamel } from "../utils/normalizeField.js";
 import Alert from "../components/ui/Alert.jsx";
+import ErrorModal from "../components/Modals/ErrorModal.jsx";
 import Table, {
   Vide,
   TableHead,
@@ -36,7 +37,7 @@ export default function Proprietaires() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
+  const [showErrorModal, setShowErrorModal] = useState(false);
   const [search, setSearch] = useState("");
 
   const [showForm, setShowForm] = useState(false);
@@ -53,6 +54,7 @@ export default function Proprietaires() {
       setProprietaires(data);
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
@@ -157,6 +159,7 @@ export default function Proprietaires() {
       closeForm();
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     } finally {
       setSaving(false);
     }
@@ -179,6 +182,7 @@ export default function Proprietaires() {
       await loadProprietaires();
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     }
   }
 
@@ -265,6 +269,15 @@ export default function Proprietaires() {
         onSubmit={handleSubmit}
         onChange={handleChange}
         onDelete={handleDelete}
+      />
+
+      <ErrorModal
+        open={showErrorModal}
+        message={error}
+        onClose={() => {
+          setShowErrorModal(false);
+          setError("");
+        }}
       />
     </div>
   );

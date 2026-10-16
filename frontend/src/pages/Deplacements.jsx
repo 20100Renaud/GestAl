@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import DeplacementsModal from "../components/Modals/Deplacements_Modal.jsx";
+import ErrorModal from "../components/Modals/ErrorModal.jsx";
 import DeplacementsCopyModal from "../components/Modals/DeplacementsCopyModal.jsx";
 import Alert from "../components/ui/Alert.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
@@ -47,6 +48,7 @@ export default function Deplacements() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   async function loadDeplacements() {
     try {
@@ -57,6 +59,7 @@ export default function Deplacements() {
       setDeplacements(data);
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
@@ -373,6 +376,14 @@ export default function Deplacements() {
           }
         }}
         onSubmit={handleCopyDeplacements}
+      />
+      <ErrorModal
+        open={showErrorModal}
+        message={error}
+        onClose={() => {
+          setShowErrorModal(false);
+          setError("");
+        }}
       />
     </div>
   );

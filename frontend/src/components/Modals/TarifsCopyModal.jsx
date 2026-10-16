@@ -48,8 +48,8 @@ export default function TarifsCopyModal({
           </div>
         )}
 
-        <div className="flex gap-1 sm:gap-4 items-end justify-center">
-          <div className="min-w-0">
+        <div className="flex gap-4 items-end justify-center">
+          <div className="min-w-0 flex-1">
             <Select
               id="sourceYear"
               label="Année à copier"
@@ -67,10 +67,10 @@ export default function TarifsCopyModal({
           </div>
 
           <div className="mb-2 text-blue-700">
-            <FileOutput strokeWidth={1.5} style={{ transform: "scaleX(-1)" }}/>
+            <FileOutput strokeWidth={1.5} style={{ transform: "scaleX(-1)" }} />
           </div>
 
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <Input
               id="targetYear"
               label="Année destination"
@@ -85,16 +85,12 @@ export default function TarifsCopyModal({
           </div>
         </div>
 
-        <div className="h-2">
+        <div className="h-2 text-right text-sm text-red-600">
           {targetYearExists && (
-            <p className="text-sm text-red-600 text-right" role="alert">
-              L'année de destination contient déjà des tarifs.
-            </p>
+            <p role="alert">L'année de destination contient déjà des tarifs.</p>
           )}
           {invalidTargetYear && targetYear !== "" && (
-            <p className="text-sm text-red-600 text-right" role="alert">
-              L'année doit être comprise entre 2000 et 2100.
-            </p>
+            <p role="alert">L'année doit être comprise entre 2000 et 2100.</p>
           )}
         </div>
 

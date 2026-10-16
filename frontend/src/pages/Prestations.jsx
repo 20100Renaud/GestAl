@@ -6,6 +6,7 @@ import PrestationsModal from "../components/Modals/Prestations_Modal.jsx";
 import ProprietairesModal from "../components/Modals/Proprietaires_Modal.jsx";
 import PrestationWorkflowModal from "../components/Modals/PrestationWorkflow_Modal.jsx";
 import Alert from "../components/ui/Alert.jsx";
+import ErrorModal from "../components/Modals/ErrorModal.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
 import { House } from "lucide-react";
 import { formatDate } from "../utils/formatDate";
@@ -97,6 +98,7 @@ export default function Prestations() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   async function loadData({ showLoading = true } = {}) {
     try {
@@ -115,6 +117,7 @@ export default function Prestations() {
       setDeplacements(deplacementsData);
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     } finally {
       if (showLoading) setLoading(false);
     }
@@ -285,6 +288,7 @@ export default function Prestations() {
       setShowDeplacementForm(false);
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     } finally {
       setSavingDeplacement(false);
     }
@@ -345,6 +349,7 @@ export default function Prestations() {
       setShowProprietaireForm(false);
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     } finally {
       setSavingProprietaire(false);
     }
@@ -507,6 +512,7 @@ export default function Prestations() {
       closeForm();
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     } finally {
       setSaving(false);
     }
@@ -529,6 +535,7 @@ export default function Prestations() {
       await loadData();
     } catch (err) {
       setError(err.message);
+      setShowErrorModal(true);
     }
   }
 
@@ -764,6 +771,15 @@ export default function Prestations() {
         onSubmit={handleProprietaireSubmit}
         onChange={handleProprietaireChange}
         onDelete={() => {}}
+      />
+
+      <ErrorModal
+        open={showErrorModal}
+        message={error}
+        onClose={() => {
+          setShowErrorModal(false);
+          setError("");
+        }}
       />
     </div>
   );
