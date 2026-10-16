@@ -5,6 +5,7 @@ import {
   getTarif,
   createTarif,
   updateTarif,
+  copyTarifs,
   deleteTarif,
 } from "../controllers/tarifs.controller.js";
 
@@ -18,6 +19,7 @@ router.use(authenticate, requireClient);
 router.get("/", getTarifs);
 router.get("/:id", getTarif);
 router.post("/", createTarif);
+router.post("/copy", copyTarifs);
 router.put("/:id", updateTarif);
 router.delete("/:id", deleteTarif);
 

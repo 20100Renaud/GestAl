@@ -1,6 +1,14 @@
-export default function Table({ children, layout = "auto" }) {
+export default function Table({
+  children,
+  layout = "auto",
+  maxWidth = "none",
+  className = "",
+}) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-blue-200 border-t-6 shadow-sm">
+    <div
+      className={`mx-auto w-full overflow-x-auto rounded-lg border border-blue-200 border-t-6 shadow-sm ${className}`}
+      style={{ maxWidth }}
+    >
       <table
         className={`w-full border-collapse bg-white text-sm ${
           layout === "fixed" ? "table-fixed" : "table-auto"

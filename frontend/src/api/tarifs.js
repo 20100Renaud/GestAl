@@ -10,6 +10,7 @@ async function handleResponse(response) {
   return data;
 }
 
+// Read all
 export async function getTarifs() {
   const response = await fetch(`${API_URL}/tarifs`, {
     method: "GET",
@@ -21,6 +22,7 @@ export async function getTarifs() {
   return data.tarifs;
 }
 
+// Read by ID
 export async function getTarif(id) {
   const response = await fetch(`${API_URL}/tarifs/${id}`, {
     method: "GET",
@@ -30,6 +32,7 @@ export async function getTarif(id) {
   return handleResponse(response);
 }
 
+// Create
 export async function createTarif(tarif) {
   const response = await fetch(`${API_URL}/tarifs`, {
     method: "POST",
@@ -43,6 +46,7 @@ export async function createTarif(tarif) {
   return handleResponse(response);
 }
 
+// Update
 export async function updateTarif(id, tarif) {
   const response = await fetch(`${API_URL}/tarifs/${id}`, {
     method: "PUT",
@@ -56,6 +60,7 @@ export async function updateTarif(id, tarif) {
   return handleResponse(response);
 }
 
+// Delete
 export async function deleteTarif(id) {
   const response = await fetch(`${API_URL}/tarifs/${id}`, {
     method: "DELETE",
@@ -67,4 +72,21 @@ export async function deleteTarif(id) {
   }
 
   return null;
+}
+
+// Copy
+export async function copyTarifs(sourceYear, targetYear) {
+  const response = await fetch(`${API_URL}/tarifs/copy`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      sourceYear: Number(sourceYear),
+      targetYear: Number(targetYear),
+    }),
+  });
+
+  return handleResponse(response);
 }

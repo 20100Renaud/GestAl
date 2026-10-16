@@ -1,15 +1,13 @@
 import prisma from "../lib/prisma.js";
 
+// Read all
 export async function getTarifs(req, res) {
   try {
     const tarifs = await prisma.t_Tarifs.findMany({
       where: {
         ID_User: req.user.userId,
       },
-      orderBy: [
-        { Annee_Tarif: "desc" },
-        { Denomination_Tarif: "asc" }
-      ],
+      orderBy: [{ Annee_Tarif: "desc" }, { Denomination_Tarif: "asc" }],
     });
 
     return res.status(200).json({
@@ -24,6 +22,7 @@ export async function getTarifs(req, res) {
   }
 }
 
+// Read by ID
 export async function getTarif(req, res) {
   try {
     const tarif = await prisma.t_Tarifs.findFirst({
@@ -49,6 +48,7 @@ export async function getTarif(req, res) {
   }
 }
 
+// Create
 export async function createTarif(req, res) {
   try {
     const { Annee_Tarif, Denomination_Tarif, Montant_Tarif } = req.body;
@@ -102,6 +102,7 @@ export async function createTarif(req, res) {
   }
 }
 
+// Update
 export async function updateTarif(req, res) {
   try {
     const { Annee_Tarif, Denomination_Tarif, Montant_Tarif } = req.body;
@@ -172,6 +173,7 @@ export async function updateTarif(req, res) {
   }
 }
 
+// Delete
 export async function deleteTarif(req, res) {
   try {
     const { id } = req.params;
@@ -214,6 +216,100 @@ export async function deleteTarif(req, res) {
 
     return res.status(500).json({
       error: "Internal server error",
+    });
+  }
+}
+
+// Copy
+export async function copyTarifs(req, res) {
+  try {
+    const { sourceYear, targetYear } = req.body;
+    const userId = req.user.userId;
+
+    if (
+      !Number.isInteger(sourceYear) ||
+      sourceYear < 2000 ||
+      sourceYear > 2100 ||
+      !Number.isInteger(targetYear) ||
+      targetYear < 2000 ||
+      targetYear > 2100
+    ) {
+      return res.status(400).json({
+        error: "Année invalide",
+      });
+    }
+
+    if (sourceYear === targetYear) {
+      return res.status(400).json({
+        error: "Les années doivent être différentes",
+      });
+    }
+
+    const result = await prisma.$transaction(
+      async (tx) => {
+        const sourceTarifs = await tx.t_Tarifs.findMany({
+          where: {
+            ID_User: userId,
+            Annee_Tarif: sourceYear,
+          },
+        });
+
+        if (sourceTarifs.length === 0) {
+          throw new Error("SOURCE_YEAR_EMPTY");
+        }
+
+        const existingTarget = await tx.t_Tarifs.findFirst({
+          where: {
+            ID_User: userId,
+            Annee_Tarif: targetYear,
+          },
+          select: {
+            ID_Tarif: true,
+          },
+        });
+
+        if (existingTarget) {
+          throw new Error("TARGET_YEAR_EXISTS");
+        }
+
+        const copied = await tx.t_Tarifs.createMany({
+          data: sourceTarifs.map((tarif) => ({
+            ID_User: userId,
+            Annee_Tarif: targetYear,
+            Denomination_Tarif: tarif.Denomination_Tarif,
+            Montant_Tarif: tarif.Montant_Tarif,
+          })),
+        });
+
+        return copied.count;
+      },
+      {
+        isolationLevel: "Serializable",
+      },
+    );
+
+    return res.status(201).json({
+      message: `${result} tarif(s) copié(s) avec succès`,
+      count: result,
+      targetYear,
+    });
+  } catch (error) {
+    if (error.message === "SOURCE_YEAR_EMPTY") {
+      return res.status(400).json({
+        error: "Aucun tarif trouvé pour l'année à copier",
+      });
+    }
+
+    if (error.message === "TARGET_YEAR_EXISTS") {
+      return res.status(409).json({
+        error: "Des tarifs existent déjà pour cette année",
+      });
+    }
+
+    console.error("Copy tarifs error:", error);
+
+    return res.status(500).json({
+      error: "Impossible de copier les tarifs",
     });
   }
 }

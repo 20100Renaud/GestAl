@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import TarifsModal from "../components/Modals/Tarifs_Modal.jsx";
+import TarifsCopyModal from "../components/Modals/TarifsCopyModal.jsx";
 import Alert from "../components/ui/Alert.jsx";
+import { CardFilter } from "../components/ui/Card.jsx";
+import { Trash2 } from "lucide-react";
+import Button from "../components/ui/Button.jsx";
 import Table, {
   Vide,
   TableHead,
@@ -9,11 +13,13 @@ import Table, {
   TableRow,
   TableCell,
 } from "../components/ui/Table.jsx";
+
 import {
   getTarifs,
   createTarif,
   updateTarif,
   deleteTarif,
+  copyTarifs,
 } from "../api/tarifs.js";
 
 const emptyForm = {
@@ -30,7 +36,15 @@ export default function Tarifs() {
 
   const [showForm, setShowForm] = useState(false);
 
-  const [search, setSearch] = useState("");
+  const currentYear = new Date().getFullYear();
+  const [search, setSearch] = useState(String(new Date().getFullYear()));
+  const [selectedYear, setSelectedYear] = useState(
+    String(new Date().getFullYear()),
+  );
+  const [showCopyModal, setShowCopyModal] = useState(false);
+  const [sourceYear, setSourceYear] = useState(String(currentYear));
+  const [targetYear, setTargetYear] = useState(String(currentYear + 1));
+  const [copying, setCopying] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -69,6 +83,7 @@ export default function Tarifs() {
     setForm(emptyForm);
     setError("");
     setShowForm(true);
+    setSearch(String(new Date().getFullYear()));
   }
 
   function openEditForm(tarif) {
@@ -98,16 +113,42 @@ export default function Tarifs() {
   const filteredTarifs = useMemo(() => {
     const value = search.trim().toLowerCase();
 
-    if (!value) {
-      return tarifs;
+    return tarifs.filter((tarif) => {
+      const matchesYear =
+        selectedYear === "all" ||
+        Number(tarif.Annee_Tarif) === Number(selectedYear);
+
+      const matchesSearch =
+        !value ||
+        [tarif.Annee_Tarif, tarif.Denomination_Tarif, tarif.Montant_Tarif]
+          .filter((field) => field !== null && field !== undefined)
+          .some((field) => String(field).toLowerCase().includes(value));
+
+      return matchesYear && matchesSearch;
+    });
+  }, [tarifs, search, selectedYear]);
+
+  const availableYears = useMemo(() => {
+    return [...new Set(tarifs.map((tarif) => Number(tarif.Annee_Tarif)))].sort(
+      (a, b) => b - a,
+    );
+  }, [tarifs]);
+
+  useEffect(() => {
+    if (availableYears.length === 0) {
+      return;
     }
 
-    return tarifs.filter((tarif) => {
-      return [tarif.Annee_Tarif, tarif.Denomination_Tarif, tarif.Montant_Tarif]
-        .filter((field) => field !== null && field !== undefined)
-        .some((field) => String(field).toLowerCase().includes(value));
+    setSelectedYear((current) => {
+      if (availableYears.includes(Number(current))) {
+        return current;
+      }
+
+      return String(
+        availableYears.includes(currentYear) ? currentYear : availableYears[0],
+      );
     });
-  }, [tarifs, search]);
+  }, [availableYears, currentYear]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -151,6 +192,54 @@ export default function Tarifs() {
     }
   }
 
+  async function handleCopyTarifs(event) {
+    event.preventDefault();
+
+    const destinationYear = Number(targetYear);
+
+    if (
+      !Number.isInteger(destinationYear) ||
+      destinationYear < 2000 ||
+      destinationYear > 2100
+    ) {
+      setError("Année destination invalide");
+      return;
+    }
+
+    if (availableYears.includes(destinationYear)) {
+      setError("Des tarifs existent déjà pour cette année");
+      return;
+    }
+
+    try {
+      setCopying(true);
+      setError("");
+
+      const result = await copyTarifs(sourceYear, destinationYear);
+
+      setShowCopyModal(false);
+      setSelectedYear(String(destinationYear));
+      setSearch(String(destinationYear));
+
+      await loadTarifs();
+
+      window.alert(result.message);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCopying(false);
+    }
+  }
+  //
+  //
+  //
+  //  ---------- return ------------
+  //
+  //
+  //
+  //
+  //
+
   return (
     <div className="w-full">
       {error && <Alert variant="error">{error}</Alert>}
@@ -167,14 +256,32 @@ export default function Tarifs() {
         searchPlaceholder="Rechercher un tarif..."
         createLabel="Nouveau tarif"
         onAction={openCreateForm}
+        secondaryActionLabel="Copier les tarifs"
+        onSecondaryAction={() => {
+          setError("");
+          setShowCopyModal(true);
+        }}
+        secondaryActionDisabled={availableYears.length === 0}
         className="mb-6"
       />
 
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-sm text-blue-900">
-          {filteredTarifs.length} tarif
-          {filteredTarifs.length > 1 ? "s" : ""}
-        </p>
+      <div className="mb-6 flex flex-wrap gap-3 justify-center">
+        {availableYears.map((year) => (
+          <CardFilter
+            key={year}
+            title="Année"
+            value={year}
+            active={selectedYear === String(year)}
+            color="blue"
+            onClick={() => {
+              const yearValue = String(year);
+
+              setSelectedYear(yearValue);
+              setSearch(yearValue);
+            }}
+            className="w-18"
+          />
+        ))}
       </div>
 
       {loading ? (
@@ -182,12 +289,15 @@ export default function Tarifs() {
       ) : filteredTarifs.length === 0 ? (
         <Vide search={search} />
       ) : (
-        <Table>
+        <Table maxWidth="500px">
           <TableHead>
             <TableRow>
               <TableHeader>Année</TableHeader>
               <TableHeader>Désignation</TableHeader>
               <TableHeader>Montant</TableHeader>
+              <TableHeader className="text-right hidden sm:table-cell">
+                Action
+              </TableHeader>
             </TableRow>
           </TableHead>
 
@@ -202,6 +312,22 @@ export default function Tarifs() {
                 <TableCell>{tarif.Denomination_Tarif}</TableCell>
 
                 <TableCell>{Number(tarif.Montant_Tarif)} €</TableCell>
+
+                <TableCell className="text-right hidden sm:table-cell">
+                  <Button
+                    type="button"
+                    variant="danger_clear"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleDelete(tarif.ID_Tarif);
+                    }}
+                    className="px-3 py-2"
+                    aria-label={`Supprimer ${tarif.Denomination_Tarif}`}
+                    title="Supprimer ce tarif"
+                  >
+                    <Trash2 size={16} />
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
           </tbody>
@@ -218,6 +344,24 @@ export default function Tarifs() {
         onSubmit={handleSubmit}
         onChange={handleChange}
         onDelete={handleDelete}
+      />
+
+      <TarifsCopyModal
+        open={showCopyModal}
+        availableYears={availableYears}
+        sourceYear={sourceYear}
+        targetYear={targetYear}
+        copying={copying}
+        error={error}
+        onSourceYearChange={setSourceYear}
+        onTargetYearChange={setTargetYear}
+        onClose={() => {
+          if (!copying) {
+            setShowCopyModal(false);
+            setError("");
+          }
+        }}
+        onSubmit={handleCopyTarifs}
       />
     </div>
   );

@@ -5,6 +5,7 @@ import {
   getDeplacement,
   createDeplacement,
   updateDeplacement,
+  copyDeplacements,
   deleteDeplacement,
 } from "../controllers/deplacements.controller.js";
 
@@ -18,6 +19,7 @@ router.use(authenticate, requireClient);
 router.get("/", getDeplacements);
 router.get("/:id", getDeplacement);
 router.post("/", createDeplacement);
+router.post("/copy", copyDeplacements);
 router.put("/:id", updateDeplacement);
 router.delete("/:id", deleteDeplacement);
 

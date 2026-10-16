@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import DeplacementsModal from "../components/Modals/Deplacements_Modal.jsx";
+import DeplacementsCopyModal from "../components/Modals/DeplacementsCopyModal.jsx";
 import Alert from "../components/ui/Alert.jsx";
+import { CardFilter } from "../components/ui/Card.jsx";
+import { Trash2 } from "lucide-react";
+import Button from "../components/ui/Button.jsx";
 import Table, {
   Vide,
   TableHead,
@@ -14,6 +18,7 @@ import {
   createDeplacement,
   updateDeplacement,
   deleteDeplacement,
+  copyDeplacements,
 } from "../api/deplacements.js";
 
 const emptyForm = {
@@ -28,7 +33,16 @@ export default function Deplacements() {
   const [editingId, setEditingId] = useState(null);
 
   const [showForm, setShowForm] = useState(false);
-  const [search, setSearch] = useState("");
+
+  const currentYear = new Date().getFullYear();
+  const [search, setSearch] = useState(String(new Date().getFullYear()));
+  const [selectedYear, setSelectedYear] = useState(
+    String(new Date().getFullYear()),
+  );
+  const [showCopyModal, setShowCopyModal] = useState(false);
+  const [sourceYear, setSourceYear] = useState(String(currentYear));
+  const [targetYear, setTargetYear] = useState(String(currentYear + 1));
+  const [copying, setCopying] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -95,20 +109,46 @@ export default function Deplacements() {
   const filteredDeplacements = useMemo(() => {
     const value = search.trim().toLowerCase();
 
-    if (!value) {
-      return deplacements;
+    return deplacements.filter((item) => {
+      const matchesYear =
+        selectedYear === "all" ||
+        Number(item.Annee_Deplacement) === Number(selectedYear);
+
+      const matchesSearch =
+        !value ||
+        [
+          item.Annee_Deplacement,
+          item.Denomination_Deplacement,
+          item.Montant_Deplacement,
+        ]
+          .filter((field) => field !== null && field !== undefined)
+          .some((field) => String(field).toLowerCase().includes(value));
+
+      return matchesYear && matchesSearch;
+    });
+  }, [deplacements, search, selectedYear]);
+
+  const availableYears = useMemo(() => {
+    return [
+      ...new Set(deplacements.map((item) => Number(item.Annee_Deplacement))),
+    ].sort((a, b) => b - a);
+  }, [deplacements]);
+
+  useEffect(() => {
+    if (availableYears.length === 0) {
+      return;
     }
 
-    return deplacements.filter((deplacement) => {
-      return [
-        deplacement.Annee_Deplacement,
-        deplacement.Denomination_Deplacement,
-        deplacement.Montant_Deplacement,
-      ]
-        .filter((field) => field !== null && field !== undefined)
-        .some((field) => String(field).toLowerCase().includes(value));
+    setSelectedYear((current) => {
+      if (availableYears.includes(Number(current))) {
+        return current;
+      }
+
+      return String(
+        availableYears.includes(currentYear) ? currentYear : availableYears[0],
+      );
     });
-  }, [deplacements, search]);
+  }, [availableYears, currentYear]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -152,6 +192,57 @@ export default function Deplacements() {
     }
   }
 
+  async function handleCopyDeplacements(event) {
+    event.preventDefault();
+
+    const destinationYear = Number(targetYear);
+
+    if (
+      !Number.isInteger(destinationYear) ||
+      destinationYear < 2000 ||
+      destinationYear > 2100
+    ) {
+      setError("Année destination invalide");
+      return;
+    }
+
+    if (availableYears.includes(destinationYear)) {
+      setError("Des déplacements existent déjà pour cette année");
+      return;
+    }
+
+    try {
+      setCopying(true);
+      setError("");
+
+      const result = await copyDeplacements(sourceYear, destinationYear);
+
+      setShowCopyModal(false);
+      setSelectedYear(String(destinationYear));
+      setSearch(String(destinationYear));
+
+      await loadDeplacements();
+
+      window.alert(result.message);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCopying(false);
+    }
+  }
+
+  //
+  //
+  //
+  //
+  //
+  // -------Return --------
+  //
+  //
+  //
+  //
+  //
+
   return (
     <div className="w-full">
       {error && <Alert variant="error">{error}</Alert>}
@@ -168,8 +259,33 @@ export default function Deplacements() {
         searchPlaceholder="Rechercher un déplacement..."
         createLabel="Nouveau déplacement"
         onAction={openCreateForm}
+        secondaryActionLabel="Copier les déplacements"
+        onSecondaryAction={() => {
+          setError("");
+          setShowCopyModal(true);
+        }}
+        secondaryActionDisabled={availableYears.length === 0}
         className="mb-6"
       />
+
+      <div className="mb-6 flex flex-wrap gap-3 justify-center">
+        {availableYears.map((year) => (
+          <CardFilter
+            key={year}
+            title="Année"
+            value={year}
+            active={selectedYear === String(year)}
+            color="blue"
+            onClick={() => {
+              const yearValue = String(year);
+
+              setSelectedYear(yearValue);
+              setSearch(yearValue);
+            }}
+            className="w-18"
+          />
+        ))}
+      </div>
 
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-sm text-blue-900">
@@ -183,12 +299,15 @@ export default function Deplacements() {
       ) : filteredDeplacements.length === 0 ? (
         <Vide search={search} />
       ) : (
-        <Table>
+        <Table maxWidth="500px">
           <TableHead>
             <TableRow>
               <TableHeader>Année</TableHeader>
               <TableHeader>Désignation</TableHeader>
               <TableHeader>Montant</TableHeader>
+              <TableHeader className="text-right hidden sm:table-cell">
+                Action
+              </TableHeader>
             </TableRow>
           </TableHead>
 
@@ -204,6 +323,21 @@ export default function Deplacements() {
 
                 <TableCell>
                   {Number(deplacement.Montant_Deplacement)} €
+                </TableCell>
+                <TableCell className="text-right hidden sm:table-cell">
+                  <Button
+                    type="button"
+                    variant="danger_clear"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleDelete(deplacement.ID_Deplacement);
+                    }}
+                    className="px-3 py-2"
+                    aria-label={`Supprimer ${deplacement.Denomination_Deplacement}`}
+                    title="Supprimer ce déplacement"
+                  >
+                    <Trash2 size={16} />
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
@@ -221,6 +355,24 @@ export default function Deplacements() {
         onSubmit={handleSubmit}
         onChange={handleChange}
         onDelete={handleDelete}
+      />
+
+      <DeplacementsCopyModal
+        open={showCopyModal}
+        availableYears={availableYears}
+        sourceYear={sourceYear}
+        targetYear={targetYear}
+        copying={copying}
+        error={error}
+        onSourceYearChange={setSourceYear}
+        onTargetYearChange={setTargetYear}
+        onClose={() => {
+          if (!copying) {
+            setShowCopyModal(false);
+            setError("");
+          }
+        }}
+        onSubmit={handleCopyDeplacements}
       />
     </div>
   );

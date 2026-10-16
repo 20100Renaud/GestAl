@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { usePageTitle } from "../../context/PageTitleContext";
-import { Search, X } from "lucide-react";
+import { Search, X, Copy, SquarePlus } from "lucide-react";
 import Input from "./Input";
 import Button from "./Button";
 
@@ -11,6 +11,10 @@ export default function PageHeader({
   searchPlaceholder = "Rechercher...",
   createLabel,
   onAction,
+  secondaryActionIcon: SecondaryActionIcon = Copy,
+  secondaryActionLabel,
+  onSecondaryAction,
+  secondaryActionDisabled = false,
   className = "",
 }) {
   const { setTitle } = usePageTitle();
@@ -21,17 +25,9 @@ export default function PageHeader({
 
   return (
     <div
-      className={`flex flex-col gap-4 md:flex-row md:items-center  md:justify-between w-full ${className}`}
+      className={`flex flex-col gap-4 md:flex-row md:items-center md:justify-between w-full ${className}`}
     >
-      {onAction && (
-        <Button
-          onClick={onAction}
-          className="order-1 md:order-2 w-full md:w-auto shrink-0"
-        >
-          + {createLabel || "Nouveau"}
-        </Button>
-      )}
-
+      {/* Search */}
       <div className="relative order-2 md:order-1 w-full max-w-[420px]">
         {onSearchChange && (
           <>
@@ -61,6 +57,34 @@ export default function PageHeader({
           </>
         )}
       </div>
+
+      {/* Actions */}
+      {(onAction || onSecondaryAction) && (
+        <div className="order-1 md:order-2 flex flex-col sm:flex-row gap-2 w-full md:w-auto shrink-0">
+          {onSecondaryAction && (
+            <Button
+              type="button"
+              variant="clear_blue"
+              onClick={onSecondaryAction}
+              disabled={secondaryActionDisabled}
+              className="w-full sm:w-auto flex items-center gap-2"
+            >
+              {SecondaryActionIcon && <SecondaryActionIcon size={16} />}
+              {secondaryActionLabel || "Action secondaire"}
+            </Button>
+          )}
+
+          {onAction && (
+            <Button
+              type="button"
+              onClick={onAction}
+              className="w-full sm:w-auto flex items-center gap-2"
+            >
+              <SquarePlus size={16}/>{createLabel || "Nouveau"}
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

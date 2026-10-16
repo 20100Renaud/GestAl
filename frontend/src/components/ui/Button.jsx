@@ -8,6 +8,8 @@ const variants = {
   clear_purple:
     "bg-white border border-purple-300 text-purple-700 transition hover:bg-purple-50 cursor-pointer",
   danger: "bg-red-600 text-white hover:bg-red-700 cursor-pointer",
+  danger_clear:
+    "bg-white text-red-700 transition hover:bg-red-50 cursor-pointer",
   ghost: "bg-transparent text-blue-300 hover:text-blue-100 cursor-pointer",
   zonage:
     "bg-green-100 px-2 py-1 text-green-700 hover:bg-green-200 cursor-pointer",

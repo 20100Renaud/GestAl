@@ -1,5 +1,6 @@
 import prisma from "../lib/prisma.js";
 
+// Deplacements all
 export async function getDeplacements(req, res) {
   try {
     const deplacements = await prisma.t_Deplacements.findMany({
@@ -24,6 +25,7 @@ export async function getDeplacements(req, res) {
   }
 }
 
+// Deplacements by ID
 export async function getDeplacement(req, res) {
   try {
     const deplacement = await prisma.t_Deplacements.findFirst({
@@ -49,6 +51,7 @@ export async function getDeplacement(req, res) {
   }
 }
 
+// Create
 export async function createDeplacement(req, res) {
   try {
     const { Annee_Deplacement, Denomination_Deplacement, Montant_Deplacement } =
@@ -106,6 +109,7 @@ export async function createDeplacement(req, res) {
   }
 }
 
+// Update
 export async function updateDeplacement(req, res) {
   try {
     const { id } = req.params;
@@ -178,6 +182,7 @@ export async function updateDeplacement(req, res) {
   }
 }
 
+// Delete
 export async function deleteDeplacement(req, res) {
   try {
     const { id } = req.params;
@@ -220,6 +225,99 @@ export async function deleteDeplacement(req, res) {
 
     return res.status(500).json({
       error: "Internal server error",
+    });
+  }
+}
+
+export async function copyDeplacements(req, res) {
+  try {
+    const { sourceYear, targetYear } = req.body;
+    const userId = req.user.userId;
+
+    if (
+      !Number.isInteger(sourceYear) ||
+      sourceYear < 2000 ||
+      sourceYear > 2100 ||
+      !Number.isInteger(targetYear) ||
+      targetYear < 2000 ||
+      targetYear > 2100
+    ) {
+      return res.status(400).json({
+        error: "Année invalide",
+      });
+    }
+
+    if (sourceYear === targetYear) {
+      return res.status(400).json({
+        error: "Les années source et destination doivent être différentes",
+      });
+    }
+
+    const count = await prisma.$transaction(
+      async (tx) => {
+        const source = await tx.t_Deplacements.findMany({
+          where: {
+            ID_User: userId,
+            Annee_Deplacement: sourceYear,
+          },
+        });
+
+        if (source.length === 0) {
+          throw new Error("SOURCE_YEAR_EMPTY");
+        }
+
+        const destination = await tx.t_Deplacements.findFirst({
+          where: {
+            ID_User: userId,
+            Annee_Deplacement: targetYear,
+          },
+          select: {
+            ID_Deplacement: true,
+          },
+        });
+
+        if (destination) {
+          throw new Error("TARGET_YEAR_EXISTS");
+        }
+
+        const result = await tx.t_Deplacements.createMany({
+          data: source.map((deplacement) => ({
+            ID_User: userId,
+            Annee_Deplacement: targetYear,
+            Denomination_Deplacement: deplacement.Denomination_Deplacement,
+            Montant_Deplacement: deplacement.Montant_Deplacement,
+          })),
+        });
+
+        return result.count;
+      },
+      {
+        isolationLevel: "Serializable",
+      },
+    );
+
+    return res.status(201).json({
+      message: `${count} déplacement(s) copié(s) avec succès`,
+      count,
+      targetYear,
+    });
+  } catch (error) {
+    if (error.message === "SOURCE_YEAR_EMPTY") {
+      return res.status(400).json({
+        error: "Aucun déplacement trouvé pour l'année à copier",
+      });
+    }
+
+    if (error.message === "TARGET_YEAR_EXISTS") {
+      return res.status(409).json({
+        error: "Des déplacements existent déjà pour cette année",
+      });
+    }
+
+    console.error("Copy deplacements error:", error);
+
+    return res.status(500).json({
+      error: "Impossible de copier les déplacements",
     });
   }
 }
