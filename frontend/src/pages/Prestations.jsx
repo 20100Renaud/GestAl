@@ -9,7 +9,7 @@ import Alert from "../components/ui/Alert.jsx";
 import ErrorModal from "../components/Modals/ErrorModal.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
 import { House } from "lucide-react";
-import { formatDate } from "../utils/formatDate";
+import { formatDateShort } from "../utils/formatDate";
 import {
   getStatutPaiement,
   formatAmountShort,
@@ -450,7 +450,7 @@ export default function Prestations() {
 
       const proprietaire = getProprietaireName(prestation);
       const lieu = getLieuName(prestation);
-      const date = formatDate(prestation.Date_Prestation);
+      const date = formatDateShort(prestation.Date_Prestation);
       const deplacement =
         prestation.Deplacement_Prestation?.Denomination_Deplacement ?? "";
 
@@ -668,7 +668,7 @@ export default function Prestations() {
                   onClick={() => openEditForm(prestation)}
                 >
                   <TableCell>
-                    {formatDate(prestation.Date_Prestation)}
+                    {formatDateShort(prestation.Date_Prestation)}
                   </TableCell>
 
                   <TableCell>{getProprietaireLabel(prestation)}</TableCell>
