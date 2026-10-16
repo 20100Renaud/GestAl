@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createConsultationPdfHandler } from "../../utils/consultationPdfHandler.js";
 
 import ConsultationsModal from "./Consultations_Modal.jsx";
@@ -19,7 +19,7 @@ import {
 import { getAnimaux } from "../../api/animaux.js";
 import { getTarifs } from "../../api/tarifs.js";
 import { getZonages } from "../../api/zonages.js";
-import { openConsultationPdf } from "../../utils/generateConsultationPdf.js";
+
 
 const emptyForm = {
   ID_Prestation: "",
@@ -38,6 +38,7 @@ export default function PrestationWorkflowConsultations({
   onError,
   onConsultationsChange,
   onAddAnimal,
+  onEditAnimal,
   onAddTarif,
   createdAnimal,
   createdTarif,
@@ -137,7 +138,13 @@ export default function PrestationWorkflowConsultations({
           String(animal.ID_Animal) === String(createdAnimal.ID_Animal),
       );
 
-      return exists ? current : [...current, createdAnimal];
+      return exists
+        ? current.map((animal) =>
+            String(animal.ID_Animal) === String(createdAnimal.ID_Animal)
+              ? { ...animal, ...createdAnimal }
+              : animal,
+          )
+        : [...current, createdAnimal];
     });
 
     setForm((current) => ({
@@ -215,7 +222,7 @@ export default function PrestationWorkflowConsultations({
     setEditingId(null);
   }
 
-  // Animal
+  // Add animal
   function handleAddAnimal() {
     const proprietaireId =
       prestation?.ID_Proprietaire ??
@@ -228,6 +235,20 @@ export default function PrestationWorkflowConsultations({
     }
 
     onAddAnimal?.(proprietaireId);
+  }
+
+  // Edit animal
+  function handleEditAnimal(animalId) {
+    const animal = animaux.find(
+      (item) => String(item.ID_Animal) === String(animalId),
+    );
+
+    if (!animal) {
+      onError?.("Animal introuvable.");
+      return;
+    }
+
+    onEditAnimal?.(animal, { lockProprietaire: true });
   }
 
   // Save btn
@@ -422,9 +443,10 @@ export default function PrestationWorkflowConsultations({
         onDelete={() => {}}
         onOpenZonages={openZonages}
         onAddAnimal={handleAddAnimal}
+        onEditAnimal={handleEditAnimal}
         onAddTarif={() => onAddTarif?.()}
         onOpenPrestation={onOpenPrestation}
-        onOpenPdf={handleOpenPdf}
+        onOpenPdf={(mode) => handleOpenPdf(mode, editingId)}
       />
 
       <PrestationWorkflowZonages

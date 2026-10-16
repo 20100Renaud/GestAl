@@ -35,7 +35,7 @@ const Select = forwardRef(function Select(
         ref={ref}
         id={id}
         required={required}
-        className={`${fieldClasses} cursor-pointer ${className}`}
+        className={`${fieldClasses} cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
         {...props}
       >
         {children}

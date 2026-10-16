@@ -8,7 +8,7 @@ import PrestationWorkflowConsultations from "./PrestationWorkflow_Consultations.
 import PrestationWorkflowPaiements from "./PrestationWorkflow_Paiements.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { getPrestation } from "../../api/prestations.js";
-import { createAnimal } from "../../api/animaux.js";
+import { createAnimal, updateAnimal, getAnimaux } from "../../api/animaux.js";
 import { createTarif } from "../../api/tarifs.js";
 import AnimauxModal from "./Animaux_Modal.jsx";
 import TarifsModal from "./Tarifs_Modal.jsx";
@@ -34,21 +34,24 @@ export default function PrestationWorkflowModal({
   open,
   prestation: initialPrestation = null,
   onClose,
+  onDeleted,
 }) {
+  const [error, setError] = useState("");
+
   const { user: currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState("prestation");
   const [prestationId, setPrestationId] = useState(null);
   const [prestation, setPrestation] = useState(null);
   const [hasConsultations, setHasConsultations] = useState(false);
-  const [error, setError] = useState("");
 
   const [createdAnimal, setCreatedAnimal] = useState(null);
-  const [createdTarif, setCreatedTarif] = useState(null);
-
   const [showAnimalModal, setShowAnimalModal] = useState(false);
   const [animalSaving, setAnimalSaving] = useState(false);
   const [animalForm, setAnimalForm] = useState(emptyAnimalForm);
+  const [editingAnimalId, setEditingAnimalId] = useState(null);
+  const [lockProprietaire, setLockProprietaire] = useState(false);
 
+  const [createdTarif, setCreatedTarif] = useState(null);
   const [showTarifModal, setShowTarifModal] = useState(false);
   const [tarifSaving, setTarifSaving] = useState(false);
   const [tarifError, setTarifError] = useState("");
@@ -95,6 +98,7 @@ export default function PrestationWorkflowModal({
     setActiveTab("consultations");
   }
 
+  // Update prestation
   function handleUpdatedPrestation(updatedPrestation) {
     setPrestation(updatedPrestation);
     setPrestationId(updatedPrestation.ID_Prestation);
@@ -104,6 +108,19 @@ export default function PrestationWorkflowModal({
     );
   }
 
+  // Delete prestation
+  function handleDeletedPrestation(id) {
+    setActiveTab("prestation");
+    setPrestationId(null);
+    setPrestation(null);
+    setHasConsultations(false);
+    setError("");
+
+    onDeleted?.(id);
+    onClose();
+  }
+
+  // Refresh prestation
   async function refreshPrestation() {
     if (!prestationId) {
       return;
@@ -122,8 +139,11 @@ export default function PrestationWorkflowModal({
     }
   }
 
+  // Add animal
   function handleAddAnimal(proprietaireId) {
     setError("");
+    setEditingAnimalId(null);
+    setLockProprietaire(false);
 
     setAnimalForm({
       ...emptyAnimalForm,
@@ -134,6 +154,35 @@ export default function PrestationWorkflowModal({
     setShowAnimalModal(true);
   }
 
+  // Edit animal
+  function handleEditAnimal(animal, options = {}) {
+    if (!animal?.ID_Animal) {
+      setError("Animal introuvable.");
+      return;
+    }
+
+    setError("");
+    setEditingAnimalId(animal.ID_Animal);
+    setLockProprietaire(Boolean(options.lockProprietaire));
+
+    setAnimalForm({
+      ID_Proprietaire: animal.ID_Proprietaire ?? "",
+      Nom_Animal: animal.Nom_Animal ?? "",
+      Genre_Animal: animal.Genre_Animal ?? "",
+      Race_Animal: animal.Race_Animal ?? "",
+      Date_Naissance_Animal: animal.Date_Naissance_Animal
+        ? String(animal.Date_Naissance_Animal).slice(0, 10)
+        : "",
+      Sexe_Animal: animal.Sexe_Animal ?? "",
+      Memo_Animal: animal.Memo_Animal ?? "",
+    });
+
+    setCreatedAnimal(null);
+    setShowAnimalModal(true);
+  }
+
+
+  // Add tarif
   function handleAddTarif() {
     setError("");
     setTarifError("");
@@ -147,6 +196,7 @@ export default function PrestationWorkflowModal({
     setShowTarifModal(true);
   }
 
+  // Update animal
   function handleAnimalChange(event) {
     const { name, value } = event.target;
 
@@ -156,6 +206,7 @@ export default function PrestationWorkflowModal({
     }));
   }
 
+  // Update tarif
   function handleTarifChange(event) {
     const { name, value } = event.target;
 
@@ -165,6 +216,7 @@ export default function PrestationWorkflowModal({
     }));
   }
 
+  // On save animal
   async function handleAnimalSubmit(event) {
     event.preventDefault();
 
@@ -172,10 +224,31 @@ export default function PrestationWorkflowModal({
       setAnimalSaving(true);
       setError("");
 
-      const newAnimal = await createAnimal(animalForm);
+      const isEditingAnimal = editingAnimalId != null;
 
-      setCreatedAnimal(newAnimal);
+      const savedAnimal = isEditingAnimal
+        ? await updateAnimal(editingAnimalId, animalForm)
+        : await createAnimal(animalForm);
+
+      const animaux = await getAnimaux();
+
+      const animalId = isEditingAnimal
+        ? editingAnimalId
+        : savedAnimal?.ID_Animal;
+
+      const refreshedAnimal = animaux.find(
+        (item) => String(item.ID_Animal) === String(animalId),
+      );
+
+      if (!refreshedAnimal) {
+        throw new Error(
+          "L'animal a été enregistré, mais il est introuvable dans la liste.",
+        );
+      }
+
+      setCreatedAnimal(refreshedAnimal);
       setShowAnimalModal(false);
+      setEditingAnimalId(null);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -183,7 +256,7 @@ export default function PrestationWorkflowModal({
     }
   }
 
-
+  // On tarif save
   async function handleTarifSubmit(event) {
     event.preventDefault();
 
@@ -203,7 +276,7 @@ export default function PrestationWorkflowModal({
     }
   }
 
-
+  // On close form
   function handleClose() {
     setActiveTab("prestation");
     setPrestationId(null);
@@ -214,6 +287,7 @@ export default function PrestationWorkflowModal({
     onClose();
   }
 
+  // Error
   function handleError(message) {
     setError(message);
   }
@@ -267,6 +341,7 @@ export default function PrestationWorkflowModal({
               prestation={prestation}
               onCreated={handleCreatedPrestation}
               onUpdated={handleUpdatedPrestation}
+              onDeleted={handleDeletedPrestation}
               onError={handleError}
             />
           </div>
@@ -283,6 +358,7 @@ export default function PrestationWorkflowModal({
                   setHasConsultations(items.length > 0);
                 }}
                 onAddAnimal={handleAddAnimal}
+                onEditAnimal={handleEditAnimal}
                 onAddTarif={handleAddTarif}
                 createdAnimal={createdAnimal}
                 createdTarif={createdTarif}
@@ -307,15 +383,20 @@ export default function PrestationWorkflowModal({
 
       <AnimauxModal
         open={showAnimalModal}
-        editingId={null}
+        editingId={editingAnimalId}
         form={animalForm}
         proprietaires={
           prestation?.Proprietaire_Prestation
             ? [prestation.Proprietaire_Prestation]
             : []
         }
+        lockProprietaire={lockProprietaire}
         saving={animalSaving}
-        onClose={() => setShowAnimalModal(false)}
+        onClose={() => {
+          if (animalSaving) return;
+          setShowAnimalModal(false);
+          setEditingAnimalId(null);
+        }}
         onSubmit={handleAnimalSubmit}
         onChange={handleAnimalChange}
         onDelete={() => {}}

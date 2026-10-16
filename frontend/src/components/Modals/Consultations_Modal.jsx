@@ -25,6 +25,7 @@ import {
   X,
   Eye,
   Download,
+  Pencil,
 } from "lucide-react";
 
 export default function ConsultationsModal({
@@ -44,6 +45,7 @@ export default function ConsultationsModal({
   onOpenZonages,
   onAddTarif,
   onAddAnimal,
+  onEditAnimal,
   onOpenPrestation,
   onOpenPdf,
 }) {
@@ -150,17 +152,35 @@ export default function ConsultationsModal({
                           {animal.Nom_Animal}
                           {" - "}
                           {animal.Genre_Animal}
+                          {" "}
+                          {animal.Race_Animal}
                         </option>
                       ))}
                     </Select>
 
-                    <div className="absolute right-0 top-0">
+                    <div className="absolute right-0 top-0 flex gap-1">
+                      {form.ID_Animal && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => onEditAnimal?.(form.ID_Animal)}
+                          disabled={saving}
+                          className="!p-1"
+                          aria-label="Modifier l'animal sélectionné"
+                          title="Modifier l'animal sélectionné"
+                        >
+                          <Pencil size={16} />
+                        </Button>
+                      )}
+
                       <Button
                         type="button"
                         variant="secondary"
                         onClick={onAddAnimal}
                         disabled={saving || !form.ID_Prestation}
                         className="!p-1"
+                        aria-label="Ajouter un animal"
+                        title="Ajouter un animal"
                       >
                         <Plus size={16} />
                       </Button>

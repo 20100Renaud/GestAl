@@ -18,9 +18,14 @@ import {
   Warehouse,
   SavePlus,
   Save,
+  Trash2,
 } from "lucide-react";
 
-import { createPrestation, updatePrestation } from "../../api/prestations.js";
+import {
+  createPrestation,
+  updatePrestation,
+  deletePrestation,
+} from "../../api/prestations.js";
 
 import {
   getProprietaires,
@@ -54,6 +59,7 @@ export default function PrestationWorkflowPrestation({
   prestation,
   onCreated,
   onUpdated,
+  onDeleted,
   onError,
 }) {
   const [proprietaires, setProprietaires] = useState([]);
@@ -62,7 +68,7 @@ export default function PrestationWorkflowPrestation({
   const [form, setForm] = useState(emptyForm);
   const [initialForm, setInitialForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
-
+  const [deleting, setDeleting] = useState(false);
   const [customLieu, setCustomLieu] = useState(false);
 
   const [showDeplacementForm, setShowDeplacementForm] = useState(false);
@@ -297,7 +303,7 @@ export default function PrestationWorkflowPrestation({
     }
   }
 
-  /* PRESTATION */
+  // Save btn
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -324,6 +330,35 @@ export default function PrestationWorkflowPrestation({
       onError?.(err.message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  // Delete btn
+  async function handleDelete() {
+    if (!prestation?.ID_Prestation) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Êtes-vous sûr de vouloir supprimer cette prestation ? Cette action est irréversible.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      onError?.("");
+
+      await deletePrestation(prestation.ID_Prestation);
+
+      // Notify the parent so it can refresh its data or close the modal.
+      onDeleted?.(prestation.ID_Prestation);
+    } catch (err) {
+      onError?.(err.message);
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -480,27 +515,45 @@ export default function PrestationWorkflowPrestation({
           />
         </div>
 
-        <div className="mt-6 flex justify-end">
-          <Button
-            type="submit"
-            disabled={
-              saving || (Boolean(prestation?.ID_Prestation) && !hasChanges)
-            }
-          >
-            {saving ? (
-              <p className="mr-2 h-4 w-4 animate-pulse">Enregistrement...</p>
-            ) : prestation?.ID_Prestation ? (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                Enregistrer les modifications
-              </>
-            ) : (
-              <>
-                <SavePlus className="mr-2 h-4 w-4" />
-                Créer la prestation
-              </>
-            )}
-          </Button>
+        <div className="mt-6 flex flex-wrap justify-between gap-3">
+          {/* DELETE — only when editing an existing prestation */}
+          {prestation?.ID_Prestation && (
+            <Button
+              type="button"
+              variant="danger"
+              onClick={handleDelete}
+              disabled={saving || deleting}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              {deleting ? "Suppression..." : "Supprimer la prestation"}
+            </Button>
+          )}
+
+          {/* SAVE */}
+          <div className="ml-auto">
+            <Button
+              type="submit"
+              disabled={
+                saving ||
+                deleting ||
+                (Boolean(prestation?.ID_Prestation) && !hasChanges)
+              }
+            >
+              {saving ? (
+                <p className="mr-2 h-4 w-4 animate-pulse">Enregistrement...</p>
+              ) : prestation?.ID_Prestation ? (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Enregistrer les modifications
+                </>
+              ) : (
+                <>
+                  <SavePlus className="mr-2 h-4 w-4" />
+                  Créer la prestation
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </form>
 

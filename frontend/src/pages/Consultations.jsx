@@ -24,7 +24,7 @@ import {
   deleteConsultation,
 } from "../api/consultations.js";
 
-import { getAnimaux, createAnimal } from "../api/animaux.js";
+import { getAnimaux, createAnimal, updateAnimal } from "../api/animaux.js";
 import { getProprietaires } from "../api/proprietaires.js";
 import { getZonages } from "../api/zonages.js";
 import { getTarifs, createTarif } from "../api/tarifs.js";
@@ -70,7 +70,7 @@ export default function Consultations() {
   const [showForm, setShowForm] = useState(false);
   const [showTarifForm, setShowTarifForm] = useState(false);
   const [showAnimalForm, setShowAnimalForm] = useState(false);
-
+  const [editingAnimalId, setEditingAnimalId] = useState(null);
   const [animalForm, setAnimalForm] = useState({
     ID_Proprietaire: "",
     Nom_Animal: "",
@@ -368,6 +368,7 @@ export default function Consultations() {
   }
 
   function openAnimalForm() {
+    setEditingAnimalId(null);
     const selectedPrestation = prestations.find(
       (prestation) =>
         String(prestation.ID_Prestation) === String(form.ID_Prestation),
@@ -386,12 +387,41 @@ export default function Consultations() {
     setShowAnimalForm(true);
   }
 
+  function openEditAnimal(animalId) {
+    const animal = animaux.find(
+      (item) => String(item.ID_Animal) === String(animalId),
+    );
+
+    if (!animal) {
+      setError("Animal introuvable.");
+      return;
+    }
+
+    setEditingAnimalId(animal.ID_Animal);
+
+    setAnimalForm({
+      ID_Proprietaire: animal.ID_Proprietaire ?? "",
+      Nom_Animal: animal.Nom_Animal ?? "",
+      Genre_Animal: animal.Genre_Animal ?? "",
+      Race_Animal: animal.Race_Animal ?? "",
+      Date_Naissance_Animal: animal.Date_Naissance_Animal
+        ? String(animal.Date_Naissance_Animal).slice(0, 10)
+        : "",
+      Sexe_Animal: animal.Sexe_Animal ?? "",
+      Memo_Animal: animal.Memo_Animal ?? "",
+    });
+
+    setError("");
+    setShowAnimalForm(true);
+  }
+
   function closeAnimalForm() {
     if (savingAnimal) {
       return;
     }
 
     setShowAnimalForm(false);
+    setEditingAnimalId(null);
   }
 
   function handleAnimalChange(event) {
@@ -409,6 +439,22 @@ export default function Consultations() {
     try {
       setSavingAnimal(true);
       setError("");
+
+      if (editingAnimalId != null) {
+        const updatedAnimal = await updateAnimal(editingAnimalId, animalForm);
+
+        setAnimaux((current) =>
+          current.map((animal) =>
+            String(animal.ID_Animal) === String(editingAnimalId)
+              ? { ...animal, ...updatedAnimal }
+              : animal,
+          ),
+        );
+
+        setShowAnimalForm(false);
+        setEditingAnimalId(null);
+        return;
+      }
 
       const newAnimal = await createAnimal(animalForm);
 
@@ -849,6 +895,7 @@ export default function Consultations() {
         onOpenPrestation={() => openPrestation(selectedPrestation)}
         onAddTarif={openTarifForm}
         onAddAnimal={openAnimalForm}
+        onEditAnimal={openEditAnimal}
         onOpenPdf={(mode) => handleOpenPdf(mode, editingId)}
       />
 
@@ -874,7 +921,7 @@ export default function Consultations() {
 
       <AnimauxModal
         open={showAnimalForm}
-        editingId={null}
+        editingId={editingAnimalId}
         form={animalForm}
         proprietaires={proprietaires}
         saving={savingAnimal}

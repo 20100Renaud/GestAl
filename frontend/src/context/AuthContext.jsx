@@ -28,9 +28,14 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function login(email, password) {
-    const data = await loginRequest(email, password);
-    setUser(data.user);
-    return data.user;
+    await loginRequest(email, password);
+
+    const data = await getCurrentUser();
+    const currentUser = data.user ?? null;
+
+    setUser(currentUser);
+
+    return currentUser;
   }
 
   async function logout() {

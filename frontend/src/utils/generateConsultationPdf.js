@@ -393,6 +393,7 @@ export function openConsultationPdf({
   const animalDescription = [
     animal?.Nom_Animal,
     animal?.Genre_Animal ? `- ${animal.Genre_Animal}` : "",
+    animal?.Race_Animal ? `${animal.Race_Animal}` : "",
     animal?.Sexe_Animal,
     animal?.Date_Naissance_Animal
       ? `de ${calculateAge(animal.Date_Naissance_Animal)}`
