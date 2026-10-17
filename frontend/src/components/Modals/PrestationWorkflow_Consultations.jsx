@@ -248,7 +248,7 @@ export default function PrestationWorkflowConsultations({
       return;
     }
 
-    onEditAnimal?.(animal, { lockProprietaire: true });
+    onEditAnimal?.(animal);
   }
 
   // Save btn

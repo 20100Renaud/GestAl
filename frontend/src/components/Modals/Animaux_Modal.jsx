@@ -19,7 +19,6 @@ export default function AnimauxModal({
   editingId,
   form,
   proprietaires,
-  lockProprietaire = false,
   saving,
   onClose,
   onSubmit,
@@ -48,7 +47,7 @@ export default function AnimauxModal({
               name="ID_Proprietaire"
               value={form.ID_Proprietaire}
               onChange={onChange}
-              disabled={lockProprietaire}
+              disabled={Boolean(editingId)}
               required
             >
               <option value="">Sélectionner</option>

@@ -50,7 +50,6 @@ export default function PrestationWorkflowModal({
   const [animalSaving, setAnimalSaving] = useState(false);
   const [animalForm, setAnimalForm] = useState(emptyAnimalForm);
   const [editingAnimalId, setEditingAnimalId] = useState(null);
-  const [lockProprietaire, setLockProprietaire] = useState(false);
 
   const [createdTarif, setCreatedTarif] = useState(null);
   const [showTarifModal, setShowTarifModal] = useState(false);
@@ -145,7 +144,6 @@ export default function PrestationWorkflowModal({
   function handleAddAnimal(proprietaireId) {
     setError("");
     setEditingAnimalId(null);
-    setLockProprietaire(false);
 
     setAnimalForm({
       ...emptyAnimalForm,
@@ -165,7 +163,6 @@ export default function PrestationWorkflowModal({
 
     setError("");
     setEditingAnimalId(animal.ID_Animal);
-    setLockProprietaire(Boolean(options.lockProprietaire));
 
     setAnimalForm({
       ID_Proprietaire: animal.ID_Proprietaire ?? "",
@@ -392,7 +389,6 @@ export default function PrestationWorkflowModal({
             ? [prestation.Proprietaire_Prestation]
             : []
         }
-        lockProprietaire={lockProprietaire}
         saving={animalSaving}
         onClose={() => {
           if (animalSaving) return;
