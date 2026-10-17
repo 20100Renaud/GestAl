@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { getAnimaux } from "../api/animaux.js";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import ProprietairesModal from "../components/Modals/Proprietaires_Modal.jsx";
 import { normalizeUpper, normalizeCamel } from "../utils/normalizeField.js";
@@ -39,7 +40,7 @@ export default function Proprietaires() {
   const [error, setError] = useState("");
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [search, setSearch] = useState("");
-
+  const [animaux, setAnimaux] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
@@ -50,8 +51,13 @@ export default function Proprietaires() {
       setError("");
 
       const data = await getProprietaires();
+      const [proprietairesData, animauxData] = await Promise.all([
+        getProprietaires(),
+        getAnimaux(),
+      ]);
 
       setProprietaires(data);
+      setAnimaux(animauxData);
     } catch (err) {
       setError(err.message);
       setShowErrorModal(true);
@@ -264,6 +270,8 @@ export default function Proprietaires() {
         open={showForm}
         editingId={editingId}
         form={form}
+        proprietaires={proprietaires}
+        animaux={animaux}
         saving={saving}
         onClose={closeForm}
         onSubmit={handleSubmit}

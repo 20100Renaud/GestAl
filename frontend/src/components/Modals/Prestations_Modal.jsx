@@ -20,6 +20,7 @@ export default function PrestationsModal({
   form,
   proprietaires,
   deplacements,
+  animaux = [],
   saving,
   onClose,
   onSubmit,
@@ -79,6 +80,10 @@ export default function PrestationsModal({
       },
     });
   }
+
+  const animauxProprietaire = animaux.filter(
+    (animal) => String(animal.ID_Proprietaire) === String(form.ID_Proprietaire),
+  );
 
   return (
     <Modal
@@ -244,6 +249,26 @@ export default function PrestationsModal({
             />
           </div>
 
+          {/* ANIMAUX DU PROPRIÉTAIRE */}
+          {animauxProprietaire.length > 0 && (
+            <div className="md:col-span-2 rounded-xl border border-blue-200 bg-blue-50 p-3">
+              <h3 className="mb-2 text-sm font-semibold text-blue-900">
+                Animaux du propriétaire
+              </h3>
+
+              <div className="flex flex-wrap gap-2">
+                {animauxProprietaire.map((animal) => (
+                  <span
+                    key={animal.ID_Animal}
+                    className="rounded-full border border-blue-200 bg-white px-3 py-1 text-sm text-blue-800"
+                  >
+                    {animal.Nom_Animal}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          
           <div className="mt-6 flex items-center justify-between gap-3">
             <div>
               {editingId && (

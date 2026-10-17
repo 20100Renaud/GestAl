@@ -1,8 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { getAnimaux } from "../api/animaux.js";
+import {
+  getPrestations,
+  createPrestation,
+  updatePrestation,
+  deletePrestation,
+} from "../api/prestations.js";
+
+import { getProprietaires, createProprietaire } from "../api/proprietaires.js";
+
+import { getDeplacements, createDeplacement } from "../api/deplacements.js";
+
 import DeplacementsModal from "../components/Modals/Deplacements_Modal.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
-import PrestationsModal from "../components/Modals/Prestations_Modal.jsx";
 import ProprietairesModal from "../components/Modals/Proprietaires_Modal.jsx";
 import PrestationWorkflowModal from "../components/Modals/PrestationWorkflow_Modal.jsx";
 import Alert from "../components/ui/Alert.jsx";
@@ -22,17 +33,6 @@ import Table, {
   TableRow,
   TableCell,
 } from "../components/ui/Table.jsx";
-
-import {
-  getPrestations,
-  createPrestation,
-  updatePrestation,
-  deletePrestation,
-} from "../api/prestations.js";
-
-import { getProprietaires, createProprietaire } from "../api/proprietaires.js";
-
-import { getDeplacements, createDeplacement } from "../api/deplacements.js";
 
 const emptyForm = {
   ID_Proprietaire: "",
@@ -101,11 +101,10 @@ export default function Prestations() {
   const [prestations, setPrestations] = useState([]);
   const [proprietaires, setProprietaires] = useState([]);
   const [deplacements, setDeplacements] = useState([]);
-
+const [animaux, setAnimaux] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
 
-  const [showForm, setShowForm] = useState(false);
   const [showWorkflow, setShowWorkflow] = useState(false);
   const [workflowPrestation, setWorkflowPrestation] = useState(null);
   const [showProprietaireForm, setShowProprietaireForm] = useState(false);
@@ -148,16 +147,22 @@ export default function Prestations() {
       if (showLoading) setLoading(true);
       setError("");
 
-      const [prestationsData, proprietairesData, deplacementsData] =
-        await Promise.all([
-          getPrestations(),
-          getProprietaires(),
-          getDeplacements(),
-        ]);
+      const [
+        prestationsData,
+        proprietairesData,
+        deplacementsData,
+        animauxData,
+      ] = await Promise.all([
+        getPrestations(),
+        getProprietaires(),
+        getDeplacements(),
+        getAnimaux(),
+      ]);
 
       setPrestations(prestationsData);
       setProprietaires(proprietairesData);
       setDeplacements(deplacementsData);
+      setAnimaux(animauxData);
     } catch (err) {
       setError(err.message);
       setShowErrorModal(true);
@@ -268,7 +273,7 @@ export default function Prestations() {
       return;
     }
 
-    setShowForm(false);
+
     setEditingId(null);
     setForm(emptyForm);
   }
@@ -547,54 +552,54 @@ export default function Prestations() {
       });
   }, [proprietaires, prestations, monthsWithoutPrestation, search]);
 
-const filteredPrestations = useMemo(() => {
-  if (monthsWithoutPrestation !== null) {
-    return [];
-  }
+  const filteredPrestations = useMemo(() => {
+    if (monthsWithoutPrestation !== null) {
+      return [];
+    }
 
-  const value = search.trim().toLowerCase();
+    const value = search.trim().toLowerCase();
 
-  return prestations.filter((prestation) => {
-    const statut = getStatutPaiement(prestation);
+    return prestations.filter((prestation) => {
+      const statut = getStatutPaiement(prestation);
 
-    if (filterCreances) {
-      if (statut.type !== "reste" && statut.type !== "aucun-paiement") {
+      if (filterCreances) {
+        if (statut.type !== "reste" && statut.type !== "aucun-paiement") {
+          return false;
+        }
+      } else if (filterStatut && statut.type !== filterStatut) {
         return false;
       }
-    } else if (filterStatut && statut.type !== filterStatut) {
-      return false;
-    }
 
-    if (!value || value === "créances") {
-      return true;
-    }
+      if (!value || value === "créances") {
+        return true;
+      }
 
-    const proprietaire = getProprietaireName(prestation);
-    const lieu = getLieuName(prestation);
-    const date = formatDateShort(prestation.Date_Prestation);
-    const deplacement =
-      prestation.Deplacement_Prestation?.Denomination_Deplacement ?? "";
+      const proprietaire = getProprietaireName(prestation);
+      const lieu = getLieuName(prestation);
+      const date = formatDateShort(prestation.Date_Prestation);
+      const deplacement =
+        prestation.Deplacement_Prestation?.Denomination_Deplacement ?? "";
 
-    return [
-      proprietaire,
-      lieu,
-      date,
-      deplacement,
-      statut.label,
-      prestation.Remise_Prestation,
-      prestation.Montant_Prestation,
-    ]
-      .filter(Boolean)
-      .some((field) => String(field).toLowerCase().includes(value));
-  });
-}, [
-  prestations,
-  proprietaires,
-  search,
-  filterStatut,
-  filterCreances,
-  monthsWithoutPrestation,
-]);
+      return [
+        proprietaire,
+        lieu,
+        date,
+        deplacement,
+        statut.label,
+        prestation.Remise_Prestation,
+        prestation.Montant_Prestation,
+      ]
+        .filter(Boolean)
+        .some((field) => String(field).toLowerCase().includes(value));
+    });
+  }, [
+    prestations,
+    proprietaires,
+    search,
+    filterStatut,
+    filterCreances,
+    monthsWithoutPrestation,
+  ]);
 
   const totalsPrestations = useMemo(() => {
     return filteredPrestations.reduce(
@@ -988,21 +993,6 @@ const filteredPrestations = useMemo(() => {
         onClose={closeWorkflow}
       />
 
-      <PrestationsModal
-        open={showForm}
-        editingId={editingId}
-        form={form}
-        proprietaires={proprietaires}
-        deplacements={deplacements}
-        saving={saving}
-        onClose={closeForm}
-        onSubmit={handleSubmit}
-        onChange={handleChange}
-        onDelete={handleDelete}
-        onAddDeplacement={openDeplacementForm}
-        onAddProprietaire={openProprietaireForm}
-      />
-
       <DeplacementsModal
         open={showDeplacementForm}
         editingId={null}
@@ -1019,6 +1009,8 @@ const filteredPrestations = useMemo(() => {
         open={showProprietaireForm}
         editingId={null}
         form={proprietaireForm}
+        proprietaires={proprietaires}
+        animaux={animaux}
         saving={savingProprietaire}
         onClose={closeProprietaireForm}
         onSubmit={handleProprietaireSubmit}

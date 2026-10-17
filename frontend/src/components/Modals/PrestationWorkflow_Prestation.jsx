@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-
+import { getAnimaux } from "../../api/animaux.js";
 import Button from "../ui/Button.jsx";
 import Input from "../ui/Input.jsx";
 import Select from "../ui/Select.jsx";
@@ -64,6 +64,7 @@ export default function PrestationWorkflowPrestation({
 }) {
   const [proprietaires, setProprietaires] = useState([]);
   const [deplacements, setDeplacements] = useState([]);
+const [animaux, setAnimaux] = useState([]);
 
   const [form, setForm] = useState(emptyForm);
   const [initialForm, setInitialForm] = useState(emptyForm);
@@ -141,13 +142,16 @@ export default function PrestationWorkflowPrestation({
 
   async function loadData() {
     try {
-      const [proprietairesData, deplacementsData] = await Promise.all([
-        getProprietaires(),
-        getDeplacements(),
-      ]);
+      const [proprietairesData, deplacementsData, animauxData] =
+        await Promise.all([
+          getProprietaires(),
+          getDeplacements(),
+          getAnimaux(),
+        ]);
 
       setProprietaires(proprietairesData);
       setDeplacements(deplacementsData);
+      setAnimaux(animauxData);
     } catch (err) {
       onError?.(err.message);
     }
@@ -573,6 +577,8 @@ export default function PrestationWorkflowPrestation({
         open={showProprietaireForm}
         editingId={null}
         form={proprietaireForm}
+        proprietaires={proprietaires}
+        animaux={animaux}
         saving={savingProprietaire}
         onClose={closeProprietaireForm}
         onSubmit={handleProprietaireSubmit}
