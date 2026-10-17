@@ -69,7 +69,10 @@ export function CardDashboard({
       >
         {/* Main value */}
         <div
-          onClick={onValueClick}
+          onClick={(event) => {
+            event.stopPropagation();
+            onValueClick?.();
+          }}
           onKeyDown={(event) => {
             if (onValueClick && (event.key === "Enter" || event.key === " ")) {
               event.preventDefault();
@@ -117,7 +120,10 @@ export function CardDashboard({
             <div className="hidden sm:block w-10 border-t border-blue-200" />
 
             <div
-              onClick={onSecondaryValueClick}
+              onClick={(event) => {
+                event.stopPropagation();
+                onSecondaryValueClick?.();
+              }}
               onKeyDown={(event) => {
                 if (
                   onSecondaryValueClick &&
