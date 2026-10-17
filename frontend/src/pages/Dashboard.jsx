@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import Button from "../components/ui/Button.jsx";
 import Alert from "../components/ui/Alert.jsx";
-import ErrorModal from "../components/Modals/ErrorModal.jsx";
-import { CardDashboard } from "../components/ui/Card.jsx";
+import {
+  CardDashboard,
+  CardProprietairesInactifs,
+} from "../components/ui/Card.jsx";
 import PrestationWorkflowModal from "../components/Modals/PrestationWorkflow_Modal.jsx";
 import { getConsultations } from "../api/consultations.js";
 import { getPaiements } from "../api/paiements.js";
@@ -122,7 +124,7 @@ export default function Dashboard() {
   const [paiements, setPaiements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [monthsWithoutPrestation, setMonthsWithoutPrestation] = useState(18);
 
   async function loadData() {
     try {
@@ -232,97 +234,90 @@ export default function Dashboard() {
       </div>
 
       <div className="flex flex-wrap justify-center gap-2 sm:gap-8">
-        <div className="transition-transform hover:-translate-y-2">
-          <CardDashboard
-            title="CONSULTATIONS"
-            value={loading ? "…" : consultationsThisYear.length}
-            subtitle={`en ${currentYear}`}
-            secondaryValue={loading ? "…" : consultationsThisMonth.length}
-            secondarySubtitle={`en ${currentMonthName}`}
-            onValueClick={() =>
-              navigate("/dashboard/consultations?statut=consultations-annee")
-            }
-            onSecondaryValueClick={() =>
-              navigate("/dashboard/consultations?statut=consultations-mois")
-            }
-            borderColor="border-t-blue-600"
-            titleColor="text-blue-700"
-            valueColor="text-blue-900"
-            subtitleColor="text-blue-500"
-            secondaryValueColor="text-blue-700"
-            secondarySubtitleColor="text-blue-400"
-            HoverColor="hover:bg-blue-50"
-          />
-        </div>
+        <CardProprietairesInactifs
+          months={monthsWithoutPrestation}
+          onMonthsChange={setMonthsWithoutPrestation}
+          onClick={() =>
+            navigate(
+              `/dashboard/prestations?statut=sans-prestation&mois=${monthsWithoutPrestation}`,
+            )
+          }
+        />
 
-        <div className="transition-transform hover:-translate-y-2">
-          <CardDashboard
-            title="CHIFFRE D'AFFAIRES"
-            value={loading ? "…" : formatCurrency(montantEncaisseThisYear)}
-            subtitle={`en ${currentYear}`}
-            secondaryValue={
-              loading ? "…" : formatCurrency(montantEncaisseThisMonth)
-            }
-            secondarySubtitle={`en ${currentMonthName}`}
-            onValueClick={() =>
-              navigate("/dashboard/paiements?statut=encaissements")
-            }
-            onSecondaryValueClick={() =>
-              navigate("/dashboard/paiements?statut=encaissements-mois")
-            }
-            borderColor="border-t-green-600"
-            titleColor="text-green-700"
-            valueColor="text-green-900"
-            subtitleColor="text-green-500"
-            secondaryValueColor="text-green-700"
-            secondarySubtitleColor="text-green-400"
-            HoverColor="hover:bg-green-50"
-          />
-        </div>
+        <CardDashboard
+          title="CONSULTATIONS"
+          value={loading ? "…" : consultationsThisYear.length}
+          subtitle={`en ${currentYear}`}
+          secondaryValue={loading ? "…" : consultationsThisMonth.length}
+          secondarySubtitle={`en ${currentMonthName}`}
+          onValueClick={() =>
+            navigate("/dashboard/consultations?statut=consultations-annee")
+          }
+          onSecondaryValueClick={() =>
+            navigate("/dashboard/consultations?statut=consultations-mois")
+          }
+        />
 
-        <div
-          onClick={() => navigate("/dashboard/prestations?statut=creances")}
-          className="cursor-pointer transition-transform hover:-translate-y-2 hover:bg-red-50 rounded-3xl"
-        >
-          <CardDashboard
-            title="CRÉANCES"
-            value={loading ? "…" : prestationsAvecCreances.length}
-            subtitle={`en ${currentYear}`}
-            secondaryValue={loading ? "…" : formatCurrency(montantCreances)}
-            secondarySubtitle="reste à payer"
-            borderColor="border-t-red-600"
-            titleColor="text-red-700"
-            valueColor="text-red-900"
-            subtitleColor="text-red-500"
-            secondaryValueColor="text-red-700"
-            secondarySubtitleColor="text-red-400"
-          />
-        </div>
+        <CardDashboard
+          title="CHIFFRE D'AFFAIRES"
+          value={loading ? "…" : formatCurrency(montantEncaisseThisYear)}
+          subtitle={`en ${currentYear}`}
+          secondaryValue={
+            loading ? "…" : formatCurrency(montantEncaisseThisMonth)
+          }
+          secondarySubtitle={`en ${currentMonthName}`}
+          onValueClick={() =>
+            navigate("/dashboard/paiements?statut=encaissements")
+          }
+          onSecondaryValueClick={() =>
+            navigate("/dashboard/paiements?statut=encaissements-mois")
+          }
+          borderColor="border-t-green-600"
+          titleColor="text-green-700"
+          valueColor="text-green-900"
+          subtitleColor="text-green-500"
+          secondaryValueColor="text-green-700"
+          secondarySubtitleColor="text-green-400"
+          HoverColor="hover:bg-green-50"
+        />
 
-        <div
-          onClick={() => navigate("/dashboard/paiements?statut=a-encaisser")}
-          className="cursor-pointer transition-transform hover:-translate-y-2 hover:bg-purple-50 rounded-3xl"
-        >
-          <CardDashboard
-            title="À ENCAISSER"
-            value={loading ? "…" : paiementsEnAttenteEncaissement.length}
-            subtitle={
-              loading
-                ? "paiement"
-                : pluralize(paiementsEnAttenteEncaissement.length, "paiement")
-            }
-            secondaryValue={
-              loading ? "…" : formatCurrency(montantEnAttenteEncaissement)
-            }
-            secondarySubtitle="à encaisser"
-            borderColor="border-t-purple-600"
-            titleColor="text-purple-700"
-            valueColor="text-purple-900"
-            subtitleColor="text-purple-500"
-            secondaryValueColor="text-purple-700"
-            secondarySubtitleColor="text-purple-400"
-          />
-        </div>
+        <CardDashboard
+          title="CRÉANCES"
+          value={loading ? "…" : prestationsAvecCreances.length}
+          subtitle={`en ${currentYear}`}
+          secondaryValue={loading ? "…" : formatCurrency(montantCreances)}
+          secondarySubtitle="reste à payer"
+          onCardClick={() => navigate("/dashboard/prestations?statut=creances")}
+          borderColor="border-t-red-600"
+          titleColor="text-red-700"
+          valueColor="text-red-900"
+          subtitleColor="text-red-500"
+          secondaryValueColor="text-red-700"
+          secondarySubtitleColor="text-red-400"
+        />
+
+        <CardDashboard
+          title="À ENCAISSER"
+          value={loading ? "…" : paiementsEnAttenteEncaissement.length}
+          subtitle={
+            loading
+              ? "paiement"
+              : pluralize(paiementsEnAttenteEncaissement.length, "paiement")
+          }
+          secondaryValue={
+            loading ? "…" : formatCurrency(montantEnAttenteEncaissement)
+          }
+          secondarySubtitle="à encaisser"
+          onCardClick={() =>
+            navigate("/dashboard/paiements?statut=a-encaisser")
+          }
+          borderColor="border-t-purple-600"
+          titleColor="text-purple-700"
+          valueColor="text-purple-900"
+          subtitleColor="text-purple-500"
+          secondaryValueColor="text-purple-700"
+          secondarySubtitleColor="text-purple-400"
+        />
       </div>
 
       <PrestationWorkflowModal

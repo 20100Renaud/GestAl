@@ -52,6 +52,48 @@ function formatCurrency(value) {
   return currencyFormatter.format(value);
 }
 
+function getPrestationDate(prestation) {
+  const value = prestation.Date_Prestation;
+
+  if (!value) return null;
+
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function subtractMonths(date, months) {
+  const result = new Date(date);
+  const day = result.getDate();
+
+  result.setDate(1);
+  result.setMonth(result.getMonth() - months);
+
+  const lastDay = new Date(
+    result.getFullYear(),
+    result.getMonth() + 1,
+    0,
+  ).getDate();
+
+  result.setDate(Math.min(day, lastDay));
+
+  return result;
+}
+
+function getProprietaireDisplayName(proprietaire) {
+  if (!proprietaire) return "";
+
+  if (proprietaire.Etablissement) {
+    return `${proprietaire.Raison_sociale ?? ""} ${
+      proprietaire.Etablissement
+    }`.trim();
+  }
+
+  return `${proprietaire.Prenom_Proprietaire ?? ""} ${
+    proprietaire.Nom_Proprietaire ?? ""
+  }`.trim();
+}
+
 export default function Prestations() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -95,6 +137,7 @@ export default function Prestations() {
   const [search, setSearch] = useState("");
   const [filterStatut, setFilterStatut] = useState(null);
   const [filterCreances, setFilterCreances] = useState(false);
+  const [monthsWithoutPrestation, setMonthsWithoutPrestation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -129,12 +172,25 @@ export default function Prestations() {
 
   useEffect(() => {
     const statut = searchParams.get("statut");
+    const mois = Number(searchParams.get("mois"));
 
     const filters = {
       reste: "Reste",
       "trop-percu": "Trop perçu",
       "aucun-paiement": "Aucun paiement",
     };
+
+    if (statut === "sans-prestation") {
+      const months = Number.isInteger(mois) && mois >= 1 ? mois : 18;
+
+      setMonthsWithoutPrestation(months);
+      setFilterStatut(null);
+      setFilterCreances(false);
+      setSearch(`Sans prestation depuis ${months} mois`);
+      return;
+    }
+
+    setMonthsWithoutPrestation(null);
 
     if (statut === "creances") {
       setFilterStatut(null);
@@ -143,10 +199,14 @@ export default function Prestations() {
       return;
     }
 
+    setFilterCreances(false);
+
     if (statut && filters[statut]) {
       setFilterStatut(statut);
       setSearch(filters[statut]);
-      setFilterCreances(false);
+    } else {
+      setFilterStatut(null);
+      setSearch("");
     }
   }, [searchParams]);
 
@@ -430,43 +490,111 @@ export default function Prestations() {
     return `${total} € (${consultations.length})`;
   }
 
-  const filteredPrestations = useMemo(() => {
-    const value = search.trim().toLowerCase();
+  const proprietairesSansPrestation = useMemo(() => {
+    if (monthsWithoutPrestation === null) {
+      return [];
+    }
 
-    return prestations.filter((prestation) => {
-      const statut = getStatutPaiement(prestation);
+    const cutoffDate = subtractMonths(new Date(), monthsWithoutPrestation);
 
-      if (filterCreances) {
-        if (statut.type !== "reste" && statut.type !== "aucun-paiement") {
-          return false;
+    const latestPrestationByOwner = new Map();
+
+    prestations.forEach((prestation) => {
+      const ownerId = prestation.ID_Proprietaire;
+      const date = getPrestationDate(prestation);
+
+      if (ownerId == null || !date) return;
+
+      const key = String(ownerId);
+      const currentLatest = latestPrestationByOwner.get(key);
+
+      if (!currentLatest || date > currentLatest.date) {
+        latestPrestationByOwner.set(key, {
+          prestation,
+          date,
+        });
+      }
+    });
+
+    return proprietaires
+      .map((proprietaire) => {
+        const latest = latestPrestationByOwner.get(
+          String(proprietaire.ID_Proprietaire),
+        );
+
+        return {
+          ...proprietaire,
+          dernierePrestation: latest?.prestation ?? null,
+          dernierePrestationDate: latest?.date ?? null,
+        };
+      })
+      .filter(({ dernierePrestationDate }) => {
+        return !dernierePrestationDate || dernierePrestationDate < cutoffDate;
+      })
+      .filter((proprietaire) => {
+        const value = search.trim().toLowerCase();
+
+        if (
+          !value ||
+          value === `sans prestation depuis ${monthsWithoutPrestation} mois`
+        ) {
+          return true;
         }
-      } else if (filterStatut && statut.type !== filterStatut) {
+
+        return getProprietaireDisplayName(proprietaire)
+          .toLowerCase()
+          .includes(value);
+      });
+  }, [proprietaires, prestations, monthsWithoutPrestation, search]);
+
+const filteredPrestations = useMemo(() => {
+  if (monthsWithoutPrestation !== null) {
+    return [];
+  }
+
+  const value = search.trim().toLowerCase();
+
+  return prestations.filter((prestation) => {
+    const statut = getStatutPaiement(prestation);
+
+    if (filterCreances) {
+      if (statut.type !== "reste" && statut.type !== "aucun-paiement") {
         return false;
       }
+    } else if (filterStatut && statut.type !== filterStatut) {
+      return false;
+    }
 
-      if (!value || value === "créances") {
-        return true;
-      }
+    if (!value || value === "créances") {
+      return true;
+    }
 
-      const proprietaire = getProprietaireName(prestation);
-      const lieu = getLieuName(prestation);
-      const date = formatDateShort(prestation.Date_Prestation);
-      const deplacement =
-        prestation.Deplacement_Prestation?.Denomination_Deplacement ?? "";
+    const proprietaire = getProprietaireName(prestation);
+    const lieu = getLieuName(prestation);
+    const date = formatDateShort(prestation.Date_Prestation);
+    const deplacement =
+      prestation.Deplacement_Prestation?.Denomination_Deplacement ?? "";
 
-      return [
-        proprietaire,
-        lieu,
-        date,
-        deplacement,
-        statut.label,
-        prestation.Remise_Prestation,
-        prestation.Montant_Prestation,
-      ]
-        .filter(Boolean)
-        .some((field) => String(field).toLowerCase().includes(value));
-    });
-  }, [prestations, proprietaires, search, filterStatut, filterCreances]);
+    return [
+      proprietaire,
+      lieu,
+      date,
+      deplacement,
+      statut.label,
+      prestation.Remise_Prestation,
+      prestation.Montant_Prestation,
+    ]
+      .filter(Boolean)
+      .some((field) => String(field).toLowerCase().includes(value));
+  });
+}, [
+  prestations,
+  proprietaires,
+  search,
+  filterStatut,
+  filterCreances,
+  monthsWithoutPrestation,
+]);
 
   const totalsPrestations = useMemo(() => {
     return filteredPrestations.reduce(
@@ -557,9 +685,17 @@ export default function Prestations() {
           if (!value.trim()) {
             setFilterStatut(null);
             setFilterCreances(false);
+            setMonthsWithoutPrestation(null);
+            navigate(location.pathname, { replace: true });
           } else {
             setFilterCreances(false);
             setFilterStatut(null);
+            if (
+              monthsWithoutPrestation !== null &&
+              value !== `Sans prestation depuis ${monthsWithoutPrestation} mois`
+            ) {
+              setMonthsWithoutPrestation(null);
+            }
           }
         }}
         searchPlaceholder="Rechercher une prestation..."
@@ -626,13 +762,130 @@ export default function Prestations() {
       {/* Count */}
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-sm text-blue-900">
-          {filteredPrestations.length} prestation
-          {filteredPrestations.length > 1 ? "s" : ""}
+          {monthsWithoutPrestation !== null
+            ? `${proprietairesSansPrestation.length} propriétaire${
+                proprietairesSansPrestation.length > 1 ? "s" : ""
+              }`
+            : `${filteredPrestations.length} prestation${
+                filteredPrestations.length > 1 ? "s" : ""
+              }`}
         </p>
       </div>
 
       {loading ? (
         <p>Chargement...</p>
+      ) : monthsWithoutPrestation !== null ? (
+        proprietairesSansPrestation.length === 0 ? (
+          <Vide search={search} />
+        ) : (
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableHeader>Date</TableHeader>
+                <TableHeader>Propriétaire</TableHeader>
+
+                <TableHeader className="hidden lg:table-cell">Lieu</TableHeader>
+
+                <TableHeader className="hidden lg:table-cell">
+                  Déplacement
+                </TableHeader>
+
+                <TableHeader className="hidden lg:table-cell">
+                  Consultations
+                </TableHeader>
+
+                <TableHeader className="hidden lg:table-cell">
+                  Remise
+                </TableHeader>
+
+                <TableHeader>Montant</TableHeader>
+              </TableRow>
+            </TableHead>
+
+            <tbody>
+              {proprietairesSansPrestation.map((proprietaire) => {
+                const prestation = proprietaire.dernierePrestation;
+
+                const clickable = Boolean(prestation);
+
+                return (
+                  <TableRow
+                    key={proprietaire.ID_Proprietaire}
+                    onClick={
+                      clickable ? () => openEditForm(prestation) : undefined
+                    }
+                    className={clickable ? "cursor-pointer" : ""}
+                  >
+                    <TableCell>
+                      {prestation
+                        ? formatDateShort(prestation.Date_Prestation)
+                        : "Jamais"}
+                    </TableCell>
+
+                    <TableCell>
+                      {prestation
+                        ? getProprietaireLabel(prestation)
+                        : getProprietaireDisplayName(proprietaire)}
+                    </TableCell>
+
+                    <TableCell className="hidden lg:table-cell">
+                      {prestation ? getLieuLabel(prestation) : "-"}
+                    </TableCell>
+
+                    <TableCell className="hidden lg:table-cell">
+                      {prestation &&
+                      Number(
+                        prestation.Deplacement_Prestation?.Montant_Deplacement,
+                      ) > 0
+                        ? `${prestation.Deplacement_Prestation.Montant_Deplacement} €`
+                        : "-"}
+                    </TableCell>
+
+                    <TableCell className="hidden lg:table-cell">
+                      {prestation ? getConsultationSummary(prestation) : "-"}
+                    </TableCell>
+
+                    <TableCell className="hidden lg:table-cell">
+                      {prestation && Number(prestation.Remise_Prestation) > 0
+                        ? `${prestation.Remise_Prestation} €`
+                        : "-"}
+                    </TableCell>
+
+                    <TableCell>
+                      {prestation
+                        ? (() => {
+                            const statut = getStatutPaiement(prestation);
+
+                            const statusColor = {
+                              reste: "text-red-600",
+                              "trop-percu": "text-blue-600",
+                              soldee: "text-green-600",
+                              "aucun-paiement": "text-red-500",
+                            }[statut.type];
+
+                            return (
+                              <div className="flex flex-col">
+                                <span>
+                                  {formatAmountShort(statut.montantPrestation)}
+                                </span>
+
+                                <span className={`text-xs ${statusColor}`}>
+                                  {statut.type === "reste" ||
+                                  statut.type === "trop-percu"
+                                    ? `${statut.label} : ${formatAmountShort(statut.montant)}`
+                                    : statut.label}
+                                </span>
+                              </div>
+                            );
+                          })()
+                        : "-"}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </tbody>
+          </Table>
+        )
       ) : filteredPrestations.length === 0 ? (
         <Vide search={search} />
       ) : (

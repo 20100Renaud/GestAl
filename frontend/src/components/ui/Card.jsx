@@ -1,9 +1,12 @@
+import Input from "./Input.jsx";
+
 export function CardDashboard({
   title,
   value = "-",
   subtitle,
   secondaryValue,
   secondarySubtitle,
+  onCardClick,
   onValueClick,
   onSecondaryValueClick,
   className = "",
@@ -17,20 +20,54 @@ export function CardDashboard({
 }) {
   return (
     <section
+      onClick={onCardClick}
+      onKeyDown={(event) => {
+        if (onCardClick && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          onCardClick();
+        }
+      }}
+      role={onCardClick ? "button" : undefined}
+      tabIndex={onCardClick ? 0 : undefined}
       className={`
-        aspect-square w-48 shrink-0
-        flex flex-col justify-between
-        rounded-3xl border border-blue-200 border-t-4
-        ${borderColor} p-4 shadow-sm
+        w-full sm:aspect-square sm:w-48 shrink-0
+        flex flex-row sm:flex-col
+        items-center sm:items-stretch
+        justify-between
+        gap-3 sm:gap-0
+        rounded-2xl sm:rounded-3xl
+        border border-blue-200 border-t-4
+        ${borderColor}
+        p-3 sm:p-5
+        text-center
+        bg-white shadow-sm
         transition-shadow duration-200 hover:shadow-xl
-        p-5 text-center bg-white
+        ${onCardClick ? "cursor-pointer" : ""}
         ${className}
       `}
     >
-      <span className={`text-sm font-semibold ${titleColor}`}>{title}</span>
+      {/* Title: first row on mobile, top on desktop */}
+      <span
+        className={`
+          w-24 sm:w-full text-xs sm:text-sm font-semibold
+          text-left sm:text-center
+          shrink-0
+          ${titleColor}
+        `}
+      >
+        {title}
+      </span>
 
-      <div className="flex flex-col items-center gap-3">
-        {/* Main value + subtitle */}
+      {/* Values: second area on mobile */}
+      <div
+        className="
+          min-w-0 flex flex-1
+          flex-row sm:flex-col
+          items-center justify-around sm:justify-center
+          gap-2 sm:gap-3
+        "
+      >
+        {/* Main value */}
         <div
           onClick={onValueClick}
           onKeyDown={(event) => {
@@ -42,31 +79,42 @@ export function CardDashboard({
           role={onValueClick ? "link" : undefined}
           tabIndex={onValueClick ? 0 : undefined}
           className={`
-            min-w-0 flex items-end gap-2
+            min-w-0 flex flex-col sm:flex-row
+            items-center gap-1 sm:gap-2
             ${
               onValueClick
-                ? `cursor-pointer rounded-lg transition-colors px-4 ${HoverColor}`
+                ? `cursor-pointer rounded-lg px-2 sm:px-4
+                  transition-all hover:-translate-y-1 ${HoverColor}`
                 : ""
             }
           `}
         >
           <strong
-            className={`font-semibold tracking-tight text-3xl ${valueColor}`}
+            className={`
+              font-semibold tracking-tight
+              text-lg sm:text-3xl
+              ${valueColor}
+            `}
           >
             {value}
           </strong>
 
           {subtitle && (
-            <span className={`mt-1 block text-xs leading-5 ${subtitleColor}`}>
+            <span
+              className={`
+                text-[10px] sm:text-xs leading-4 sm:leading-5
+                ${subtitleColor}
+              `}
+            >
               {subtitle}
             </span>
           )}
         </div>
 
-        {/* Secondary value + subtitle */}
+        {/* Secondary value */}
         {secondaryValue !== undefined && (
           <>
-            <div className="w-10 border-t border-blue-200" />
+            <div className="hidden sm:block w-10 border-t border-blue-200" />
 
             <div
               onClick={onSecondaryValueClick}
@@ -82,23 +130,32 @@ export function CardDashboard({
               role={onSecondaryValueClick ? "link" : undefined}
               tabIndex={onSecondaryValueClick ? 0 : undefined}
               className={`
-                min-w-0 flex items-end gap-2
+                min-w-0 flex flex-col sm:flex-row
+                items-center gap-1 sm:gap-2
                 ${
                   onSecondaryValueClick
-                    ? `cursor-pointer rounded-lg transition-colors px-4 ${HoverColor}`
+                    ? `cursor-pointer rounded-lg px-2 sm:px-4
+                      transition-all hover:-translate-y-1 ${HoverColor}`
                     : ""
                 }
               `}
             >
               <strong
-                className={`block break-words text-xl font-semibold  ${secondaryValueColor}`}
+                className={`
+                  break-words font-semibold
+                  text-base sm:text-xl
+                  ${secondaryValueColor}
+                `}
               >
                 {secondaryValue}
               </strong>
 
               {secondarySubtitle && (
                 <span
-                  className={`mt-1 block text-xs leading-5 ${secondarySubtitleColor}`}
+                  className={`
+                    text-[10px] sm:text-xs leading-4 sm:leading-5
+                    ${secondarySubtitleColor}
+                  `}
                 >
                   {secondarySubtitle}
                 </span>
@@ -275,5 +332,107 @@ export function CardFilter({
 
       <p className={`text-lg font-semibold ${styles.value}`}>{value}</p>
     </button>
+  );
+}
+
+export function CardProprietairesInactifs({
+  months,
+  onMonthsChange,
+  onClick,
+  className = "",
+}) {
+  const isValid =
+    months !== "" && Number.isInteger(Number(months)) && Number(months) >= 1;
+
+  return (
+    <section
+      className={`
+        w-full sm:w-48 shrink-0
+        flex flex-col
+        rounded-2xl sm:rounded-3xl
+        border border-blue-200 border-t-4 border-t-orange-500
+        bg-white p-3 sm:p-4
+        shadow-sm transition-shadow duration-200 hover:shadow-xl
+        ${className}
+      `}
+    >
+      {/* Mobile */}
+      <div className="flex items-center justify-between gap-3 sm:hidden">
+        <div className="min-w-0 h-12 self-stretch flex flex-col justify-between">
+          <h3 className="flex-1 flex items-center text-xs font-semibold text-orange-700">
+            PROPRIÉTAIRES
+          </h3>
+
+          <p className="mt-1 text-xs text-blue-900">
+            Sans prestation depuis 18 mois
+          </p>
+        </div>
+
+        <button
+          type="button"
+          disabled={!isValid}
+          onClick={onClick}
+          className="
+            shrink-0 rounded-lg border border-orange-600
+            px-3 py-2 text-sm font-medium text-orange-700
+            transition-colors hover:bg-orange-50
+            cursor-pointer disabled:cursor-not-allowed
+            disabled:opacity-50
+          "
+        >
+          Afficher
+        </button>
+      </div>
+
+      {/* >sm */}
+      <div className="hidden sm:flex sm:flex-col">
+        <div className="mb-2 flex flex-col items-stretch gap-2">
+          <h3 className="text-center text-sm font-semibold text-orange-700">
+            PROPRIÉTAIRES
+          </h3>
+
+          <label
+            htmlFor="monthsWithoutPrestation"
+            className="text-sm text-blue-900"
+          >
+            Sans prestation depuis :
+          </label>
+        </div>
+
+        <div className="flex flex-col items-stretch gap-3">
+          <div className="mx-auto w-24">
+            <Input
+              id="monthsWithoutPrestation"
+              type="number"
+              min="6"
+              step="6"
+              value={months}
+              suffix="mois"
+              onChange={(event) => {
+                const value = event.target.value;
+                onMonthsChange(value === "" ? "" : Number(value));
+              }}
+              onClick={(event) => event.stopPropagation()}
+              className="min-w-0 border-none text-center focus:!ring-0"
+            />
+          </div>
+
+          <button
+            type="button"
+            disabled={!isValid}
+            onClick={onClick}
+            className="
+              w-full rounded-lg border border-orange-600 px-3 py-2
+              text-sm font-medium text-orange-700
+              transition-transform hover:-translate-y-1
+              hover:bg-orange-50 cursor-pointer
+              disabled:cursor-not-allowed disabled:opacity-50
+            "
+          >
+            Afficher
+          </button>
+        </div>
+      </div>
+    </section>
   );
 }
