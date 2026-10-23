@@ -215,7 +215,12 @@ export default function Dashboard() {
 
   return (
     <div className="w-full">
-      <PageHeader title="Tableau de bord" />
+      <PageHeader
+        title="Tableau de bord"
+        createLabel="Nouvelle prestation"
+        onAction={() => setShowWorkflow(true)}
+        className="mb-6"
+      />
 
       {error && (
         <div className="mb-4">
@@ -223,15 +228,6 @@ export default function Dashboard() {
           <Button onClick={loadData}>Réessayer</Button>
         </div>
       )}
-
-      <div className="mb-6 w-full flex justify-center">
-        <Button
-          onClick={() => setShowWorkflow(true)}
-          className="w-full md:w-auto"
-        >
-          + Nouvelle prestation
-        </Button>
-      </div>
 
       <div className="flex flex-wrap justify-center gap-2 sm:gap-8">
         <CardProprietairesInactifs
