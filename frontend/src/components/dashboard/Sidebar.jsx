@@ -1,6 +1,7 @@
 import NavLink from "../ui/NavLink.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { Settings } from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
+import Button from "../ui/Button.jsx";
 
 const navigation = [
   {
@@ -14,19 +15,10 @@ const navigation = [
     path: "/dashboard/prestations",
     clientOnly: true,
   },
+
   {
     label: "Consultations",
     path: "/dashboard/consultations",
-    clientOnly: true,
-  },
-  {
-    label: "Propriétaires",
-    path: "/dashboard/proprietaires",
-    clientOnly: true,
-  },
-  {
-    label: "Animaux",
-    path: "/dashboard/animaux",
     clientOnly: true,
   },
   {
@@ -35,6 +27,20 @@ const navigation = [
     separator: true,
     clientOnly: true,
   },
+  {
+    label: "Propriétaires",
+    path: "/dashboard/proprietaires",
+    clientOnly: true,
+    child: false,
+  },
+  {
+    label: "Animaux",
+    path: "/dashboard/animaux",
+    separator: true,
+    clientOnly: true,
+    child: false,
+  },
+
   {
     label: "Tarifs",
     path: "/dashboard/tarifs",
@@ -82,21 +88,26 @@ export default function Sidebar({ onNavigate, onOpenProfile }) {
 
   return (
     <aside className="sticky top-0 flex h-screen min-h-full w-[240px] flex-col bg-blue-950 text-white">
-      <div className="border-b border-white/40 p-5 text-2xl">
+      <div className="border-b border-white/40 p-5 text-2xl text-center">
         <h1>GestAL</h1>
       </div>
 
       <nav className="flex flex-col p-4">
         {visibleNavigation.map((item, index) => (
           <div key={item.path}>
-            <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.path === "/dashboard"}
-              onClick={() => onNavigate?.()}
+            <div
+              className={item.child ? "ml-5 border-l border-white/40 pl-3" : ""}
             >
-              {item.label}
-            </NavLink>
+              <NavLink
+                to={item.path}
+                end={item.path === "/dashboard"}
+                onClick={() => onNavigate?.()}
+                className={item.child ? "w-full" : ""}
+              >
+
+                {item.label}
+              </NavLink>
+            </div>
 
             {item.separator && index < visibleNavigation.length - 1 && (
               <div className="border-b border-white/40 my-2 md:my-6" />
@@ -130,16 +141,18 @@ export default function Sidebar({ onNavigate, onOpenProfile }) {
           )}
         </div>
 
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={async () => {
             await handleLogout();
             onNavigate?.();
           }}
-          className="w-full p-2 rounded-lg bg-gray-700 text-white cursor-pointer hover:bg-gray-600"
+          className="w-full gap-2"
         >
-          Déconnexion
-        </button>
+          <LogOut size={18} />
+          <span>Déconnexion</span>
+        </Button>
       </div>
     </aside>
   );

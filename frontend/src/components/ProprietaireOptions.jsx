@@ -8,7 +8,7 @@ export function getProprietaireLabel(proprietaire) {
   } ${proprietaire.Prenom_Proprietaire}`.trim();
 }
 
-export default function ProprietaireOptions({ proprietaires = [] }) {
+export function ProprietaireOptions({ proprietaires = [] }) {
   const particuliers = [...proprietaires]
     .filter((p) => !p.Etablissement)
     .sort((a, b) =>

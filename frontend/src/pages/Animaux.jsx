@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { getConsultations } from "../api/consultations.js";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import AnimauxModal from "../components/Modals/Animaux_Modal.jsx";
 import ErrorModal from "../components/Modals/ErrorModal.jsx";
@@ -35,7 +37,9 @@ const emptyForm = {
 
 export default function Animaux() {
   const [animaux, setAnimaux] = useState([]);
+  const navigate = useNavigate();
   const [proprietaires, setProprietaires] = useState([]);
+const [consultations, setConsultations] = useState([]);
 
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -49,18 +53,22 @@ export default function Animaux() {
   const [error, setError] = useState("");
   const [showErrorModal, setShowErrorModal] = useState(false);
 
+
   async function loadData() {
     try {
       setLoading(true);
       setError("");
 
-      const [animalsData, proprietairesData] = await Promise.all([
-        getAnimaux(),
-        getProprietaires(),
-      ]);
+      const [animalsData, proprietairesData, consultationsData] =
+        await Promise.all([
+          getAnimaux(),
+          getProprietaires(),
+          getConsultations(),
+        ]);
 
       setAnimaux(animalsData);
       setProprietaires(proprietairesData);
+      setConsultations(consultationsData);
     } catch (err) {
       setError(err.message);
       setShowErrorModal(true);
@@ -220,6 +228,20 @@ export default function Animaux() {
     );
   }
 
+  function handleOpenConsultation(consultation) {
+    navigate("/dashboard/consultations", {
+      state: {
+        openConsultationId: consultation.ID_Consultation,
+      },
+    });
+  }
+
+  function getConsultationCount(animalId) {
+    return consultations.filter(
+      (consultation) => String(consultation.ID_Animal) === String(animalId),
+    ).length;
+  }
+
   return (
     <div className="w-full">
       {error && <Alert variant="error">{error}</Alert>}
@@ -257,37 +279,49 @@ export default function Animaux() {
               <TableHeader>Nom</TableHeader>
               <TableHeader>Propriétaire</TableHeader>
               <TableHeader>Genre</TableHeader>
-              <TableHeader className="hidden md:table-cell">Race</TableHeader>
-              <TableHeader className="hidden md:table-cell">âge</TableHeader>
+              <TableHeader className="hidden lg:table-cell">Race</TableHeader>
+              <TableHeader className="hidden xl:table-cell">âge</TableHeader>
               <TableHeader className="hidden md:table-cell">Sexe</TableHeader>
             </TableRow>
           </TableHead>
 
           <tbody>
-            {filteredAnimaux.map((animal) => (
-              <TableRow
-                key={animal.ID_Animal}
-                onClick={() => openEditForm(animal)}
-              >
-                <TableCell>{animal.Nom_Animal}</TableCell>
+            {filteredAnimaux.map((animal) => {
+              const consultationCount = getConsultationCount(animal.ID_Animal);
 
-                <TableCell>{getProprietaireLabel(animal)}</TableCell>
+              return (
+                <TableRow
+                  key={animal.ID_Animal}
+                  onClick={() => openEditForm(animal)}
+                >
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span>{animal.Nom_Animal}</span>
 
-                <TableCell>{animal.Genre_Animal}</TableCell>
+                      <span className="inline-flex min-w-6 h-6 items-center justify-center rounded-full bg-blue-100 px-1.5 text-xs font-semibold text-blue-700">
+                        {consultationCount}
+                      </span>
+                    </div>
+                  </TableCell>
 
-                <TableCell className="hidden md:table-cell">
-                  {animal.Race_Animal || "-"}
-                </TableCell>
+                  <TableCell>{getProprietaireLabel(animal)}</TableCell>
 
-                <TableCell className="hidden md:table-cell">
-                  {calculateAge(animal.Date_Naissance_Animal)}
-                </TableCell>
+                  <TableCell>{animal.Genre_Animal}</TableCell>
 
-                <TableCell className="hidden md:table-cell">
-                  {animal.Sexe_Animal || "-"}
-                </TableCell>
-              </TableRow>
-            ))}
+                  <TableCell className="hidden lg:table-cell">
+                    {animal.Race_Animal || "-"}
+                  </TableCell>
+
+                  <TableCell className="hidden xl:table-cell">
+                    {calculateAge(animal.Date_Naissance_Animal)}
+                  </TableCell>
+
+                  <TableCell className="hidden md:table-cell">
+                    {animal.Sexe_Animal || "-"}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </tbody>
         </Table>
       )}
@@ -297,11 +331,13 @@ export default function Animaux() {
         editingId={editingId}
         form={form}
         proprietaires={proprietaires}
+        consultations={consultations}
         saving={saving}
         onClose={closeForm}
         onSubmit={handleSubmit}
         onChange={handleChange}
         onDelete={handleDelete}
+        onOpenConsultation={handleOpenConsultation}
       />
 
       <ErrorModal

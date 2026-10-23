@@ -102,10 +102,10 @@ export default function ConsultationsModal({
         }
         onClose={onClose}
       >
-        {!prestation || tarifs.length === 0 ? (
+        {!prestation === 0 ? (
           <div className="p-6">
             <p className="text-blue-900">
-              Une <u>prestation</u>, un <u>animal</u> et un <u>tarif</u> doivent
+              Une <u>prestation</u> doit
               exister avant de pouvoir créer une consultation.
             </p>
           </div>
@@ -151,9 +151,7 @@ export default function ConsultationsModal({
                         <option key={animal.ID_Animal} value={animal.ID_Animal}>
                           {animal.Nom_Animal}
                           {" - "}
-                          {animal.Genre_Animal}
-                          {" "}
-                          {animal.Race_Animal}
+                          {animal.Genre_Animal} {animal.Race_Animal}
                         </option>
                       ))}
                     </Select>
@@ -199,14 +197,22 @@ export default function ConsultationsModal({
                       required
                     >
                       <option value="">Sélectionner un tarif</option>
-                      {tarifs.map((tarif) => (
-                        <option key={tarif.ID_Tarif} value={tarif.ID_Tarif}>
-                          {tarif.Denomination_Tarif}
-                          {" ("}
-                          {tarif.Montant_Tarif}
-                          {" €)"}
-                        </option>
-                      ))}
+
+                      {tarifs
+                        .filter(
+                          (tarif) =>
+                            Number(tarif.Annee_Tarif) ===
+                            new Date().getFullYear(),
+                        )
+                        .map((tarif) => (
+                          <option key={tarif.ID_Tarif} value={tarif.ID_Tarif}>
+                            {tarif.Denomination_Tarif}
+                            {" ("}
+                            {tarif.Montant_Tarif}
+                            {" €) - "}
+                            {tarif.Annee_Tarif}
+                          </option>
+                        ))}
                     </Select>
 
                     <div className="absolute right-0 top-0">

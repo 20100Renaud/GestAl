@@ -1,6 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { updateAnimal, deleteAnimal } from "../../api/animaux.js";
 import AnimauxModal from "./Animaux_Modal.jsx";
+import { getConsultations } from "../../api/consultations.js";
+import { calculateAge } from "../../utils/calculateAge";
+import { getPrestations } from "../../api/prestations.js";
+import { getTarifs } from "../../api/tarifs.js";
 import Button from "../ui/Button.jsx";
 import Input from "../ui/Input.jsx";
 import Select from "../ui/Select.jsx";
@@ -30,9 +35,16 @@ export default function ProprietairesModal({
   onChange,
   onDelete,
 }) {
+  const navigate = useNavigate();
   const [showAnimalModal, setShowAnimalModal] = useState(false);
   const [selectedAnimal, setSelectedAnimal] = useState(null);
   const [savingAnimal, setSavingAnimal] = useState(false);
+  const [consultations, setConsultations] = useState([]);
+  const [prestations, setPrestations] = useState([]);
+  const [tarifs, setTarifs] = useState([]);
+  const [selectedConsultation, setSelectedConsultation] = useState(null);
+  const [showConsultationModal, setShowConsultationModal] = useState(false);
+  const [savingConsultation, setSavingConsultation] = useState(false);
 
   const onRaisonChange = (event) => {
     const { name, value } = event.target;
@@ -63,6 +75,49 @@ export default function ProprietairesModal({
   };
 
   const [animalForm, setAnimalForm] = useState(emptyAnimalForm);
+
+  useEffect(() => {
+    if (!open || !editingId) return;
+
+    getConsultations()
+      .then(setConsultations)
+      .catch((err) => {
+        console.error("Erreur chargement consultations :", err);
+      });
+  }, [open, editingId]);
+
+  async function loadConsultationData() {
+    const [consultationsData, prestationsData, tarifsData] = await Promise.all([
+      getConsultations(),
+      getPrestations(),
+      getTarifs(),
+    ]);
+
+    setConsultations(consultationsData);
+    setPrestations(prestationsData);
+    setTarifs(tarifsData);
+  }
+
+  async function handleOpenAnimal(animal) {
+    setSelectedAnimal(animal);
+
+    setAnimalForm({
+      ID_Proprietaire: String(animal.ID_Proprietaire ?? ""),
+      Nom_Animal: animal.Nom_Animal ?? "",
+      Genre_Animal: animal.Genre_Animal ?? "",
+      Race_Animal: animal.Race_Animal ?? "",
+      Date_Naissance_Animal: animal.Date_Naissance_Animal?.slice(0, 10) ?? "",
+      Sexe_Animal: animal.Sexe_Animal ?? "",
+      Memo_Animal: animal.Memo_Animal ?? "",
+    });
+
+    try {
+      await loadConsultationData();
+      setShowAnimalModal(true);
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
   async function handleAnimalSubmit(event) {
     event.preventDefault();
@@ -98,6 +153,27 @@ export default function ProprietairesModal({
     } finally {
       setSavingAnimal(false);
     }
+  }
+
+  function getConsultationCount() {
+    if (!editingId) return 0;
+
+    return consultations.filter((consultation) => {
+      const proprietaire =
+        consultation.Prestation_Consultation?.Proprietaire_Prestation;
+
+      return String(proprietaire?.ID_Proprietaire) === String(editingId);
+    }).length;
+  }
+
+  function handleOpenConsultations() {
+    const proprietaireName = form.etablissement?.trim()
+      ? `${form.raisonSociale ?? ""} ${form.etablissement}`.trim()
+      : `${form.prenom ?? ""} ${form.nom ?? ""}`.trim();
+
+    navigate(
+      `/dashboard/consultations?search=${encodeURIComponent(proprietaireName)}`,
+    );
   }
 
   return (
@@ -231,42 +307,56 @@ export default function ProprietairesModal({
             />
           </div>
 
-          {/* ANIMAUX DU PROPRIÉTAIRE */}
+          {/* Owner's animals */}
           {editingId && (
             <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-3">
-              <h3 className=" text-sm font-semibold text-blue-700">
+              <h3 className="text-sm font-semibold text-blue-700">
                 {animauxProprietaire.length === 0
                   ? "Aucun animal associé à ce propriétaire."
-                  : "Animaux du propriétaire"}
+                  : `${animauxProprietaire.length} ${
+                      animauxProprietaire.length > 1 ? "animaux" : "animal"
+                    }`}
               </h3>
 
               {animauxProprietaire.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3">
+                <div className="flex flex-wrap gap-2 mt-3 justify-center">
                   {animauxProprietaire.map((animal) => (
                     <button
                       key={animal.ID_Animal}
                       type="button"
-                      onClick={() => {
-                        setSelectedAnimal(animal);
-
-                        setAnimalForm({
-                          ID_Proprietaire: String(animal.ID_Proprietaire ?? ""),
-                          Nom_Animal: animal.Nom_Animal ?? "",
-                          Genre_Animal: animal.Genre_Animal ?? "",
-                          Race_Animal: animal.Race_Animal ?? "",
-                          Date_Naissance_Animal:
-                            animal.Date_Naissance_Animal?.slice(0, 10) ?? "",
-                          Sexe_Animal: animal.Sexe_Animal ?? "",
-                          Memo_Animal: animal.Memo_Animal ?? "",
-                        });
-
-                        setShowAnimalModal(true);
-                      }}
+                      onClick={() => handleOpenAnimal(animal)}
                       className="cursor-pointer rounded-full border border-blue-200 bg-white px-3 py-1 text-sm text-blue-800 hover:bg-blue-100"
                     >
-                      {animal.Nom_Animal}
+                      {`${animal.Nom_Animal} - ${animal.Genre_Animal} ${
+                        animal.Sexe_Animal ?? ""
+                      } de ${calculateAge(animal.Date_Naissance_Animal)}`}
                     </button>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Owner's consultations */}
+          {editingId && (
+            <div className="flex items-center justify-between mt-6 rounded-xl border border-blue-200 bg-blue-50 p-3">
+              <h3 className="text-sm font-semibold text-blue-700">
+                {getConsultationCount() === 0
+                  ? "Aucune consultation associée à ce propriétaire."
+                  : `${getConsultationCount()} consultation${
+                      getConsultationCount() > 1 ? "s" : ""
+                    }`}
+              </h3>
+
+              {getConsultationCount() > 0 && (
+                <div className="flex flex-1 flex-wrap justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleOpenConsultations}
+                    className="cursor-pointer rounded-full border border-blue-200 bg-white px-3 py-1 text-sm text-blue-800 hover:bg-blue-100"
+                  >
+                    Voir les consultations
+                  </button>
                 </div>
               )}
             </div>
@@ -307,11 +397,13 @@ export default function ProprietairesModal({
           </div>
         </form>
       </Modal>
+
       <AnimauxModal
         open={showAnimalModal}
         editingId={selectedAnimal?.ID_Animal ?? null}
         form={animalForm}
         proprietaires={proprietaires}
+        consultations={consultations}
         saving={savingAnimal}
         onClose={() => {
           setShowAnimalModal(false);
@@ -327,6 +419,10 @@ export default function ProprietairesModal({
         }}
         onSubmit={handleAnimalSubmit}
         onDelete={handleAnimalDelete}
+        onOpenConsultation={(consultation) => {
+          setSelectedConsultation(consultation);
+          setShowConsultationModal(true);
+        }}
       />
     </>
   );

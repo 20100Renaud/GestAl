@@ -4,6 +4,7 @@ import { WorkflowModal } from "../ui/Modal.jsx";
 import Alert from "../ui/Alert.jsx";
 import ErrorModal from "../Modals/ErrorModal.jsx";
 import PrestationWorkflowPrestation from "./PrestationWorkflow_Prestation.jsx";
+import { getConsultations } from "../../api/consultations.js";
 import PrestationWorkflowConsultations from "./PrestationWorkflow_Consultations.jsx";
 import PrestationWorkflowPaiements from "./PrestationWorkflow_Paiements.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -44,6 +45,7 @@ export default function PrestationWorkflowModal({
   const [prestationId, setPrestationId] = useState(null);
   const [prestation, setPrestation] = useState(null);
   const [hasConsultations, setHasConsultations] = useState(false);
+const [consultations, setConsultations] = useState([]);
 
   const [createdAnimal, setCreatedAnimal] = useState(null);
   const [showAnimalModal, setShowAnimalModal] = useState(false);
@@ -155,7 +157,7 @@ export default function PrestationWorkflowModal({
   }
 
   // Edit animal
-  function handleEditAnimal(animal, options = {}) {
+  async function handleEditAnimal(animal, options = {}) {
     if (!animal?.ID_Animal) {
       setError("Animal introuvable.");
       return;
@@ -177,7 +179,15 @@ export default function PrestationWorkflowModal({
     });
 
     setCreatedAnimal(null);
-    setShowAnimalModal(true);
+
+    try {
+      const data = await getConsultations();
+      setConsultations(data);
+      setShowAnimalModal(true);
+    } catch (err) {
+      setError(err.message || "Impossible de charger les consultations.");
+      setShowErrorModal(true);
+    }
   }
 
   // Add tarif
@@ -389,6 +399,7 @@ export default function PrestationWorkflowModal({
             ? [prestation.Proprietaire_Prestation]
             : []
         }
+        consultations={consultations}
         saving={animalSaving}
         onClose={() => {
           if (animalSaving) return;

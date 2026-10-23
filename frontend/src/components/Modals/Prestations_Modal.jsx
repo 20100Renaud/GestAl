@@ -91,14 +91,7 @@ export default function PrestationsModal({
       title={editingId ? "Modifier la prestation" : "Ajouter une prestation"}
       onClose={onClose}
     >
-      {proprietaires.length === 0 || deplacements.length === 0 ? (
-        <div className="p-6">
-          <p className="text-blue-900">
-            Un <u>propriétaire</u> et un <u>déplacement</u> doivent exister
-            avant de pouvoir créer une prestation.
-          </p>
-        </div>
-      ) : (
+
         <form onSubmit={onSubmit} className="p-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* PROPRIETAIRE */}
@@ -268,7 +261,7 @@ export default function PrestationsModal({
               </div>
             </div>
           )}
-          
+
           <div className="mt-6 flex items-center justify-between gap-3">
             <div>
               {editingId && (
@@ -303,7 +296,7 @@ export default function PrestationsModal({
             </div>
           </div>
         </form>
-      )}
+      
     </Modal>
   );
 }

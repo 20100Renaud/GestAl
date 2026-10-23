@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { getConsultations } from "../api/consultations.js";
+import { PawPrint, ClipboardList } from "lucide-react";
 import { getAnimaux } from "../api/animaux.js";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import ProprietairesModal from "../components/Modals/Proprietaires_Modal.jsx";
@@ -34,7 +36,7 @@ const emptyForm = {
 
 export default function Proprietaires() {
   const [proprietaires, setProprietaires] = useState([]);
-
+const [consultations, setConsultations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -50,14 +52,16 @@ export default function Proprietaires() {
       setLoading(true);
       setError("");
 
-      const data = await getProprietaires();
-      const [proprietairesData, animauxData] = await Promise.all([
-        getProprietaires(),
-        getAnimaux(),
-      ]);
+      const [proprietairesData, animauxData, consultationsData] =
+        await Promise.all([
+          getProprietaires(),
+          getAnimaux(),
+          getConsultations(),
+        ]);
 
-      setProprietaires(data);
+      setProprietaires(proprietairesData);
       setAnimaux(animauxData);
+      setConsultations(consultationsData);
     } catch (err) {
       setError(err.message);
       setShowErrorModal(true);
@@ -114,6 +118,21 @@ export default function Proprietaires() {
     setShowForm(false);
     setEditingId(null);
     setForm(emptyForm);
+  }
+
+  function getAnimalCount(proprietaireId) {
+    return animaux.filter(
+      (animal) => String(animal.ID_Proprietaire) === String(proprietaireId),
+    ).length;
+  }
+
+  function getConsultationCount(proprietaireId) {
+    return consultations.filter((consultation) => {
+      const proprietaire =
+        consultation.Prestation_Consultation?.Proprietaire_Prestation;
+
+      return String(proprietaire?.ID_Proprietaire) === String(proprietaireId);
+    }).length;
   }
 
   const filteredProprietaires = useMemo(() => {
@@ -226,10 +245,11 @@ export default function Proprietaires() {
         <Table>
           <TableHead>
             <TableRow>
+              <TableHeader></TableHeader>
               <TableHeader>Raison sociale</TableHeader>
               <TableHeader>Nom</TableHeader>
-              <TableHeader className="hidden md:table-cell">Email</TableHeader>
-              <TableHeader>Ville</TableHeader>
+              <TableHeader className="hidden lg:table-cell">Email</TableHeader>
+              <TableHeader className="hidden md:table-cell">Ville</TableHeader>
             </TableRow>
           </TableHead>
 
@@ -239,6 +259,19 @@ export default function Proprietaires() {
                 key={proprietaire.ID_Proprietaire}
                 onClick={() => openEditForm(proprietaire)}
               >
+                <TableCell colSpan={4}>
+                  <div className="flex sm:flex-row flex-col items-center gap-x-6 gap-y-2 py-1 text-sm text-blue-700">
+                    <span className="inline-flex min-w-6 h-6 items-center justify-center rounded-full bg-blue-100 px-1.5 text-xs font-semibold text-blue-700 gap-2">
+                      <PawPrint size={16} />
+                      {getAnimalCount(proprietaire.ID_Proprietaire)}
+                    </span>
+
+                    <span className="inline-flex min-w-6 h-6 items-center justify-center rounded-full bg-blue-100 px-1.5 text-xs font-semibold text-blue-700 gap-2">
+                      <ClipboardList size={16} />
+                      {getConsultationCount(proprietaire.ID_Proprietaire)}{" "}
+                    </span>
+                  </div>
+                </TableCell>
                 <TableCell>
                   {[proprietaire.Raison_sociale, proprietaire.Etablissement]
                     .filter(Boolean)
@@ -255,11 +288,13 @@ export default function Proprietaires() {
                     .join(" ") || "-"}
                 </TableCell>
 
-                <TableCell className="hidden md:table-cell">
+                <TableCell className="hidden lg:table-cell">
                   {proprietaire.Email_Proprietaire || "-"}
                 </TableCell>
 
-                <TableCell>{proprietaire.Ville_Proprietaire || "-"}</TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {proprietaire.Ville_Proprietaire || "-"}
+                </TableCell>
               </TableRow>
             ))}
           </tbody>

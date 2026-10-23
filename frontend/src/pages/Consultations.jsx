@@ -187,6 +187,29 @@ export default function Consultations() {
     });
   }, [location.state, prestations, navigate, location.pathname]);
 
+  useEffect(() => {
+    const consultationId = location.state?.openConsultationId;
+
+    if (!consultationId || consultations.length === 0) {
+      return;
+    }
+
+    const consultation = consultations.find(
+      (item) => String(item.ID_Consultation) === String(consultationId),
+    );
+
+    if (!consultation) {
+      return;
+    }
+
+    openEditForm(consultation);
+
+    navigate(location.pathname, {
+      replace: true,
+      state: null,
+    });
+  }, [location.state, consultations]);
+  
   function handleChange(event) {
     const { name, value } = event.target;
 
@@ -938,6 +961,7 @@ export default function Consultations() {
         editingId={editingAnimalId}
         form={animalForm}
         proprietaires={proprietaires}
+        consultations={consultations}
         saving={savingAnimal}
         onClose={closeAnimalForm}
         onSubmit={handleAnimalSubmit}
