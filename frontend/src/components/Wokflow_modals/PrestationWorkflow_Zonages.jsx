@@ -5,7 +5,7 @@ import Modal from "../ui/Modal.jsx";
 import PageHeader from "../ui/PageHeader.jsx";
 import { CardZonage } from "../ui/Card.jsx";
 import { getZonages } from "../../api/zonages.js";
-import CommentaireZonageModal from "./CommentaireZonageModal.jsx";
+import CommentaireZonageModal from "../Modals/CommentaireZonageModal.jsx";
 import { Check } from "lucide-react";
 import {
   getConsultationZonages,
@@ -137,7 +137,7 @@ export default function PrestationWorkflowZonages({
       onClose?.();
       return;
     }
-    
+
     try {
       setSaving(true);
       onError?.("");

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createConsultationPdfHandler } from "../../utils/consultationPdfHandler.js";
 
-import ConsultationsModal from "./Consultations_Modal.jsx";
+import ConsultationsModal from "../Modals/Consultations_Modal.jsx";
 import PrestationHeader from "../PrestationHeader.jsx";
 import PrestationWorkflowZonages from "./PrestationWorkflow_Zonages.jsx";
 import { Eye, Download, Plus } from "lucide-react";
@@ -19,7 +19,6 @@ import {
 import { getAnimaux } from "../../api/animaux.js";
 import { getTarifs } from "../../api/tarifs.js";
 import { getZonages } from "../../api/zonages.js";
-
 
 const emptyForm = {
   ID_Prestation: "",

@@ -7,7 +7,7 @@ import Alert from "../components/ui/Alert.jsx";
 import ErrorModal from "../components/Modals/ErrorModal.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
 import { formatDateShort } from "../utils/formatDate";
-import PrestationWorkflowZonages from "../components/Modals/PrestationWorkflow_Zonages.jsx";
+import PrestationWorkflowZonages from "../components/Wokflow_modals/PrestationWorkflow_Zonages.jsx";
 import Table, {
   Vide,
   TableHead,
@@ -209,7 +209,7 @@ export default function Consultations() {
       state: null,
     });
   }, [location.state, consultations]);
-  
+
   function handleChange(event) {
     const { name, value } = event.target;
 

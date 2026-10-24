@@ -15,7 +15,7 @@ import { getDeplacements, createDeplacement } from "../api/deplacements.js";
 import DeplacementsModal from "../components/Modals/Deplacements_Modal.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import ProprietairesModal from "../components/Modals/Proprietaires_Modal.jsx";
-import PrestationWorkflowModal from "../components/Modals/PrestationWorkflow_Modal.jsx";
+import PrestationWorkflowModal from "../components/Wokflow_modals/PrestationWorkflow_Modal.jsx";
 import Alert from "../components/ui/Alert.jsx";
 import ErrorModal from "../components/Modals/ErrorModal.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";

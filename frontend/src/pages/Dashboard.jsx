@@ -7,7 +7,7 @@ import {
   CardDashboard,
   CardProprietairesInactifs,
 } from "../components/ui/Card.jsx";
-import PrestationWorkflowModal from "../components/Modals/PrestationWorkflow_Modal.jsx";
+import PrestationWorkflowModal from "../components/Wokflow_modals/PrestationWorkflow_Modal.jsx";
 import { getConsultations } from "../api/consultations.js";
 import { getPaiements } from "../api/paiements.js";
 import { getPrestations } from "../api/prestations.js";

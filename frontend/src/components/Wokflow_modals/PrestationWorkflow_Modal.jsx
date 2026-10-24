@@ -11,8 +11,8 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { getPrestation } from "../../api/prestations.js";
 import { createAnimal, updateAnimal, getAnimaux } from "../../api/animaux.js";
 import { createTarif } from "../../api/tarifs.js";
-import AnimauxModal from "./Animaux_Modal.jsx";
-import TarifsModal from "./Tarifs_Modal.jsx";
+import AnimauxModal from "../Modals/Animaux_Modal.jsx";
+import TarifsModal from "../Modals/Tarifs_Modal.jsx";
 import { TabButton } from "../ui/Button.jsx";
 
 const emptyAnimalForm = {
@@ -45,7 +45,7 @@ export default function PrestationWorkflowModal({
   const [prestationId, setPrestationId] = useState(null);
   const [prestation, setPrestation] = useState(null);
   const [hasConsultations, setHasConsultations] = useState(false);
-const [consultations, setConsultations] = useState([]);
+  const [consultations, setConsultations] = useState([]);
 
   const [createdAnimal, setCreatedAnimal] = useState(null);
   const [showAnimalModal, setShowAnimalModal] = useState(false);

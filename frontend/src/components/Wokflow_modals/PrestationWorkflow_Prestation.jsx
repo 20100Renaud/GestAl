@@ -4,8 +4,8 @@ import Button from "../ui/Button.jsx";
 import Input from "../ui/Input.jsx";
 import Select from "../ui/Select.jsx";
 import { ProprietaireOptions } from "../ProprietaireOptions.jsx";
-import DeplacementsModal from "./Deplacements_Modal.jsx";
-import ProprietairesModal from "./Proprietaires_Modal.jsx";
+import DeplacementsModal from "../Modals/Deplacements_Modal.jsx";
+import ProprietairesModal from "../Modals/Proprietaires_Modal.jsx";
 
 import {
   File,
@@ -383,6 +383,7 @@ export default function PrestationWorkflowPrestation({
               value={form.ID_Proprietaire}
               onChange={handleProprietaireChange}
               required
+              disabled={Boolean(prestation?.ID_Prestation)}
             >
               <option value="">Sélectionner</option>
 
@@ -393,7 +394,7 @@ export default function PrestationWorkflowPrestation({
               type="button"
               variant="secondary"
               onClick={openProprietaireForm}
-              disabled={saving}
+              disabled={saving || Boolean(prestation?.ID_Prestation)}
               className="absolute right-0 top-0 !p-1"
             >
               <Plus size={16} />

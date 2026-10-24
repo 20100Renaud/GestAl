@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import PaiementsModal from "./Paiements_Modal.jsx";
+import PaiementsModal from "../Modals/Paiements_Modal.jsx";
 import { formatDateInput, formatDateShort } from "../../utils/formatDate.js";
 import PrestationAmountHeader from "../PrestationAmountHeader.jsx";
 import { MOYENS_PAIEMENT } from "../../constants/paiement.js";
