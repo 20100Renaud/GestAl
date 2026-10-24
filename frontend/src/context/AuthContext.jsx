@@ -35,13 +35,6 @@ export function AuthProvider({ children }) {
     const data = await getCurrentUser();
     const currentUser = data?.user ?? null;
 
-    if (!currentUser) {
-      setUser(null);
-      throw new Error(
-        "Login succeeded, but the authenticated session could not be loaded.",
-      );
-    }
-
     setUser(currentUser);
 
     return currentUser;
