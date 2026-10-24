@@ -277,7 +277,7 @@ export default function Dashboard() {
           HoverColor="hover:bg-green-50"
         />
 
-        <div className="transition-all hover:-translate-y-2">
+        <div className="transition-all hover:-translate-y-2 w-full  sm:w-auto">
           <CardDashboard
             title="CRÉANCES"
             value={loading ? "…" : prestationsAvecCreances.length}
@@ -296,7 +296,7 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="transition-all hover:-translate-y-2">
+        <div className="transition-all hover:-translate-y-2 w-full  sm:w-auto">
           <CardDashboard
             title="À ENCAISSER"
             value={loading ? "…" : paiementsEnAttenteEncaissement.length}

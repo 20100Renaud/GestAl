@@ -411,7 +411,7 @@ const [animaux, setAnimaux] = useState([]);
             </label>
 
             {!form.ID_Proprietaire ? (
-              <div className="flex h-full items-center rounded-md border border-blue-200 bg-blue-50 px-3 text-sm text-blue-900">
+              <div className="flex items-center rounded-md border border-blue-200 bg-blue-50 px-3 text-sm text-blue-900 h-full py-2">
                 Sélectionner d'abord un propriétaire
               </div>
             ) : !customLieu ? (
@@ -420,7 +420,7 @@ const [animaux, setAnimaux] = useState([]);
                 variant="secondary"
                 onClick={handleLieuDifferent}
                 disabled={saving}
-                className="h-full"
+                className="h-full py-2"
               >
                 Changer de lieu
               </Button>

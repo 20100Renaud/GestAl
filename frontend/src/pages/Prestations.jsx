@@ -796,7 +796,7 @@ const [animaux, setAnimaux] = useState([]);
                 </TableHeader>
 
                 <TableHeader className="hidden lg:table-cell">
-                  Consultations
+                  Consultation
                 </TableHeader>
 
                 <TableHeader className="hidden lg:table-cell">
@@ -908,7 +908,7 @@ const [animaux, setAnimaux] = useState([]);
                 </TableHeader>
 
                 <TableHeader className="hidden lg:table-cell">
-                  Consultations
+                  Consultation
                 </TableHeader>
 
                 <TableHeader className="hidden lg:table-cell">

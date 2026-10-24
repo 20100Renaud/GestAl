@@ -16,8 +16,9 @@ export function AuthProvider({ children }) {
     async function checkAuthentication() {
       try {
         const data = await getCurrentUser();
-        setUser(data.user ?? null);
-      } catch {
+        setUser(data?.user ?? null);
+      } catch (error) {
+        console.error("Authentication check failed:", error);
         setUser(null);
       } finally {
         setLoading(false);
@@ -28,10 +29,18 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function login(email, password) {
+
     await loginRequest(email, password);
 
     const data = await getCurrentUser();
-    const currentUser = data.user ?? null;
+    const currentUser = data?.user ?? null;
+
+    if (!currentUser) {
+      setUser(null);
+      throw new Error(
+        "Login succeeded, but the authenticated session could not be loaded.",
+      );
+    }
 
     setUser(currentUser);
 
