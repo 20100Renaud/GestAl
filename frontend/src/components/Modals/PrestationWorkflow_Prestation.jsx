@@ -3,7 +3,7 @@ import { getAnimaux } from "../../api/animaux.js";
 import Button from "../ui/Button.jsx";
 import Input from "../ui/Input.jsx";
 import Select from "../ui/Select.jsx";
-import {ProprietaireOptions} from "../ProprietaireOptions.jsx";
+import { ProprietaireOptions } from "../ProprietaireOptions.jsx";
 import DeplacementsModal from "./Deplacements_Modal.jsx";
 import ProprietairesModal from "./Proprietaires_Modal.jsx";
 
@@ -64,7 +64,7 @@ export default function PrestationWorkflowPrestation({
 }) {
   const [proprietaires, setProprietaires] = useState([]);
   const [deplacements, setDeplacements] = useState([]);
-const [animaux, setAnimaux] = useState([]);
+  const [animaux, setAnimaux] = useState([]);
 
   const [form, setForm] = useState(emptyForm);
   const [initialForm, setInitialForm] = useState(emptyForm);
@@ -519,14 +519,15 @@ const [animaux, setAnimaux] = useState([]);
           />
         </div>
 
-        <div className="mt-6 flex flex-wrap justify-between gap-3">
-          {/* DELETE — only when editing an existing prestation */}
+        <div className="mt-6 flex flex-col sm:flex-row justify-center sm:justify-between gap-3">
+          {/* DELETE btn */}
           {prestation?.ID_Prestation && (
             <Button
               type="button"
               variant="danger"
               onClick={handleDelete}
               disabled={saving || deleting}
+              className="order-2 md:order-1"
             >
               <Trash2 className="mr-2 h-4 w-4" />
               {deleting ? "Suppression..." : "Supprimer la prestation"}
@@ -534,30 +535,30 @@ const [animaux, setAnimaux] = useState([]);
           )}
 
           {/* SAVE */}
-          <div className="ml-auto">
-            <Button
-              type="submit"
-              disabled={
-                saving ||
-                deleting ||
-                (Boolean(prestation?.ID_Prestation) && !hasChanges)
-              }
-            >
-              {saving ? (
-                <p className="mr-2 h-4 w-4 animate-pulse">Enregistrement...</p>
-              ) : prestation?.ID_Prestation ? (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Enregistrer les modifications
-                </>
-              ) : (
-                <>
-                  <SavePlus className="mr-2 h-4 w-4" />
-                  Créer la prestation
-                </>
-              )}
-            </Button>
-          </div>
+
+          <Button
+            type="submit"
+            disabled={
+              saving ||
+              deleting ||
+              (Boolean(prestation?.ID_Prestation) && !hasChanges)
+            }
+            className="order-1 md:order-2"
+          >
+            {saving ? (
+              <p className="mr-2 h-4 w-4 animate-pulse">Enregistrement...</p>
+            ) : prestation?.ID_Prestation ? (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Enregistrer les modifications
+              </>
+            ) : (
+              <>
+                <SavePlus className="mr-2 h-4 w-4" />
+                Créer la prestation
+              </>
+            )}
+          </Button>
         </div>
       </form>
 
