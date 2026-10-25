@@ -105,8 +105,8 @@ export default function ConsultationsModal({
         {!prestation === 0 ? (
           <div className="p-6">
             <p className="text-blue-900">
-              Une <u>prestation</u> doit
-              exister avant de pouvoir créer une consultation.
+              Une <u>prestation</u> doit exister avant de pouvoir créer une
+              consultation.
             </p>
           </div>
         ) : (
@@ -443,14 +443,16 @@ export default function ConsultationsModal({
               </div>
 
               <div className="flex gap-3">
-                <Button
-                  type="button"
-                  onClick={onClose}
-                  variant="secondary"
-                  disabled={saving}
-                >
-                  Annuler
-                </Button>
+                <div className="hidden md:block">
+                  <Button
+                    type="button"
+                    onClick={onClose}
+                    variant="secondary"
+                    disabled={saving}
+                  >
+                    Annuler
+                  </Button>
+                </div>
 
                 <Button
                   type="submit"

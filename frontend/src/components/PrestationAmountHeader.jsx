@@ -76,7 +76,7 @@ export default function PrestationAmountHeader({ prestation }) {
   return (
     <div className="rounded-md border border-blue-200 bg-blue-50 text-sm text-blue-700 shadow-lg">
       <PrestationHeader prestation={prestation} className=" !border-none" />
-      <div className="p-4">
+      <div className="flex p-4 justify-center">
         <div className="space-y-2">
           {/* DÉPLACEMENT */}
           <div className="flex justify-between gap-4 font-medium">
