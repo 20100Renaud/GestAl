@@ -19,7 +19,7 @@ import Prestations from "./pages/Prestations.jsx";
 export default function App() {
   const { isAuthenticated, user } = useAuth();
   const defaultPath =
-    user?.role === "ADMIN" ? "/dashboard/users" : "/dashboard";
+    user?.role === "ADMIN" ? "/users" : "/dashboard";
 
   return (
     <Routes>
@@ -33,21 +33,21 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/dashboard/consultations" element={<Consultations />} />
-          <Route path="/dashboard/prestations" element={<Prestations />} />
+          <Route path="/consultations" element={<Consultations />} />
+          <Route path="/prestations" element={<Prestations />} />
 
-          <Route path="/dashboard/proprietaires" element={<Proprietaires />} />
+          <Route path="/proprietaires" element={<Proprietaires />} />
 
-          <Route path="/dashboard/animaux" element={<Animaux />} />
+          <Route path="/animaux" element={<Animaux />} />
 
-          <Route path="/dashboard/paiements" element={<Paiements />} />
+          <Route path="/paiements" element={<Paiements />} />
 
-          <Route path="/dashboard/tarifs" element={<Tarifs />} />
+          <Route path="/tarifs" element={<Tarifs />} />
 
-          <Route path="/dashboard/deplacements" element={<Deplacements />} />
+          <Route path="/deplacements" element={<Deplacements />} />
 
-          <Route path="/dashboard/zonages" element={<Zonages />} />
-          <Route path="/dashboard/users" element={<Users />} />
+          <Route path="/zonages" element={<Zonages />} />
+          <Route path="/users" element={<Users />} />
         </Route>
       </Route>
 

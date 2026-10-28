@@ -12,30 +12,30 @@ const navigation = [
   },
   {
     label: "Prestations",
-    path: "/dashboard/prestations",
+    path: "/prestations",
     clientOnly: true,
   },
 
   {
     label: "Consultations",
-    path: "/dashboard/consultations",
+    path: "/consultations",
     clientOnly: true,
   },
   {
     label: "Paiements",
-    path: "/dashboard/paiements",
+    path: "/paiements",
     separator: true,
     clientOnly: true,
   },
   {
     label: "Propriétaires",
-    path: "/dashboard/proprietaires",
+    path: "/proprietaires",
     clientOnly: true,
     child: false,
   },
   {
     label: "Animaux",
-    path: "/dashboard/animaux",
+    path: "/animaux",
     separator: true,
     clientOnly: true,
     child: false,
@@ -43,22 +43,22 @@ const navigation = [
 
   {
     label: "Tarifs",
-    path: "/dashboard/tarifs",
+    path: "/tarifs",
     clientOnly: true,
   },
   {
     label: "Déplacements",
-    path: "/dashboard/deplacements",
+    path: "/deplacements",
     clientOnly: true,
   },
   {
     label: "Utilisateurs",
-    path: "/dashboard/users",
+    path: "/users",
     adminOnly: true,
   },
   {
     label: "Zonage",
-    path: "/dashboard/zonages",
+    path: "/zonages",
     adminOnly: true,
   },
 ];

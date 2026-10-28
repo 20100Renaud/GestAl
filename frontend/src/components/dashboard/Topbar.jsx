@@ -5,7 +5,7 @@ export default function Topbar({ onMenuClick }) {
   const { title } = usePageTitle();
 
   return (
-    <header className="relative flex min-h-[72px] items-center justify-between gap-3 border-b border-blue-200 bg-blue-950 px-4 text-blue-300 md:bg-white md:px-8 md:text-blue-900">
+    <header className="relative flex min-h-[72px] items-center border-b border-blue-200 bg-blue-950 md:bg-white px-4 md:px-8 text-blue-300 md:text-blue-900">
       <div className="flex min-w-0 items-center gap-3">
         <button
           type="button"
@@ -16,7 +16,7 @@ export default function Topbar({ onMenuClick }) {
           <Menu size={22} />
         </button>
 
-        <h2 className="m-0 truncate text-xl font-semibold md:text-2xl">
+        <h2 className="truncate text-xl font-semibold md:text-2xl">
           {title || "Administration"}
         </h2>
       </div>
