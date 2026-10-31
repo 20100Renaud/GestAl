@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar.jsx";
 import Topbar from "./Topbar.jsx";
-import UsersModal from "../Modals/Users_Modal.jsx";
+import UsersModal from "../modals/Users_Modal.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { getMyProfile, updateMyProfile } from "../../api/users.js";
 import { normalizeUpper, normalizeCamel } from "../../utils/normalizeField.js";
@@ -22,7 +22,7 @@ const emptyProfile = {
   password: "",
 };
 
-export default function DashboardLayout() {
+export default function Layout() {
   const { user } = useAuth();
 
   const [showProfile, setShowProfile] = useState(false);

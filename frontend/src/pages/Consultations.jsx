@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { createConsultationPdfHandler } from "../utils/consultationPdfHandler.js";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import Alert from "../components/ui/Alert.jsx";
-import ErrorModal from "../components/Modals/ErrorModal.jsx";
+import ErrorModal from "../components/modals/ErrorModal.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
 import { formatDateShort } from "../utils/formatDate";
 import PrestationWorkflowZonages from "../components/Wokflow_modals/PrestationWorkflow_Zonages.jsx";
@@ -15,9 +15,9 @@ import Table, {
   TableRow,
   TableCell,
 } from "../components/ui/Table.jsx";
-import ConsultationsModal from "../components/Modals/Consultations_Modal.jsx";
-import TarifsModal from "../components/Modals/Tarifs_Modal.jsx";
-import AnimauxModal from "../components/Modals/Animaux_Modal.jsx";
+import ConsultationsModal from "../components/modals/Consultations_Modal.jsx";
+import TarifsModal from "../components/modals/Tarifs_Modal.jsx";
+import AnimauxModal from "../components/modals/Animaux_Modal.jsx";
 import {
   getConsultations,
   createConsultation,

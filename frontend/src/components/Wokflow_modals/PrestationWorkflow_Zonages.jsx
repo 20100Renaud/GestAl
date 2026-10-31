@@ -5,7 +5,7 @@ import Modal from "../ui/Modal.jsx";
 import PageHeader from "../ui/PageHeader.jsx";
 import { CardZonage } from "../ui/Card.jsx";
 import { getZonages } from "../../api/zonages.js";
-import CommentaireZonageModal from "../Modals/CommentaireZonageModal.jsx";
+import CommentaireZonageModal from "../modals/CommentaireZonageModal.jsx";
 import { Check } from "lucide-react";
 import {
   getConsultationZonages,

@@ -4,8 +4,8 @@ import Button from "../ui/Button.jsx";
 import Input from "../ui/Input.jsx";
 import Select from "../ui/Select.jsx";
 import { ProprietaireOptions } from "../ProprietaireOptions.jsx";
-import DeplacementsModal from "../Modals/Deplacements_Modal.jsx";
-import ProprietairesModal from "../Modals/Proprietaires_Modal.jsx";
+import DeplacementsModal from "../modals/Deplacements_Modal.jsx";
+import ProprietairesModal from "../modals/Proprietaires_Modal.jsx";
 
 import {
   File,

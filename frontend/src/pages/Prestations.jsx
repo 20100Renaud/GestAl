@@ -12,12 +12,12 @@ import { getProprietaires, createProprietaire } from "../api/proprietaires.js";
 
 import { getDeplacements, createDeplacement } from "../api/deplacements.js";
 
-import DeplacementsModal from "../components/Modals/Deplacements_Modal.jsx";
+import DeplacementsModal from "../components/modals/Deplacements_Modal.jsx";
 import PageHeader from "../components/ui/PageHeader.jsx";
-import ProprietairesModal from "../components/Modals/Proprietaires_Modal.jsx";
+import ProprietairesModal from "../components/modals/Proprietaires_Modal.jsx";
 import PrestationWorkflowModal from "../components/Wokflow_modals/PrestationWorkflow_Modal.jsx";
 import Alert from "../components/ui/Alert.jsx";
-import ErrorModal from "../components/Modals/ErrorModal.jsx";
+import ErrorModal from "../components/modals/ErrorModal.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
 import { House } from "lucide-react";
 import { formatDateShort } from "../utils/formatDate";
@@ -101,7 +101,7 @@ export default function Prestations() {
   const [prestations, setPrestations] = useState([]);
   const [proprietaires, setProprietaires] = useState([]);
   const [deplacements, setDeplacements] = useState([]);
-const [animaux, setAnimaux] = useState([]);
+  const [animaux, setAnimaux] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
 
@@ -272,7 +272,6 @@ const [animaux, setAnimaux] = useState([]);
     if (saving) {
       return;
     }
-
 
     setEditingId(null);
     setForm(emptyForm);

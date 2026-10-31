@@ -36,7 +36,7 @@ export async function login(req, res) {
 
     if (!user) {
       return res.status(401).json({
-        error: "Invalid email or password",
+        error: "Email ou mot de passe non valide",
       });
     }
 
@@ -47,7 +47,7 @@ export async function login(req, res) {
 
     if (!passwordValid) {
       return res.status(401).json({
-        error: "Invalid email or password",
+        error: "Email ou mot de passe non valide",
       });
     }
 

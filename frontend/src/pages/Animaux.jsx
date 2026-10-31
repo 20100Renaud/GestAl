@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getConsultations } from "../api/consultations.js";
 import PageHeader from "../components/ui/PageHeader.jsx";
-import AnimauxModal from "../components/Modals/Animaux_Modal.jsx";
-import ErrorModal from "../components/Modals/ErrorModal.jsx";
+import AnimauxModal from "../components/modals/Animaux_Modal.jsx";
+import ErrorModal from "../components/modals/ErrorModal.jsx";
 import { normalizeUpper, normalizeCamel } from "../utils/normalizeField.js";
 import Alert from "../components/ui/Alert.jsx";
 import { formatDate } from "../utils/formatDate";
@@ -39,7 +39,7 @@ export default function Animaux() {
   const [animaux, setAnimaux] = useState([]);
   const navigate = useNavigate();
   const [proprietaires, setProprietaires] = useState([]);
-const [consultations, setConsultations] = useState([]);
+  const [consultations, setConsultations] = useState([]);
 
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -52,7 +52,6 @@ const [consultations, setConsultations] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [showErrorModal, setShowErrorModal] = useState(false);
-
 
   async function loadData() {
     try {

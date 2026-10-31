@@ -41,8 +41,8 @@ export function CardDashboard({
         p-3 sm:p-5
         text-center
         bg-white shadow-sm
-        transition-shadow duration-200 hover:shadow-xl
-        ${onCardClick ? "cursor-pointer" : ""}
+        transition-all duration-200 ease-out hover:shadow-xl
+        ${onCardClick ? "cursor-pointer hover:-translate-y-1" : ""}
         ${className}
       `}
     >
@@ -70,8 +70,10 @@ export function CardDashboard({
         {/* Main value */}
         <div
           onClick={(event) => {
-            event.stopPropagation();
-            onValueClick?.();
+            if (onValueClick) {
+              event.stopPropagation();
+              onValueClick();
+            }
           }}
           onKeyDown={(event) => {
             if (onValueClick && (event.key === "Enter" || event.key === " ")) {
@@ -121,8 +123,10 @@ export function CardDashboard({
 
             <div
               onClick={(event) => {
-                event.stopPropagation();
-                onSecondaryValueClick?.();
+                if (onValueClick) {
+                  event.stopPropagation();
+                  onSecondaryValueClick();
+                }
               }}
               onKeyDown={(event) => {
                 if (

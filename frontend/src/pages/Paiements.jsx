@@ -4,9 +4,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
 import { formatDateShort } from "../utils/formatDate";
-import PaiementsModal from "../components/Modals/Paiements_Modal.jsx";
+import PaiementsModal from "../components/modals/Paiements_Modal.jsx";
 import Alert from "../components/ui/Alert.jsx";
-import ErrorModal from "../components/Modals/ErrorModal.jsx";
+import ErrorModal from "../components/modals/ErrorModal.jsx";
 import Table, {
   Vide,
   TableHead,

@@ -235,7 +235,7 @@ export default function Dashboard() {
           onMonthsChange={setMonthsWithoutPrestation}
           onClick={() =>
             navigate(
-              `/dashboard/prestations?statut=sans-prestation&mois=${monthsWithoutPrestation}`,
+              `/prestations?statut=sans-prestation&mois=${monthsWithoutPrestation}`,
             )
           }
         />
@@ -247,10 +247,10 @@ export default function Dashboard() {
           secondaryValue={loading ? "…" : consultationsThisMonth.length}
           secondarySubtitle={`en ${currentMonthName}`}
           onValueClick={() =>
-            navigate("/dashboard/consultations?statut=consultations-annee")
+            navigate("/consultations?statut=consultations-annee")
           }
           onSecondaryValueClick={() =>
-            navigate("/dashboard/consultations?statut=consultations-mois")
+            navigate("/consultations?statut=consultations-mois")
           }
         />
 
@@ -262,11 +262,9 @@ export default function Dashboard() {
             loading ? "…" : formatCurrency(montantEncaisseThisMonth)
           }
           secondarySubtitle={`en ${currentMonthName}`}
-          onValueClick={() =>
-            navigate("/dashboard/paiements?statut=encaissements")
-          }
+          onValueClick={() => navigate("/paiements?statut=encaissements")}
           onSecondaryValueClick={() =>
-            navigate("/dashboard/paiements?statut=encaissements-mois")
+            navigate("/paiements?statut=encaissements-mois")
           }
           borderColor="border-t-green-600"
           titleColor="text-green-700"
@@ -277,49 +275,41 @@ export default function Dashboard() {
           HoverColor="hover:bg-green-50"
         />
 
-        <div className="transition-all hover:-translate-y-2 w-full  sm:w-auto">
-          <CardDashboard
-            title="CRÉANCES"
-            value={loading ? "…" : prestationsAvecCreances.length}
-            subtitle={`en ${currentYear}`}
-            secondaryValue={loading ? "…" : formatCurrency(montantCreances)}
-            secondarySubtitle="reste à payer"
-            onCardClick={() =>
-              navigate("/dashboard/prestations?statut=creances")
-            }
-            borderColor="border-t-red-600"
-            titleColor="text-red-700"
-            valueColor="text-red-900"
-            subtitleColor="text-red-500"
-            secondaryValueColor="text-red-700"
-            secondarySubtitleColor="text-red-400"
-          />
-        </div>
+        <CardDashboard
+          title="CRÉANCES"
+          value={loading ? "…" : prestationsAvecCreances.length}
+          subtitle={`en ${currentYear}`}
+          secondaryValue={loading ? "…" : formatCurrency(montantCreances)}
+          secondarySubtitle="reste à payer"
+          onCardClick={() => navigate("/prestations?statut=creances")}
+          borderColor="border-t-red-600"
+          titleColor="text-red-700"
+          valueColor="text-red-900"
+          subtitleColor="text-red-500"
+          secondaryValueColor="text-red-700"
+          secondarySubtitleColor="text-red-400"
+        />
 
-        <div className="transition-all hover:-translate-y-2 w-full  sm:w-auto">
-          <CardDashboard
-            title="À ENCAISSER"
-            value={loading ? "…" : paiementsEnAttenteEncaissement.length}
-            subtitle={
-              loading
-                ? "paiement"
-                : pluralize(paiementsEnAttenteEncaissement.length, "paiement")
-            }
-            secondaryValue={
-              loading ? "…" : formatCurrency(montantEnAttenteEncaissement)
-            }
-            secondarySubtitle="à encaisser"
-            onCardClick={() =>
-              navigate("/dashboard/paiements?statut=a-encaisser")
-            }
-            borderColor="border-t-purple-600"
-            titleColor="text-purple-700"
-            valueColor="text-purple-900"
-            subtitleColor="text-purple-500"
-            secondaryValueColor="text-purple-700"
-            secondarySubtitleColor="text-purple-400"
-          />
-        </div>
+        <CardDashboard
+          title="À ENCAISSER"
+          value={loading ? "…" : paiementsEnAttenteEncaissement.length}
+          subtitle={
+            loading
+              ? "paiement"
+              : pluralize(paiementsEnAttenteEncaissement.length, "paiement")
+          }
+          secondaryValue={
+            loading ? "…" : formatCurrency(montantEnAttenteEncaissement)
+          }
+          secondarySubtitle="à encaisser"
+          onCardClick={() => navigate("/paiements?statut=a-encaisser")}
+          borderColor="border-t-purple-600"
+          titleColor="text-purple-700"
+          valueColor="text-purple-900"
+          subtitleColor="text-purple-500"
+          secondaryValueColor="text-purple-700"
+          secondarySubtitleColor="text-purple-400"
+        />
       </div>
 
       <PrestationWorkflowModal

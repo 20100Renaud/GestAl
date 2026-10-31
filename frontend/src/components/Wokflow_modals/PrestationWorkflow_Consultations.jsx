@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createConsultationPdfHandler } from "../../utils/consultationPdfHandler.js";
 
-import ConsultationsModal from "../Modals/Consultations_Modal.jsx";
+import ConsultationsModal from "../modals/Consultations_Modal.jsx";
 import PrestationHeader from "../PrestationHeader.jsx";
 import PrestationWorkflowZonages from "./PrestationWorkflow_Zonages.jsx";
 import { Eye, Download, Plus } from "lucide-react";

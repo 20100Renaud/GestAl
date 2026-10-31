@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
-import ErrorModal from "../components/Modals/ErrorModal.jsx";
+import ErrorModal from "../components/modals/ErrorModal.jsx";
 import Button from "../components/ui/Button.jsx";
 import Input from "../components/ui/Input.jsx";
 
@@ -85,16 +85,18 @@ export default function Login() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-xs text-blue-400 cursor-pointer">CGU · Lun-e · Création de compte</p>
+        <p className="mt-6 text-center text-xs text-blue-400 cursor-pointer">
+          CGU · Lun-e · Création de compte
+        </p>
       </div>
       <ErrorModal
-              open={showErrorModal}
-              message={error}
-              onClose={() => {
-                setShowErrorModal(false);
-                setError("");
-              }}
-            />
+        open={showErrorModal}
+        message={error}
+        onClose={() => {
+          setShowErrorModal(false);
+          setError("");
+        }}
+      />
     </main>
   );
 }

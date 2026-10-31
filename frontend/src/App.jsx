@@ -2,7 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import { useAuth } from "./context/AuthContext.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
-import DashboardLayout from "./components/dashboard/DashboardLayout.jsx";
+import Layout from "./components/layout/Layout.jsx";
 import Consultations from "./pages/Consultations.jsx";
 
 import Login from "./pages/Login.jsx";
@@ -15,6 +15,7 @@ import Tarifs from "./pages/Tarifs.jsx";
 import Deplacements from "./pages/Deplacements.jsx";
 import Zonages from "./pages/Zonages.jsx";
 import Prestations from "./pages/Prestations.jsx";
+import NotFound from "./pages/NotFound.jsx";
 
 export default function App() {
   const { isAuthenticated, user } = useAuth();
@@ -31,7 +32,7 @@ export default function App() {
       />
 
       <Route element={<ProtectedRoute />}>
-        <Route element={<DashboardLayout />}>
+        <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/consultations" element={<Consultations />} />
           <Route path="/prestations" element={<Prestations />} />
@@ -51,12 +52,7 @@ export default function App() {
         </Route>
       </Route>
 
-      <Route
-        path="*"
-        element={
-          <Navigate to={isAuthenticated ? defaultPath : "/login"} replace />
-        }
-      />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

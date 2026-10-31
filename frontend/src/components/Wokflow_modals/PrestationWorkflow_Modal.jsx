@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { WorkflowModal } from "../ui/Modal.jsx";
 import Alert from "../ui/Alert.jsx";
-import ErrorModal from "../Modals/ErrorModal.jsx";
+import ErrorModal from "../modals/ErrorModal.jsx";
 import PrestationWorkflowPrestation from "./PrestationWorkflow_Prestation.jsx";
 import { getConsultations } from "../../api/consultations.js";
 import PrestationWorkflowConsultations from "./PrestationWorkflow_Consultations.jsx";
@@ -11,8 +11,8 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { getPrestation } from "../../api/prestations.js";
 import { createAnimal, updateAnimal, getAnimaux } from "../../api/animaux.js";
 import { createTarif } from "../../api/tarifs.js";
-import AnimauxModal from "../Modals/Animaux_Modal.jsx";
-import TarifsModal from "../Modals/Tarifs_Modal.jsx";
+import AnimauxModal from "../modals/Animaux_Modal.jsx";
+import TarifsModal from "../modals/Tarifs_Modal.jsx";
 import { TabButton } from "../ui/Button.jsx";
 
 const emptyAnimalForm = {

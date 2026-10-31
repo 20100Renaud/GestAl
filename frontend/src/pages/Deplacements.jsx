@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/ui/PageHeader.jsx";
-import DeplacementsModal from "../components/Modals/Deplacements_Modal.jsx";
-import ErrorModal from "../components/Modals/ErrorModal.jsx";
-import DeplacementsCopyModal from "../components/Modals/DeplacementsCopyModal.jsx";
+import DeplacementsModal from "../components/modals/Deplacements_Modal.jsx";
+import ErrorModal from "../components/modals/ErrorModal.jsx";
+import DeplacementsCopyModal from "../components/modals/DeplacementsCopyModal.jsx";
 import Alert from "../components/ui/Alert.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
 import { Trash2 } from "lucide-react";

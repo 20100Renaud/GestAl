@@ -3,10 +3,10 @@ import { getConsultations } from "../api/consultations.js";
 import { PawPrint, ClipboardList } from "lucide-react";
 import { getAnimaux } from "../api/animaux.js";
 import PageHeader from "../components/ui/PageHeader.jsx";
-import ProprietairesModal from "../components/Modals/Proprietaires_Modal.jsx";
+import ProprietairesModal from "../components/modals/Proprietaires_Modal.jsx";
 import { normalizeUpper, normalizeCamel } from "../utils/normalizeField.js";
 import Alert from "../components/ui/Alert.jsx";
-import ErrorModal from "../components/Modals/ErrorModal.jsx";
+import ErrorModal from "../components/modals/ErrorModal.jsx";
 import Table, {
   Vide,
   TableHead,
@@ -36,7 +36,7 @@ const emptyForm = {
 
 export default function Proprietaires() {
   const [proprietaires, setProprietaires] = useState([]);
-const [consultations, setConsultations] = useState([]);
+  const [consultations, setConsultations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");

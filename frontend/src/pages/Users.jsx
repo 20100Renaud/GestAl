@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import PageHeader from "../components/ui/PageHeader.jsx";
-import UsersModal from "../components/Modals/Users_Modal.jsx";
+import UsersModal from "../components/modals/Users_Modal.jsx";
 
 import Table, {
   Vide,
