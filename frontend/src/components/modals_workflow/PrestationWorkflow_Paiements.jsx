@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import PaiementsModal from "../modals/Paiements_Modal.jsx";
 import { formatDateInput, formatDateShort } from "../../utils/formatDate.js";
-import PrestationAmountHeader from "../PrestationAmountHeader.jsx";
+import PrestationAmountHeader from "../headers/PrestationAmountHeader.jsx";
 import { MOYENS_PAIEMENT } from "../../constants/paiement.js";
 import { Plus } from "lucide-react";
 

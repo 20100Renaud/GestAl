@@ -1,4 +1,4 @@
-import { getProprietaireLabel } from "./ProprietaireOptions.jsx";
+import { getProprietaireLabel } from "../options/ProprietaireOptions.jsx";
 import {
   UserRound,
   CalendarDays,

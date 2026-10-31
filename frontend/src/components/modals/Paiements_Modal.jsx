@@ -3,7 +3,7 @@ import Button from "../ui/Button.jsx";
 import Input from "../ui/Input.jsx";
 import Select from "../ui/Select.jsx";
 import Modal from "../ui/Modal.jsx";
-import PrestationHeader from "../PrestationHeader.jsx";
+import PrestationHeader from "../headers/PrestationHeader.jsx";
 
 import {
   CalendarDays,

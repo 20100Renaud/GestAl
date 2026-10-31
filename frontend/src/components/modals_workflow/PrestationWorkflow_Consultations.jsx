@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createConsultationPdfHandler } from "../../utils/consultationPdfHandler.js";
 
 import ConsultationsModal from "../modals/Consultations_Modal.jsx";
-import PrestationHeader from "../PrestationHeader.jsx";
+import PrestationHeader from "../headers/PrestationHeader.jsx";
 import PrestationWorkflowZonages from "./PrestationWorkflow_Zonages.jsx";
 import { Eye, Download, Plus } from "lucide-react";
 import Button from "../ui/Button.jsx";
@@ -11,6 +11,7 @@ import {
   getConsultations,
   createConsultation,
   updateConsultation,
+  deleteConsultation,
 } from "../../api/consultations.js";
 import {
   getConsultationZonages,
@@ -209,6 +210,37 @@ export default function PrestationWorkflowConsultations({
     });
 
     setShowForm(true);
+  }
+
+  // Delete a consultation
+  async function handleDelete(id) {
+    if (!window.confirm("Supprimer cette consultation ?")) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      onError?.("");
+
+      await deleteConsultation(id);
+
+      if (String(editingId) === String(id)) {
+        setShowForm(false);
+        setEditingId(null);
+        setForm({
+          ...emptyForm,
+          ID_Prestation: prestationId,
+        });
+      }
+
+      await loadData();
+      await onPrestationUpdated?.();
+    } catch (err) {
+      console.error("Erreur lors de la suppression :", err);
+      onError?.(err.message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   // On close the consultation modal
@@ -439,7 +471,7 @@ export default function PrestationWorkflowConsultations({
         onClose={closeForm}
         onSubmit={handleSubmit}
         onChange={handleChange}
-        onDelete={() => {}}
+        onDelete={handleDelete}
         onOpenZonages={openZonages}
         onAddAnimal={handleAddAnimal}
         onEditAnimal={handleEditAnimal}

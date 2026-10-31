@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "../ui/Button.jsx";
 import Input from "../ui/Input.jsx";
 import Select from "../ui/Select.jsx";
@@ -7,7 +7,7 @@ import Modal from "../ui/Modal.jsx";
 import {
   getProprietaireLabel,
   ProprietaireOptions,
-} from "../ProprietaireOptions.jsx";
+} from "../options/ProprietaireOptions.jsx";
 import {
   PawPrint,
   UserRound,
@@ -34,6 +34,11 @@ export default function AnimauxModal({
   onOpenConsultation,
 }) {
   const [visibleConsultations, setVisibleConsultations] = useState(3);
+
+  useEffect(() => {
+    setVisibleConsultations(3);
+  }, [editingId, open]);
+  
   const consultationsAnimal = consultations
     .filter(
       (consultation) => String(consultation.ID_Animal) === String(editingId),

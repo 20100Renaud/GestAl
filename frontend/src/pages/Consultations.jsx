@@ -7,7 +7,7 @@ import Alert from "../components/ui/Alert.jsx";
 import ErrorModal from "../components/modals/ErrorModal.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
 import { formatDateShort } from "../utils/formatDate";
-import PrestationWorkflowZonages from "../components/Wokflow_modals/PrestationWorkflow_Zonages.jsx";
+import PrestationWorkflowZonages from "../components/modals_workflow/PrestationWorkflow_Zonages.jsx";
 import Table, {
   Vide,
   TableHead,

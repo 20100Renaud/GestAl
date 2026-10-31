@@ -4,7 +4,7 @@ import Input from "../ui/Input.jsx";
 import Select from "../ui/Select.jsx";
 import Textarea from "../ui/Textarea.jsx";
 import Modal from "../ui/Modal.jsx";
-import PrestationHeader from "../PrestationHeader.jsx";
+import PrestationHeader from "../headers/PrestationHeader.jsx";
 import { CardZonage, techniqueCardColors } from "../ui/Card.jsx";
 import CommentaireZonageModal from "./CommentaireZonageModal.jsx";
 import {
