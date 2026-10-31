@@ -1,3 +1,4 @@
+// frontend/src/App.jsx
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { useAuth } from "./context/AuthContext.jsx";
@@ -19,11 +20,20 @@ import NotFound from "./pages/NotFound.jsx";
 
 export default function App() {
   const { isAuthenticated, user } = useAuth();
-  const defaultPath =
-    user?.role === "ADMIN" ? "/users" : "/dashboard";
+
+  const defaultPath = user?.role === "ADMIN" ? "/users" : "/dashboard";
 
   return (
     <Routes>
+      {/* Origin */}
+      <Route
+        path="/"
+        element={
+          <Navigate to={isAuthenticated ? defaultPath : "/login"} replace />
+        }
+      />
+
+      {/* Login */}
       <Route
         path="/login"
         element={
@@ -31,27 +41,23 @@ export default function App() {
         }
       />
 
+      {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/consultations" element={<Consultations />} />
           <Route path="/prestations" element={<Prestations />} />
-
           <Route path="/proprietaires" element={<Proprietaires />} />
-
           <Route path="/animaux" element={<Animaux />} />
-
           <Route path="/paiements" element={<Paiements />} />
-
           <Route path="/tarifs" element={<Tarifs />} />
-
           <Route path="/deplacements" element={<Deplacements />} />
-
           <Route path="/zonages" element={<Zonages />} />
           <Route path="/users" element={<Users />} />
         </Route>
       </Route>
 
+      {/* 404 page */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
