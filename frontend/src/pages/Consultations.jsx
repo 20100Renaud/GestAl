@@ -127,10 +127,18 @@ export default function Consultations() {
       setProprietaires(proprietairesData);
       setZonages(zonagesData);
       setTarifs(tarifsData);
+
+      return {
+        consultations: consultationsData,
+        prestations: prestationsData,
+        animaux: animauxData,
+        proprietaires: proprietairesData,
+        tarifs: tarifsData,
+      };
     } catch (err) {
       setError(err.message);
       setShowErrorModal(true);
-      setShowErrorModal(true);
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -703,6 +711,23 @@ export default function Consultations() {
     ]);
   }
 
+  async function saveConsultation() {
+    let consultationId = editingId;
+
+    if (editingId) {
+      await updateConsultation(editingId, form);
+    } else {
+      const consultation = await createConsultation(form);
+      consultationId = consultation.ID_Consultation;
+    }
+
+    await saveConsultationZonages(consultationId);
+
+    await loadData();
+
+    return consultationId;
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -710,22 +735,44 @@ export default function Consultations() {
       setSaving(true);
       setError("");
 
-      let consultationId = editingId;
+      await saveConsultation();
 
-      if (editingId) {
-        await updateConsultation(editingId, form);
-      } else {
-        const consultation = await createConsultation(form);
-        consultationId = consultation.ID_Consultation;
-      }
-
-      await saveConsultationZonages(consultationId);
-
-      await loadData();
       closeForm();
     } catch (err) {
       setError(err.message);
       setShowErrorModal(true);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSaveAndOpenPdf(mode) {
+    try {
+      setSaving(true);
+      setError("");
+
+      const consultationId = await saveConsultation();
+      const data = await loadData();
+
+      const updatedPdfHandler = createConsultationPdfHandler({
+        consultations: data.consultations,
+        animaux: data.animaux,
+        tarifs: data.tarifs,
+        zonagesByConsultation: {
+          [consultationId]: consultationZonages.map((item) => ({
+            ...(item.Zonage ?? {}),
+            ...item,
+          })),
+        },
+        prestations: data.prestations,
+        proprietaires: data.proprietaires,
+        currentUser,
+        onError: setError,
+      });
+
+      await updatedPdfHandler(mode, consultationId);
+    } catch (err) {
+      setError(err.message);
       setShowErrorModal(true);
     } finally {
       setSaving(false);
@@ -933,7 +980,7 @@ export default function Consultations() {
         onAddTarif={openTarifForm}
         onAddAnimal={openAnimalForm}
         onEditAnimal={openEditAnimal}
-        onOpenPdf={(mode) => handleOpenPdf(mode, editingId)}
+        onOpenPdf={handleSaveAndOpenPdf}
       />
 
       <PrestationWorkflowZonages

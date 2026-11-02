@@ -452,7 +452,7 @@ export function openConsultationPdf({
   const leftX = 14 + textIndent;
   const availableWidth = pageWidth - 28 - textIndent * 2;
 
-  // Motif: label and value on the same line
+  // Motif
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(30, 58, 138);

@@ -116,6 +116,13 @@ export default function PrestationWorkflowConsultations({
       setZonagesByConsultation(Object.fromEntries(associations));
 
       onConsultationsChange?.(filteredConsultations);
+      return {
+        consultations: filteredConsultations,
+        animaux: animauxData,
+        tarifs: tarifsData,
+        proprietaires: proprietairesData,
+        zonagesByConsultation: Object.fromEntries(associations),
+      };
     } catch (err) {
       onError?.(err.message);
     }
@@ -326,6 +333,60 @@ export default function PrestationWorkflowConsultations({
     }
   }
 
+  // Save and open PDF
+  async function handleSaveAndOpenPdf(mode) {
+    try {
+      setSaving(true);
+      onError?.("");
+
+      let consultationId = editingId;
+
+      if (editingId) {
+        await updateConsultation(editingId, form);
+      } else {
+        const consultation = await createConsultation(form);
+        consultationId = consultation.ID_Consultation;
+
+        if (!consultationId) {
+          throw new Error("Identifiant de consultation introuvable.");
+        }
+
+        await Promise.all(
+          draftZonages.map((zonage) =>
+            createConsultationZonage(consultationId, {
+              ID_Zonage: zonage.ID_Zonage,
+              Commentaire_Zonage: zonage.Commentaire_Zonage || "",
+            }),
+          ),
+        );
+
+        setDraftZonages([]);
+      }
+
+      const data = await loadData();
+
+      await onPrestationUpdated?.();
+
+      const updatedPdfHandler = createConsultationPdfHandler({
+        consultations: data.consultations,
+        animaux: data.animaux,
+        tarifs: data.tarifs,
+        zonagesByConsultation: data.zonagesByConsultation,
+        prestations: prestation ? [prestation] : [],
+        proprietaires: data.proprietaires,
+        currentUser,
+        onError,
+      });
+
+      await updatedPdfHandler(mode, consultationId);
+    } catch (err) {
+      console.error("Erreur lors de l'enregistrement :", err);
+      onError?.(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   // Zonages
   function openZonages(consultationId) {
     setZonageConsultationId(consultationId ?? null);
@@ -477,7 +538,7 @@ export default function PrestationWorkflowConsultations({
         onEditAnimal={handleEditAnimal}
         onAddTarif={() => onAddTarif?.()}
         onOpenPrestation={onOpenPrestation}
-        onOpenPdf={(mode) => handleOpenPdf(mode, editingId)}
+        onOpenPdf={handleSaveAndOpenPdf}
       />
 
       <PrestationWorkflowZonages
