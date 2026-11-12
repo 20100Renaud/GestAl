@@ -259,7 +259,7 @@ export default function Proprietaires() {
                 key={proprietaire.ID_Proprietaire}
                 onClick={() => openEditForm(proprietaire)}
               >
-                <TableCell colSpan={4}>
+                <TableCell>
                   <div className="flex sm:flex-row flex-col items-center gap-x-6 gap-y-2 py-1 text-sm text-blue-700">
                     <span className="inline-flex min-w-6 h-6 items-center justify-center rounded-full bg-blue-100 px-1.5 text-xs font-semibold text-blue-700 gap-2">
                       <PawPrint size={16} />
@@ -268,10 +268,11 @@ export default function Proprietaires() {
 
                     <span className="inline-flex min-w-6 h-6 items-center justify-center rounded-full bg-blue-100 px-1.5 text-xs font-semibold text-blue-700 gap-2">
                       <ClipboardList size={16} />
-                      {getConsultationCount(proprietaire.ID_Proprietaire)}{" "}
+                      {getConsultationCount(proprietaire.ID_Proprietaire)}
                     </span>
                   </div>
                 </TableCell>
+
                 <TableCell>
                   {[proprietaire.Raison_sociale, proprietaire.Etablissement]
                     .filter(Boolean)
