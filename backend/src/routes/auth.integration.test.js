@@ -79,7 +79,7 @@ describe("Intégration de l'authentification", () => {
       });
 
       expect(response.status).toBe(401);
-      expect(response.body.error).toBe("Invalid email or password");
+      expect(response.body.error).toBe("Email ou mot de passe non valide");
 
       expect(response.headers["set-cookie"]).toBeUndefined();
     });
