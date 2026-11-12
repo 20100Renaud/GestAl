@@ -22,7 +22,7 @@ Gestion de consulations animales pour les professionnels
 
 Database: http://localhost:5432/
 ```
-~/GestAl/backend$ docker compose up
+~/GestAl$ docker compose up
 ```
 Studio: http://localhost:5173/
 ```
