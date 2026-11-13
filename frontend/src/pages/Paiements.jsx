@@ -183,7 +183,7 @@ export default function Paiements() {
       return;
     }
 
-    navigate("/dashboard/prestations", {
+    navigate("/prestations", {
       state: {
         openPrestationId: prestation.ID_Prestation,
       },

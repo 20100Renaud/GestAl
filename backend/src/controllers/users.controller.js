@@ -88,7 +88,7 @@ function handlePrismaError(error, res) {
 
   if (error.code === "P2003" || error.code === "P2014") {
     return res.status(409).json({
-      error: "This user has related records and cannot be deleted",
+      error: "Cet utilisateur possède des enregistrements et ne peut donc pas être supprimé",
     });
   }
 

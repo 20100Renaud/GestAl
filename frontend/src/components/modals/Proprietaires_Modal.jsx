@@ -172,7 +172,7 @@ export default function ProprietairesModal({
       : `${form.prenom ?? ""} ${form.nom ?? ""}`.trim();
 
     navigate(
-      `/dashboard/consultations?search=${encodeURIComponent(proprietaireName)}`,
+      `/consultations?search=${encodeURIComponent(proprietaireName)}`,
     );
   }
 

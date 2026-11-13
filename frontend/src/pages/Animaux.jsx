@@ -228,7 +228,7 @@ export default function Animaux() {
   }
 
   function handleOpenConsultation(consultation) {
-    navigate("/dashboard/consultations", {
+    navigate("/consultations", {
       state: {
         openConsultationId: consultation.ID_Consultation,
       },
