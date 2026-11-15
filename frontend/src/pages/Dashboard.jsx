@@ -314,7 +314,10 @@ export default function Dashboard() {
 
       <PrestationWorkflowModal
         open={showWorkflow}
-        onClose={() => setShowWorkflow(false)}
+        onClose={() => {
+          setShowWorkflow(false);
+          loadData();
+        }}
       />
     </div>
   );

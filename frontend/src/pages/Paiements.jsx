@@ -508,7 +508,7 @@ export default function Paiements() {
             ${
               showMoreFilters
                 ? "max-h-40 opacity-100 translate-y-0"
-                : "max-h-0 opacity-0 -translate-y-2 pointer-events-none xl:max-h-40 xl:opacity-100 xl:translate-y-0"
+                : "max-h-0 opacity-0 -translate-y-2 pointer-events-none xl:max-h-40 xl:opacity-100 xl:translate-y-0 xl:pointer-events-auto"
             }
           `}
         >
@@ -569,7 +569,7 @@ export default function Paiements() {
             ${
               showMoreFilters
                 ? "max-h-40 opacity-100 translate-y-0"
-                : "max-h-0 opacity-0 -translate-y-2 pointer-events-none xl:max-h-40 xl:opacity-100 xl:translate-y-0"
+                : "max-h-0 opacity-0 -translate-y-2 pointer-events-none xl:max-h-40 xl:opacity-100 xl:translate-y-0 xl:pointer-events-auto"
             }
           `}
         >

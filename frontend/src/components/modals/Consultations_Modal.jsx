@@ -399,7 +399,7 @@ export default function ConsultationsModal({
               </div>
             </form>
 
-            {/* FIXED ACTIONS — OUTSIDE THE SCROLLABLE DIV */}
+            {/* ACTIONS BTNS */}
             <div className="flex shrink-0 items-center justify-between gap-3 border border-blue-200 bg-blue-100 rounded-b-2xl px-6 py-4 shadow-[0_-4px_10px_rgba(0,0,0,0.12)]">
               <div className="flex gap-3">
                 {editingId && (
