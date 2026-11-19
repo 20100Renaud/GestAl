@@ -1,4 +1,4 @@
-import { openConsultationPdf } from "./generateConsultationPdf.js";
+import { generateConsultationPdf } from "./generateConsultationPdf.js";
 
 export function createConsultationPdfHandler({
   consultations,
@@ -10,7 +10,7 @@ export function createConsultationPdfHandler({
   currentUser,
   onError,
 }) {
-  return function handleOpenPdf(mode = "preview", consultationId) {
+  return async function handleOpenPdf(mode = "preview", consultationId) {
     try {
       if (!consultationId) {
         onError?.(
@@ -68,7 +68,7 @@ export function createConsultationPdfHandler({
       const zonages =
         zonagesByConsultation?.[consultation.ID_Consultation] ?? [];
 
-      openConsultationPdf({
+      await generateConsultationPdf({
         user: currentUser,
         prestation,
         consultation,
@@ -80,7 +80,8 @@ export function createConsultationPdfHandler({
         mode,
       });
     } catch (err) {
-      onError?.(err.message);
+      console.error("Erreur génération PDF :", err);
+      onError?.(err.message || "Erreur lors de la génération du PDF.");
     }
   };
 }
