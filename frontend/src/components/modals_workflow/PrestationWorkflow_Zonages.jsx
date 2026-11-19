@@ -6,6 +6,8 @@ import PageHeader from "../ui/PageHeader.jsx";
 import { CardZonage } from "../ui/Card.jsx";
 import { getZonages } from "../../api/zonages.js";
 import CommentaireZonageModal from "../modals/CommentaireZonageModal.jsx";
+import { getZonageKey } from "../zonages/anatomyConfig.js";
+import AnatomicalMap from "../zonages/AnatomicalMap.jsx";
 import { Check } from "lucide-react";
 import {
   getConsultationZonages,
@@ -116,6 +118,16 @@ export default function PrestationWorkflowZonages({
         Zonage: zonage,
       },
     ]);
+  }
+
+  function handleAnatomicalToggle(zonage) {
+    const existing = zonages.find(
+      (item) => getZonageKey(item) === getZonageKey(zonage),
+    );
+
+    if (!existing) return;
+
+    handleToggle(existing.ID_Zonage);
   }
 
   function handleCommentChange(zonageId, value) {
@@ -231,113 +243,154 @@ export default function PrestationWorkflowZonages({
   return (
     <>
       <Modal open={open} title="Zonages associés" onClose={onClose}>
-        <div className="flex h-[min(600px,80vh)] flex-col p-6">
+        <div className="flex h-[min(750px,80vh)] min-h-0 flex-col px-4 sm:px-6">
           {loading ? (
             <p className="text-sm text-blue-700">Chargement...</p>
           ) : (
             <>
-              {/* Search + result count */}
-              <div className="shrink-0">
-                <PageHeader
-                  search={search}
-                  onSearchChange={setSearch}
-                  searchPlaceholder="Rechercher un zonage..."
-                  className="mb-4"
-                />
+              {/* CONTENU SCROLLABLE */}
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+                <div className="space-y-3">
+                  {/* 1. Recherche par cartes */}
+                  <details className="group rounded-xl border border-blue-100 bg-white">
+                    <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl bg-blue-50/50 px-4 py-3 text-sm font-semibold text-blue-800 hover:bg-blue-50">
+                      <span>Recherche par cartes</span>
 
-                <div className="mb-3 text-sm text-blue-900">
-                  {filteredZonages.length} résultat
-                  {filteredZonages.length > 1 ? "s" : ""}
-                </div>
-              </div>
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                          {consultationZonages.length} sélectionné
+                          {consultationZonages.length > 1 ? "s" : ""}
+                        </span>
 
-              {/* Cards */}
-              <div className="min-h-0 flex-1 overflow-y-auto">
-                {filteredZonages.length === 0 ? (
-                  <p className="p-6 text-center text-sm text-red-500 border bg-red-50 rounded-2xl w-fit">
-                    Aucun zonage ne correspond à la recherche.
-                  </p>
-                ) : (
-                  <div className="flex flex-wrap justify-center gap-2 px-1 py-2">
-                    {filteredZonages.map((zonage) => {
-                      const selected = consultationZonages.find(
-                        (item) => item.ID_Zonage === zonage.ID_Zonage,
-                      );
+                        <icon
+                          name="chevron-down"
+                          className="transition-transform group-open:rotate-180"
+                        />
+                      </div>
+                    </summary>
 
-                      const title = `${zonage.Nom_Zonage ?? ""}${
-                        zonage.Position_Zonage ?? ""
-                      }${
-                        zonage.Orientation_Zonage
-                          ? `-${zonage.Orientation_Zonage}`
-                          : ""
-                      }`;
+                    <div className="border-t border-blue-100 p-3 sm:p-4">
+                      <PageHeader
+                        search={search}
+                        onSearchChange={setSearch}
+                        searchPlaceholder="Rechercher un zonage..."
+                        className="mb-4"
+                      />
 
-                      const colors = techniqueCardColors[
-                        zonage.Technique_Zonage
-                      ] ?? {
-                        badge: "text-gray-500",
-                        commentBorder: "border-gray-500",
-                        commentBg: "bg-gray-50",
-                      };
+                      <div className="mb-3 text-sm text-blue-900">
+                        {filteredZonages.length} résultat
+                        {filteredZonages.length > 1 ? "s" : ""}
+                      </div>
 
-                      return (
-                        <div
-                          key={zonage.ID_Zonage}
-                          className="relative flex flex-col items-center gap-2"
-                        >
-                          <CardZonage
-                            title={title}
-                            technique={zonage.Technique_Zonage}
-                            onClick={() => {
-                              if (!saving) {
-                                handleToggle(zonage.ID_Zonage);
-                              }
-                            }}
-                          />
+                      {filteredZonages.length === 0 ? (
+                        <p className="w-fit rounded-2xl border bg-red-50 p-6 text-center text-sm text-red-500">
+                          Aucun zonage ne correspond à la recherche.
+                        </p>
+                      ) : (
+                        <div className="flex flex-wrap justify-center gap-2 px-1 py-2">
+                          {filteredZonages.map((zonage) => {
+                            const selected = consultationZonages.find(
+                              (item) => item.ID_Zonage === zonage.ID_Zonage,
+                            );
 
-                          {selected && (
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
+                            const title = `${zonage.Nom_Zonage ?? ""}${
+                              zonage.Position_Zonage ?? ""
+                            }${
+                              zonage.Orientation_Zonage
+                                ? `-${zonage.Orientation_Zonage}`
+                                : ""
+                            }`;
 
-                                if (!saving) {
-                                  openCommentModal(zonage);
-                                }
-                              }}
-                              disabled={saving}
-                              aria-label={`Commentaire du zonage ${title}`}
-                              title={
-                                selected.Commentaire_Zonage
-                                  ? `Commentaire : ${selected.Commentaire_Zonage}`
-                                  : "Ajouter un commentaire"
-                              }
-                              className={`absolute left-1/2 -bottom-1 z-10 flex h-5 max-w-24 -translate-x-1/2 items-center gap-1 rounded-full border px-1.5 cursor-pointer hover:brightness-95 disabled:cursor-not-allowed ${colors.commentBorder} ${colors.commentBg}`}
-                            >
-                              <Check
-                                size={15}
-                                strokeWidth={3}
-                                className={`shrink-0 ${colors.badge}`}
-                              />
+                            const colors = techniqueCardColors[
+                              zonage.Technique_Zonage
+                            ] ?? {
+                              badge: "text-gray-500",
+                              commentBorder: "border-gray-500",
+                              commentBg: "bg-gray-50",
+                            };
 
-                              <span
-                                className={`truncate text-xs ${colors.badge}`}
+                            return (
+                              <div
+                                key={zonage.ID_Zonage}
+                                className="relative flex flex-col items-center gap-2"
                               >
-                                {selected.Commentaire_Zonage || "..."}
-                              </span>
-                            </button>
-                          )}
+                                <CardZonage
+                                  title={title}
+                                  technique={zonage.Technique_Zonage}
+                                  onClick={() => {
+                                    if (!saving) {
+                                      handleToggle(zonage.ID_Zonage);
+                                    }
+                                  }}
+                                />
+
+                                {selected && (
+                                  <button
+                                    type="button"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+
+                                      if (!saving) {
+                                        openCommentModal(zonage);
+                                      }
+                                    }}
+                                    disabled={saving}
+                                    aria-label={`Commentaire du zonage ${title}`}
+                                    title={
+                                      selected.Commentaire_Zonage
+                                        ? `Commentaire : ${selected.Commentaire_Zonage}`
+                                        : "Ajouter un commentaire"
+                                    }
+                                    className={`absolute left-1/2 -bottom-1 z-10 flex h-5 max-w-24 -translate-x-1/2 items-center gap-1 rounded-full border px-1.5 cursor-pointer hover:brightness-95 disabled:cursor-not-allowed ${colors.commentBorder} ${colors.commentBg}`}
+                                  >
+                                    <Check
+                                      size={15}
+                                      strokeWidth={3}
+                                      className={`shrink-0 ${colors.badge}`}
+                                    />
+
+                                    <span
+                                      className={`truncate text-xs ${colors.badge}`}
+                                    >
+                                      {selected.Commentaire_Zonage || "..."}
+                                    </span>
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                      )}
+                    </div>
+                  </details>
+
+                  {/* 2. Selections anatomiques */}
+                  <details className="group rounded-xl border border-blue-100 bg-white">
+                    <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl bg-blue-50/50 px-4 py-3 text-sm font-semibold text-blue-800 hover:bg-blue-50">
+                      <span>Sélection anatomique</span>
+
+                      <icon
+                        name="chevron-down"
+                        className="transition-transform group-open:rotate-180"
+                      />
+                    </summary>
+
+                    <div className="border-t border-blue-100 p-3">
+                      <AnatomicalMap
+                        zonages={zonages}
+                        selectedZonages={consultationZonages}
+                        onToggle={handleAnatomicalToggle}
+                        disabled={saving}
+                      />
+                    </div>
+                  </details>
+                </div>
               </div>
             </>
           )}
 
-          {/* Buttons */}
-          <div className="mt-auto flex shrink-0 justify-end gap-3 border-t border-blue-100 pt-4">
+          {/* BOUTONS FIXES */}
+          <div className="mt-3 flex shrink-0 justify-end gap-3 border-t border-blue-100 pt-2">
             <Button
               type="button"
               variant="secondary"
