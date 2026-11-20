@@ -18,7 +18,7 @@ export default function Modal({ open, title, onClose, children }) {
           </Button>
         </div>
 
-        <div className="overflow-y-auto md:p-6">{children}</div>
+        <div className="overflow-y-auto py-2 md:p-6">{children}</div>
       </div>
     </div>
   );
@@ -70,4 +70,3 @@ export function WorkflowModal({ open, title, onClose, tabs, children }) {
     </div>
   );
 }
-

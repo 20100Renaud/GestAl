@@ -251,6 +251,7 @@ export default function PrestationWorkflowZonages({
               {/* CONTENU SCROLLABLE */}
               <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
                 <div className="space-y-3">
+
                   {/* 1. Recherche par cartes */}
                   <details className="group rounded-xl border border-blue-100 bg-white">
                     <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl bg-blue-50/50 px-4 py-3 text-sm font-semibold text-blue-800 hover:bg-blue-50">
@@ -262,10 +263,7 @@ export default function PrestationWorkflowZonages({
                           {consultationZonages.length > 1 ? "s" : ""}
                         </span>
 
-                        <icon
-                          name="chevron-down"
-                          className="transition-transform group-open:rotate-180"
-                        />
+
                       </div>
                     </summary>
 
@@ -375,7 +373,7 @@ export default function PrestationWorkflowZonages({
                       />
                     </summary>
 
-                    <div className="border-t border-blue-100 p-3">
+                    <div className="bg-blue-50/40">
                       <AnatomicalMap
                         zonages={zonages}
                         selectedZonages={consultationZonages}
