@@ -578,336 +578,303 @@ export default function AnatomicalSpine({
   return (
     <div className="w-full">
       {/* Légende */}
-      <div className="flex flex-wrap justify-around gap-4 text-xs">
-        <span className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded bg-blue-600" />
-          Tissulaire
-        </span>
+      <div className="rounded-xl border border-blue-100 bg-white p-3">
+        <div className="flex flex-wrap justify-around gap-4 text-xs py-2">
+          <span className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded bg-blue-600" />
+            Tissulaire
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded bg-green-600" />
+            Articulaire
+          </span>
+        </div>
 
-        <span className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded bg-green-600" />
-          Articulaire
-        </span>
-      </div>
-
-      {/* Zone de selection */}
-      <div className="max-h-[650px] overflow-y-auto">
-        <svg
-          viewBox={`0 0 440 ${anatomy.height}`}
-          width="100%"
-          role="group"
-          aria-label="Sélection anatomique de la colonne vertébrale"
-          className="mx-auto block"
-        >
-          <defs>
-            <linearGradient id="Bone" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#F8FAFC" />
-              <stop offset="100%" stopColor="#CBD5E1" />
-            </linearGradient>
-          </defs>
-
-          {/* ------- Silhouette ------ */}
-          <g>
-            <path
-              d={buildSilhouette(anatomyPoints)}
-              fill="#F8FAFC"
-              stroke="#E2E8F0"
-              strokeWidth="2"
-            />
-
-            <path
-              d={buildSilhouette(anatomyPoints)}
-              transform="translate(440 0) scale(-1 1)"
-              fill="#F8FAFC"
-              stroke="#E2E8F0"
-              strokeWidth="2"
-            />
-          </g>
-
-          {/* ------- Axe vertébral pointillé -------- */}
-          <path
-            d={`M 220 95 V ${anatomy.height - 30}`}
-            stroke="#94A3B8"
-            strokeWidth="2"
-            strokeDasharray="4 5"
-          />
-
-          {/* ------- Tête ------- */}
-          <path
-            d="
-              M 220 28
-              C 195 30 181 50 190 72
-              L 220 92
-              L 250 72
-              C 259 50 245 30 220 28
-            "
-            fill="#E2E8F0"
-            stroke="#94A3B8"
-            strokeWidth="1.5"
-          />
-
-          {/* Zones anatomiques de la tête */}
-          <g>
-            {/* ATM gauche */}
-            <circle
-              cx="190"
-              cy="55"
-              r="5"
-              fill="#FFFFFF"
-              stroke="#475569"
-              strokeWidth="3"
-            />
-
-            {/* ATM droite */}
-            <circle
-              cx="250"
-              cy="55"
-              r="5"
-              fill="#FFFFFF"
-              stroke="#475569"
-              strokeWidth="3"
-            />
-
-            {/* Os Hyoïd */}
-            <path
-              d="
-                M 207 76
-                Q 220 69 233 76
-                M 207 76
-                Q 220 84 233 76
-              "
-              fill="#FFFFFF"
-              stroke="#475569"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-
-            {/* C0 */}
-            <path
-              d="
-                M 210 86
-                Q 220 94 230 86
-              "
-              fill="none"
-              stroke="#475569"
-              strokeWidth="3"
-              strokeLinecap="round"
-            />
-          </g>
-
-          {/* Noms */}
-          <g
-            fill="#334155"
-            fontSize="10"
-            fontWeight="700"
-            textAnchor="middle"
-            pointerEvents="none"
+        {/* Zone de selection */}
+        <div className="w-full">
+          <svg
+            viewBox={`0 0 440 ${anatomy.height}`}
+            width="100%"
+            role="group"
+            aria-label="Sélection anatomique de la colonne vertébrale"
+            className="mx-auto block"
           >
-            <text x="220" y="55">
-              ATM
-            </text>
-
-            <text x="220" y="68">
-              Os Hyoïd
-            </text>
-
+            <defs>
+              <linearGradient id="Bone" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#F8FAFC" />
+                <stop offset="100%" stopColor="#CBD5E1" />
+              </linearGradient>
+            </defs>
+            {/* ------- Silhouette ------ */}
             <g>
-              <rect
-                x="205"
-                y="95"
-                width="30"
-                height="12"
-                rx="4"
-                fill="#FFFFFF"
+              <path
+                d={buildSilhouette(anatomyPoints)}
+                fill="#F8FAFC"
+                stroke="#E2E8F0"
+                strokeWidth="2"
               />
-
-              <text
-                x="220"
-                y="105"
-                textAnchor="middle"
-                fontSize="10"
-                fontWeight="700"
-                fill="#334155"
-              >
-                C0
-              </text>
+              <path
+                d={buildSilhouette(anatomyPoints)}
+                transform="translate(440 0) scale(-1 1)"
+                fill="#F8FAFC"
+                stroke="#E2E8F0"
+                strokeWidth="2"
+              />
             </g>
-          </g>
-
-          {/* Section pointillée de la tête */}
-          <g>
-            <rect
-              x="12"
-              y="3"
-              width="416"
-              height="110"
-              rx="10"
-              fill="#0452fa21"
-              fillOpacity="0.20"
-              stroke="#CBD5E1"
-              strokeDasharray="3 4"
+            {/* ------- Axe vertébral pointillé -------- */}
+            <path
+              d={`M 220 95 V ${anatomy.height - 30}`}
+              stroke="#94A3B8"
+              strokeWidth="2"
+              strokeDasharray="4 5"
             />
-
-            <text
-              x="220"
-              y="20"
-              textAnchor="middle"
+            {/* ------- Tête ------- */}
+            <path
+              d="
+                M 220 28
+                C 195 30 181 50 190 72
+                L 220 92
+                L 250 72
+                C 259 50 245 30 220 28
+              "
+              fill="#E2E8F0"
+              stroke="#94A3B8"
+              strokeWidth="1.5"
+            />
+            {/* Zones anatomiques de la tête */}
+            <g>
+              {/* ATM gauche */}
+              <circle
+                cx="190"
+                cy="55"
+                r="5"
+                fill="#FFFFFF"
+                stroke="#475569"
+                strokeWidth="3"
+              />
+              {/* ATM droite */}
+              <circle
+                cx="250"
+                cy="55"
+                r="5"
+                fill="#FFFFFF"
+                stroke="#475569"
+                strokeWidth="3"
+              />
+              {/* Os Hyoïd */}
+              <path
+                d="
+                  M 207 76
+                  Q 220 69 233 76
+                  M 207 76
+                  Q 220 84 233 76
+                "
+                fill="#FFFFFF"
+                stroke="#475569"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {/* C0 */}
+              <path
+                d="
+                  M 210 86
+                  Q 220 94 230 86
+                "
+                fill="none"
+                stroke="#475569"
+                strokeWidth="3"
+                strokeLinecap="round"
+              />
+            </g>
+            {/* Noms */}
+            <g
+              fill="#334155"
               fontSize="10"
               fontWeight="700"
-              letterSpacing="1.2"
-              fill="#64748B"
+              textAnchor="middle"
+              pointerEvents="none"
             >
-              TÊTE
-            </text>
-          </g>
-
-          {/* Btns de la tête */}
-          <g>
-            {/* ATM */}
-            {renderPelvisZone("ATM", "G", "Tissulaire", 125, 50)}
-            {renderPelvisZone("ATM", "G", "Articulaire", 150, 50)}
-
-            {renderPelvisZone("ATM", "D", "Tissulaire", 270, 50)}
-            {renderPelvisZone("ATM", "D", "Articulaire", 295, 50)}
-
-            {/* Os Hyoïd */}
-            {renderPelvisZone("Os Hyoïd", "G", "Tissulaire", 125, 70)}
-            {renderPelvisZone("Os Hyoïd", "G", "Articulaire", 150, 70)}
-
-            {renderPelvisZone("Os Hyoïd", "D", "Tissulaire", 270, 70)}
-            {renderPelvisZone("Os Hyoïd", "D", "Articulaire", 295, 70)}
-
-            {/* C0 */}
-            {renderPelvisZone("C0", "G", "Tissulaire", 125, 90)}
-            {renderPelvisZone("C0", "G", "Articulaire", 150, 90)}
-
-            {renderPelvisZone("C0", "D", "Tissulaire", 270, 90)}
-            {renderPelvisZone("C0", "D", "Articulaire", 295, 90)}
-          </g>
-
-          {/* ------ Section anatomique du bassin ------ */}
-          {(() => {
-            const offset = anatomyPoints.bottom - 245;
-
-            return (
+              <text x="220" y="55">
+                ATM
+              </text>
+              <text x="220" y="68">
+                Os Hyoïd
+              </text>
               <g>
-                {/* Section pointillée du bassin*/}
                 <rect
-                  x="12"
-                  y={offset + 155}
-                  width="416"
-                  height="100"
-                  rx="10"
-                  fill="#0452fa21"
-                  fillOpacity="0.20"
-                  stroke="#CBD5E1"
-                  strokeDasharray="3 4"
+                  x="205"
+                  y="95"
+                  width="30"
+                  height="12"
+                  rx="4"
+                  fill="#FFFFFF"
                 />
-
-                {/* Titre */}
                 <text
                   x="220"
-                  y={offset + 170}
+                  y="105"
                   textAnchor="middle"
                   fontSize="10"
                   fontWeight="700"
-                  letterSpacing="1.2"
-                  fill="#64748B"
+                  fill="#334155"
                 >
-                  BASSIN
+                  C0
                 </text>
               </g>
-            );
-          })()}
-
-          {/* Dessin anatomique du bassin */}
-          <Pelvis bottom={anatomyPoints.bottom} />
-
-          {/* Zones interactives du bassin */}
-          {(() => {
-            const offset = anatomyPoints.bottom - 255;
-
-            const structures = [
-              { nom: "Ilium", y: offset + 190 },
-              { nom: "Sacro-iliaque", y: offset + 216 },
-              { nom: "Coxo", y: offset + 242 },
-            ];
-
-            return (
-              <g>
-                {structures.map(({ nom, y }) => (
-                  <g key={nom}>
-                    {renderPelvisZone(nom, "G", "Tissulaire", 85, y)}
-                    {renderPelvisZone(nom, "G", "Articulaire", 110, y)}
-                    {renderPelvisZone(nom, "D", "Tissulaire", 310, y)}
-                    {renderPelvisZone(nom, "D", "Articulaire", 335, y)}
-                  </g>
-                ))}
-              </g>
-            );
-          })()}
-
-          {/* Section pointillée de la colonne */}
-          {anatomy.sections.map((section) => (
-            <g key={section.prefix}>
+            </g>
+            {/* Section pointillée de la tête */}
+            <g>
               <rect
                 x="12"
-                y={section.startY - 15}
+                y="3"
                 width="416"
-                height={section.endY - section.startY + 10}
+                height="110"
                 rx="10"
                 fill="#0452fa21"
-                fillOpacity="0.20"
+                fillOpacity="0.12"
                 stroke="#CBD5E1"
                 strokeDasharray="3 4"
               />
-
               <text
                 x="220"
-                y={section.startY}
+                y="20"
                 textAnchor="middle"
                 fontSize="10"
                 fontWeight="700"
                 letterSpacing="1.2"
                 fill="#64748B"
               >
-                {section.label.toUpperCase()}
+                TÊTE
               </text>
             </g>
-          ))}
-
-          {/* Cage thoracique */}
-          <RibCage vertebrae={anatomy.vertebrae} />
-
-          {/* Vertèbres et zones interactives */}
-          {anatomy.vertebrae.map((vertebra) => (
-            <g key={vertebra.label}>
-              <VertebraBone y={vertebra.y} section={vertebra.section} />
-
-              {/* Gauche */}
-              {renderZone(vertebra, "G", "Tissulaire", 125)}
-              {renderZone(vertebra, "G", "Articulaire", 150)}
-
-              {/* Identification */}
-              <text
-                x="220"
-                y={vertebra.y + 5}
-                fontSize="11"
-                fontWeight="700"
-                textAnchor="middle"
-                fill="#334155"
-                pointerEvents="none"
-              >
-                {vertebra.label}
-              </text>
-
-              {/* Droite */}
-              {renderZone(vertebra, "D", "Tissulaire", 270)}
-              {renderZone(vertebra, "D", "Articulaire", 294)}
+            {/* Btns de la tête */}
+            <g>
+              {/* ATM */}
+              {renderPelvisZone("ATM", "G", "Tissulaire", 125, 50)}
+              {renderPelvisZone("ATM", "G", "Articulaire", 150, 50)}
+              {renderPelvisZone("ATM", "D", "Tissulaire", 270, 50)}
+              {renderPelvisZone("ATM", "D", "Articulaire", 295, 50)}
+              {/* Os Hyoïd */}
+              {renderPelvisZone("Os Hyoïd", "G", "Tissulaire", 125, 70)}
+              {renderPelvisZone("Os Hyoïd", "G", "Articulaire", 150, 70)}
+              {renderPelvisZone("Os Hyoïd", "D", "Tissulaire", 270, 70)}
+              {renderPelvisZone("Os Hyoïd", "D", "Articulaire", 295, 70)}
+              {/* C0 */}
+              {renderPelvisZone("C0", "G", "Tissulaire", 125, 90)}
+              {renderPelvisZone("C0", "G", "Articulaire", 150, 90)}
+              {renderPelvisZone("C0", "D", "Tissulaire", 270, 90)}
+              {renderPelvisZone("C0", "D", "Articulaire", 295, 90)}
             </g>
-          ))}
-        </svg>
+            {/* ------ Section anatomique du bassin ------ */}
+            {(() => {
+              const offset = anatomyPoints.bottom - 245;
+              return (
+                <g>
+                  {/* Section pointillée du bassin*/}
+                  <rect
+                    x="12"
+                    y={offset + 155}
+                    width="416"
+                    height="100"
+                    rx="10"
+                    fill="#0452fa21"
+                    fillOpacity="0.20"
+                    stroke="#CBD5E1"
+                    strokeDasharray="3 4"
+                  />
+                  {/* Titre */}
+                  <text
+                    x="220"
+                    y={offset + 170}
+                    textAnchor="middle"
+                    fontSize="10"
+                    fontWeight="700"
+                    letterSpacing="1.2"
+                    fill="#64748B"
+                  >
+                    BASSIN
+                  </text>
+                </g>
+              );
+            })()}
+            {/* Dessin anatomique du bassin */}
+            <Pelvis bottom={anatomyPoints.bottom} />
+            {/* Zones interactives du bassin */}
+            {(() => {
+              const offset = anatomyPoints.bottom - 255;
+              const structures = [
+                { nom: "Ilium", y: offset + 190 },
+                { nom: "Sacro-iliaque", y: offset + 216 },
+                { nom: "Coxo", y: offset + 242 },
+              ];
+              return (
+                <g>
+                  {structures.map(({ nom, y }) => (
+                    <g key={nom}>
+                      {renderPelvisZone(nom, "G", "Tissulaire", 85, y)}
+                      {renderPelvisZone(nom, "G", "Articulaire", 110, y)}
+                      {renderPelvisZone(nom, "D", "Tissulaire", 310, y)}
+                      {renderPelvisZone(nom, "D", "Articulaire", 335, y)}
+                    </g>
+                  ))}
+                </g>
+              );
+            })()}
+            {/* Section pointillée de la colonne */}
+            {anatomy.sections.map((section) => (
+              <g key={section.prefix}>
+                <rect
+                  x="12"
+                  y={section.startY - 15}
+                  width="416"
+                  height={section.endY - section.startY + 10}
+                  rx="10"
+                  fill="#0452fa21"
+                  fillOpacity="0.20"
+                  stroke="#CBD5E1"
+                  strokeDasharray="3 4"
+                />
+                <text
+                  x="220"
+                  y={section.startY}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fontWeight="700"
+                  letterSpacing="1.2"
+                  fill="#64748B"
+                >
+                  {section.label.toUpperCase()}
+                </text>
+              </g>
+            ))}
+            {/* Cage thoracique */}
+            <RibCage vertebrae={anatomy.vertebrae} />
+            {/* Vertèbres et zones interactives */}
+            {anatomy.vertebrae.map((vertebra) => (
+              <g key={vertebra.label}>
+                <VertebraBone y={vertebra.y} section={vertebra.section} />
+                {/* Gauche */}
+                {renderZone(vertebra, "G", "Tissulaire", 125)}
+                {renderZone(vertebra, "G", "Articulaire", 150)}
+                {/* Identification */}
+                <text
+                  x="220"
+                  y={vertebra.y + 5}
+                  fontSize="11"
+                  fontWeight="700"
+                  textAnchor="middle"
+                  fill="#334155"
+                  pointerEvents="none"
+                >
+                  {vertebra.label}
+                </text>
+                {/* Droite */}
+                {renderZone(vertebra, "D", "Tissulaire", 270)}
+                {renderZone(vertebra, "D", "Articulaire", 294)}
+              </g>
+            ))}
+          </svg>
+        </div>
       </div>
     </div>
   );

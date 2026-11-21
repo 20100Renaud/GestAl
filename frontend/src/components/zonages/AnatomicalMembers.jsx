@@ -1,175 +1,136 @@
 import { useMemo } from "react";
-import { getZonageKey } from "./anatomyConfig.js";
+import { getZonageKey, memberZonesConfig } from "./anatomyConfig.js";
+import ForelimbSvg from "./ForelimbSvg.jsx";
+import HindlimbSvg from "./HindlimbSvg.jsx";
 
 const TECHNIQUES = {
   Tissulaire: {
-    active: "#2563EB",
-    inactive: "#DBEAFE",
-    stroke: "#60A5FA",
-    text: "#1D4ED8",
+    active: "fill-blue-600 stroke-blue-600",
+    inactive: "fill-blue-100 stroke-blue-400",
+    text: "fill-blue-700",
+    selectedText: "fill-white",
   },
   Articulaire: {
-    active: "#16A34A",
-    inactive: "#DCFCE7",
-    stroke: "#4ADE80",
-    text: "#15803D",
+    active: "fill-green-600 stroke-green-600",
+    inactive: "fill-green-100 stroke-green-400",
+    text: "fill-green-700",
+    selectedText: "fill-white",
   },
 };
 
-const DIAGRAMS = {
-  anterior: {
-    title: "Membres antérieurs",
-    subtitle: "Épaule jusqu'aux doigts",
-    regions: [
-      { name: "SH", label: "Épaule", y: 65 },
-      { name: "Coude", label: "Coude", y: 145 },
-      { name: "Carpe", label: "Carpe", y: 225 },
-      { name: "Méta/P1", label: "Méta / P1", y: 275 },
-      { name: "P1/P2 a", label: "P1 / P2", y: 325 },
-      { name: "P2/P3 a", label: "P2 / P3", y: 375 },
-    ],
-  },
-  posterior: {
-    title: "Membres postérieurs",
-    subtitle: "Bassin jusqu'aux doigts",
-    regions: [
-      { name: "Ilium", label: "Ilion", y: 45 },
-      { name: "Coxo", label: "Hanche", y: 105 },
-      { name: "Grasset", label: "Grasset", y: 185 },
-      { name: "Jarret", label: "Jarret", y: 265 },
-      { name: "Métat/P1", label: "Métat / P1", y: 315 },
-      { name: "P1/P2 p", label: "P1 / P2", y: 365 },
-      { name: "P2/P3 p", label: "P2 / P3", y: 415 },
-    ],
-  },
+// Dimensions
+const CENTER = 220;
+const BUTTON_WIDTH = 20;
+const BUTTON_HEIGHT = 13;
+const BUTTON_GAP = 4;
+
+// Positions des btns membres
+const MEMBER_LEFT_X = 70;
+const MEMBER_RIGHT_X = 326;
+const MEMBER_Y = {
+  anterior: [90, 135, 210, 275, 295, 315],
+  posterior: [40, 70, 100, 170, 250, 295, 310, 325],
 };
 
+
+// Bouton interactif
 function InteractiveZone({
   x,
   y,
-  orientation,
-  technique,
   zonage,
+  available,
   selected,
   disabled,
   onToggle,
 }) {
-  const style = TECHNIQUES[technique];
+  const style = TECHNIQUES[zonage.Technique_Zonage];
+  const unavailable = !available || disabled;
 
-  const active = selected;
-  const available = Boolean(zonage);
-
-  const unavailable = disabled || !available;
+  function activate() {
+    if (!unavailable) {
+      onToggle?.(available);
+    }
+  }
 
   return (
     <g
       role="button"
       tabIndex={unavailable ? -1 : 0}
-      aria-label={`${orientation === "G" ? "Gauche" : "Droite"} - ${technique}`}
-      aria-pressed={active}
+      aria-label={[
+        zonage.Nom_Zonage,
+        zonage.Orientation_Zonage === "G" ? "Gauche" : "Droite",
+        zonage.Technique_Zonage,
+      ].join(" ")}
+      aria-pressed={selected}
       aria-disabled={unavailable}
-      className={unavailable ? "" : "cursor-pointer"}
-      opacity={available ? 1 : 0.2}
-      onClick={() => {
-        if (!unavailable) onToggle?.(zonage);
-      }}
+      onClick={activate}
       onKeyDown={(event) => {
-        if (!unavailable && (event.key === "Enter" || event.key === " ")) {
+        if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          onToggle?.(zonage);
+          activate();
         }
       }}
+      className={`
+        transition-opacity focus:outline-none focus:ring-0
+        ${unavailable ? "cursor-not-allowed opacity-[0.18]" : "cursor-pointer"}
+      `}
     >
       <title>
-        {orientation === "G" ? "Gauche" : "Droite"} - {technique}
+        {zonage.Nom_Zonage} - {zonage.Orientation_Zonage} -{" "}
+        {zonage.Technique_Zonage}
       </title>
 
       <rect
         x={x}
         y={y}
-        width="31"
-        height="21"
-        rx="5"
-        fill={active ? style.active : style.inactive}
-        stroke={active ? style.active : style.stroke}
-        strokeWidth={active ? 2 : 1}
+        width={BUTTON_WIDTH}
+        height={BUTTON_HEIGHT}
+        rx="8"
+        className={`
+          transition-all duration-150
+          ${selected ? style.active : style.inactive}
+          ${unavailable ? "" : "hover:brightness-90"}
+        `}
+        strokeWidth={selected ? 2 : 1}
       />
 
       <text
-        x={x + 15.5}
-        y={y + 14}
+        x={x + BUTTON_WIDTH / 2}
+        y={y + BUTTON_HEIGHT / 2 + 3}
         textAnchor="middle"
-        fontSize="10"
+        fontSize="9"
         fontWeight="700"
-        fill={active ? "#FFFFFF" : style.text}
         pointerEvents="none"
+        className={selected ? style.selectedText : style.text}
       >
-        {technique === "Tissulaire" ? "T" : "A"}
+        {zonage.Technique_Zonage === "Tissulaire" ? "T" : "A"}
       </text>
     </g>
   );
 }
 
-function BoneStructure({ type, centerX }) {
-  if (type === "anterior") {
-    return (
-      <g
-        transform={`translate(${centerX}, 0)`}
-        fill="#E2E8F0"
-        stroke="#94A3B8"
-        strokeWidth="1.5"
-      >
-        {/* Scapula */}
-        <path d="M -20 45 Q -35 55 -24 88 L -8 110 L 10 85 L 16 53 Q 0 37 -20 45 Z" />
-
-        {/* Humérus */}
-        <path d="M -9 105 Q -18 120 -10 145 L -7 170 Q 0 182 7 170 L 10 145 Q 18 120 9 105 Z" />
-
-        {/* Radius et ulna */}
-        <path d="M -8 175 L -11 220 Q -10 235 -5 238 L 0 232 L 2 180 Z" />
-        <path d="M 3 180 L 5 230 L 11 238 Q 17 230 13 215 L 9 175 Z" />
-
-        {/* Métacarpe */}
-        {[-9, -3, 3, 9].map((offset) => (
-          <path
-            key={offset}
-            d={`M ${offset} 240 L ${offset - 2} 286 L ${offset + 1} 290 L ${offset + 3} 242 Z`}
-          />
-        ))}
-      </g>
-    );
-  }
-
+// Noms des articulations
+function AnatomyLabel({ label, y }) {
   return (
-    <g
-      transform={`translate(${centerX}, 0)`}
-      fill="#E2E8F0"
-      stroke="#94A3B8"
-      strokeWidth="1.5"
-    >
-      {/* Os iliaque */}
-      <path d="M -12 35 Q -38 35 -34 65 L -12 100 L 12 100 L 34 65 Q 38 35 12 35 L 0 55 Z" />
-
-      {/* Fémur */}
-      <path d="M -9 100 Q -17 120 -12 150 L -7 190 Q 0 200 7 190 L 12 150 Q 17 120 9 100 Z" />
-
-      {/* Tibia et fibula */}
-      <path d="M -8 195 L -12 240 L -7 275 L 0 280 L 4 240 L 8 195 Z" />
-      <path d="M 5 195 L 10 245 L 12 275 L 16 270 L 13 220 L 9 195 Z" />
-
-      {/* Métatarse */}
-      {[-9, -3, 3, 9].map((offset) => (
-        <path
-          key={offset}
-          d={`M ${offset} 278 L ${offset - 2} 326 L ${offset + 1} 330 L ${offset + 3} 280 Z`}
-        />
-      ))}
+    <g pointerEvents="none">
+      <text
+        x={CENTER}
+        y={y + 2}
+        textAnchor="middle"
+        fontSize="9"
+        fontWeight="700"
+        fill="#334155"
+      >
+        {label}
+      </text>
     </g>
   );
 }
 
+// Diagramme d'un membre
 function MemberDiagram({ type, zonages, selectedZonages, onToggle, disabled }) {
-  const config = DIAGRAMS[type];
+  const config = memberZonesConfig[type];
+  const positions = MEMBER_Y[type];
 
   const availableZones = useMemo(
     () => new Map(zonages.map((item) => [getZonageKey(item), item])),
@@ -182,152 +143,148 @@ function MemberDiagram({ type, zonages, selectedZonages, onToggle, disabled }) {
     [selectedZonages],
   );
 
-  function renderRegion(region, orientation, centerX) {
+  // Rendu des btns
+  function renderZone(region, orientation, technique, x, y) {
+    const candidate = {
+      Nom_Zonage: region.name,
+      Position_Zonage: "",
+      Orientation_Zonage: orientation,
+      Technique_Zonage: technique,
+    };
+
+    const key = getZonageKey(candidate);
+    const available = availableZones.get(key);
+
     return (
-      <g key={`${region.name}-${orientation}`}>
-        {/* Fond de la région */}
-        <rect
-          x={centerX - 42}
-          y={region.y - 10}
-          width="84"
-          height="34"
-          rx="7"
-          fill="#F8FAFC"
-          stroke="#CBD5E1"
-          strokeDasharray="3 2"
-        />
-
-        <text
-          x={centerX}
-          y={region.y + 1}
-          textAnchor="middle"
-          fontSize="8"
-          fontWeight="600"
-          fill="#475569"
-          pointerEvents="none"
-        >
-          {region.label}
-        </text>
-
-        {["Tissulaire", "Articulaire"].map((technique, index) => {
-          const candidate = {
-            Nom_Zonage: region.name,
-            Position_Zonage: "",
-            Orientation_Zonage: orientation,
-            Technique_Zonage: technique,
-          };
-
-          const key = getZonageKey(candidate);
-          const zonage = availableZones.get(key);
-
-          return (
-            <InteractiveZone
-              key={key}
-              x={centerX - 34 + index * 37}
-              y={region.y + 5}
-              orientation={orientation}
-              technique={technique}
-              zonage={zonage}
-              selected={selectedZones.has(key)}
-              disabled={disabled}
-              onToggle={onToggle}
-            />
-          );
-        })}
-      </g>
+      <InteractiveZone
+        key={key}
+        x={x}
+        y={y}
+        zonage={candidate}
+        available={available}
+        selected={selectedZones.has(key)}
+        disabled={disabled}
+        onToggle={onToggle}
+      />
     );
   }
 
+
+  // Positions x des btns
+  function renderSide(orientation, side) {
+    const x = side === "left" ? MEMBER_LEFT_X : MEMBER_RIGHT_X;
+
+    return config.map((region, index) => {
+      const y = positions[index];
+
+      return (
+        <g key={`${orientation}-${region.name}`}>
+          {renderZone(region, orientation, "Tissulaire", x, y - 7)}
+
+          {renderZone(
+            region,
+            orientation,
+            "Articulaire",
+            x + BUTTON_WIDTH + BUTTON_GAP,
+            y - 7,
+          )}
+        </g>
+      );
+    });
+  }
+
   return (
-    <section className="rounded-xl border border-blue-100 bg-white p-3">
-      <div className="mb-3 text-center">
-        <h3 className="text-sm font-semibold text-blue-900">{config.title}</h3>
-        <p className="text-xs text-gray-500">{config.subtitle}</p>
+    <section className="rounded-xl border border-blue-100 bg-white md:p-3">
+      {/* Titre */}
+      <div className="text-center">
+        <div className="flex flex-wrap justify-around gap-4 text-xs pt-2">
+          <span className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded bg-blue-600" />
+            Tissulaire
+          </span>
+
+          <span className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded bg-green-600" />
+            Articulaire
+          </span>
+        </div>
       </div>
 
-      <svg
-        viewBox="0 0 360 475"
-        width="100%"
-        role="group"
-        aria-label={config.title}
-        className="mx-auto block"
-      >
-        {/* Membres gauche et droite */}
-        <BoneStructure type={type} centerX={90} />
-        <BoneStructure type={type} centerX={270} />
-
-        {/* Séparateur central */}
-        <path d="M180 25 V455" stroke="#E2E8F0" strokeDasharray="4 5" />
-
-        <text
-          x="90"
-          y="20"
-          fontSize="11"
-          textAnchor="middle"
-          fontWeight="700"
-          fill="#2563EB"
+      {/* Diagramme anatomique */}
+      <div className="w-full">
+        <svg
+          viewBox="0 0 440 340"
+          width="100%"
+          role="group"
+          aria-label={`Sélection des ${
+            type === "anterior" ? "membres antérieurs" : "membres postérieurs"
+          }`}
+          className="mx-auto block"
         >
-          Gauche
-        </text>
-
-        <text
-          x="270"
-          y="20"
-          fontSize="11"
-          textAnchor="middle"
-          fontWeight="700"
-          fill="#2563EB"
-        >
-          Droite
-        </text>
-
-        {/* Zones interactives */}
-        {config.regions.map((region) => (
-          <g key={region.name}>
-            {renderRegion(region, "G", 90)}
-            {renderRegion(region, "D", 270)}
+          {/* Sections pointillées */}
+          <rect
+            x="5"
+            y="10"
+            width="430"
+            height="325"
+            rx="10"
+            fill="#0452fa21"
+            fillOpacity="0.12"
+            stroke="#CBD5E1"
+            strokeDasharray="3 4"
+          />
+          {/* Légendes gauche et droite */}
+          <g
+            fill="#64748B"
+            fontSize="10"
+            fontWeight="700"
+            letterSpacing="1"
+            textAnchor="middle"
+          >
+            <text x="35" y="25">
+              GAUCHE
+            </text>
+            <text x="407" y="25">
+              DROITE
+            </text>
           </g>
-        ))}
-      </svg>
+          {/* Dessin anatomique */}
+          {type === "anterior" ? <ForelimbSvg /> : <HindlimbSvg />}
+
+          {/* Noms des articulations */}
+          {config.map((region, index) => (
+            <AnatomyLabel
+              key={region.name}
+              label={region.label}
+              y={positions[index]}
+            />
+          ))}
+
+          {/* Boutons gauche */}
+          {renderSide("G", "left")}
+
+          {/* Boutons droite */}
+          {renderSide("D", "right")}
+        </svg>
+      </div>
     </section>
   );
 }
 
 export default function AnatomicalMembers({
+  type,
   zonages = [],
   selectedZonages = [],
   onToggle,
   disabled = false,
 }) {
   return (
-    <div className="space-y-4">
-      <MemberDiagram
-        type="anterior"
-        zonages={zonages}
-        selectedZonages={selectedZonages}
-        onToggle={onToggle}
-        disabled={disabled}
-      />
-
-      <MemberDiagram
-        type="posterior"
-        zonages={zonages}
-        selectedZonages={selectedZonages}
-        onToggle={onToggle}
-        disabled={disabled}
-      />
-
-      <div className="flex flex-wrap justify-center gap-4 border-t border-gray-100 pt-3 text-xs">
-        <span className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded bg-blue-600" />
-          Tissulaire
-        </span>
-
-        <span className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded bg-green-600" />
-          Articulaire
-        </span>
-      </div>
-    </div>
+    <MemberDiagram
+      type={type}
+      zonages={zonages}
+      selectedZonages={selectedZonages}
+      onToggle={onToggle}
+      disabled={disabled}
+    />
   );
 }

@@ -310,7 +310,7 @@ export default function PrestationWorkflowModal({
         tabs={
           <div className="relative z-10 flex overflow-x-auto justify-around mt-2">
             <TabButton
-              number={1}
+              number={"1. "}
               label="Prestation"
               tab="prestation"
               activeTab={activeTab}
@@ -318,7 +318,7 @@ export default function PrestationWorkflowModal({
             />
 
             <TabButton
-              number={2}
+              number={"2. "}
               label="Consultations"
               tab="consultations"
               activeTab={activeTab}
@@ -327,7 +327,7 @@ export default function PrestationWorkflowModal({
             />
 
             <TabButton
-              number={3}
+              number={"3. "}
               label="Paiements"
               tab="paiements"
               activeTab={activeTab}

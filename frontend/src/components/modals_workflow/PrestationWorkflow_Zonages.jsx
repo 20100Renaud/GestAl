@@ -8,7 +8,7 @@ import { getZonages } from "../../api/zonages.js";
 import CommentaireZonageModal from "../modals/CommentaireZonageModal.jsx";
 import { getZonageKey } from "../zonages/anatomyConfig.js";
 import AnatomicalMap from "../zonages/AnatomicalMap.jsx";
-import { Check } from "lucide-react";
+import { Check, ChevronDown, LayoutGrid, Bone } from "lucide-react";
 import {
   getConsultationZonages,
   createConsultationZonage,
@@ -32,9 +32,11 @@ export default function PrestationWorkflowZonages({
   const [loading, setLoading] = useState(false);
   const [commentModalZonageId, setCommentModalZonageId] = useState(null);
   const [commentDraft, setCommentDraft] = useState("");
+  const [activePanel, setActivePanel] = useState("anatomical");
 
   useEffect(() => {
     if (!open) return;
+    setActivePanel("anatomical");
 
     async function loadData() {
       try {
@@ -248,26 +250,46 @@ export default function PrestationWorkflowZonages({
             <p className="text-sm text-blue-700">Chargement...</p>
           ) : (
             <>
-              {/* CONTENU SCROLLABLE */}
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
-                <div className="space-y-3">
-
-                  {/* 1. Recherche par cartes */}
-                  <details className="group rounded-xl border border-blue-100 bg-white">
-                    <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl bg-blue-50/50 px-4 py-3 text-sm font-semibold text-blue-800 hover:bg-blue-50">
+              {/* CONTENU DES PANNEAUX */}
+              <div className="flex min-h-0 flex-1 flex-col gap-3">
+                {/* 1. RECHERCHE PAR CARTES */}
+                <section
+                  className={`flex min-h-0 flex-col rounded-xl border border-blue-100 bg-white ${
+                    activePanel === "cards" ? "flex-1" : "shrink-0"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActivePanel((current) =>
+                        current === "cards" ? "null" : "cards",
+                      )
+                    }
+                    aria-expanded={activePanel === "cards"}
+                    className="flex shrink-0 cursor-pointer items-center justify-between rounded-xl bg-blue-300/50 px-4 py-1 sm:py-3 text-sm font-semibold text-blue-800 hover:bg-blue-500/60"
+                  >
+                    <div className="flex gap-4">
+                      <LayoutGrid />
                       <span>Recherche par cartes</span>
+                    </div>
 
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-                          {consultationZonages.length} sélectionné
-                          {consultationZonages.length > 1 ? "s" : ""}
-                        </span>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                        {consultationZonages.length} sélectionné
+                        {consultationZonages.length > 1 ? "s" : ""}
+                      </span>
 
+                      <ChevronDown
+                        size={18}
+                        className={`transition-transform ${
+                          activePanel === "cards" ? "rotate-180" : ""
+                        }`}
+                      />
+                    </div>
+                  </button>
 
-                      </div>
-                    </summary>
-
-                    <div className="border-t border-blue-100 p-3 sm:p-4">
+                  {activePanel === "cards" && (
+                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4">
                       <PageHeader
                         search={search}
                         onSearchChange={setSearch}
@@ -275,13 +297,15 @@ export default function PrestationWorkflowZonages({
                         className="mb-4"
                       />
 
-                      <div className="mb-3 text-sm text-blue-900">
-                        {filteredZonages.length} résultat
-                        {filteredZonages.length > 1 ? "s" : ""}
-                      </div>
-
+                      {filteredZonages.length > 0 && (
+                        <div className="mb-3 text-sm text-blue-900">
+                          {filteredZonages.length} résultat
+                          {filteredZonages.length > 1 ? "s" : ""}
+                        </div>
+                      )}
+                      
                       {filteredZonages.length === 0 ? (
-                        <p className="w-fit rounded-2xl border bg-red-50 p-6 text-center text-sm text-red-500">
+                        <p className="rounded-2xl p-6 text-center text-sm text-blue-900">
                           Aucun zonage ne correspond à la recherche.
                         </p>
                       ) : (
@@ -360,20 +384,40 @@ export default function PrestationWorkflowZonages({
                         </div>
                       )}
                     </div>
-                  </details>
+                  )}
+                </section>
 
-                  {/* 2. Selections anatomiques */}
-                  <details className="group rounded-xl border border-blue-100 bg-white">
-                    <summary className="flex cursor-pointer list-none items-center justify-between rounded-xl bg-blue-50/50 px-4 py-3 text-sm font-semibold text-blue-800 hover:bg-blue-50">
-                      <span>Sélection anatomique</span>
+                {/* 2. SÉLECTION ANATOMIQUE */}
+                <section
+                  className={`flex min-h-0 flex-col rounded-xl border border-blue-100 bg-white ${
+                    activePanel === "anatomical" ? "flex-1" : "shrink-0"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActivePanel((current) =>
+                        current === "anatomical" ? "null" : "anatomical",
+                      )
+                    }
+                    aria-expanded={activePanel === "anatomical"}
+                    className="flex shrink-0 cursor-pointer items-center justify-between rounded-xl bg-blue-300/50 px-4 py-1 sm:py-3 text-sm font-semibold text-blue-800 hover:bg-blue-500/60"
+                  >
+                    <div className="flex gap-4">
+                      <Bone />
+                      <span>Anatomie articulaire</span>
+                    </div>
 
-                      <icon
-                        name="chevron-down"
-                        className="transition-transform group-open:rotate-180"
-                      />
-                    </summary>
+                    <ChevronDown
+                      size={18}
+                      className={`transition-transform ${
+                        activePanel === "anatomical" ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
 
-                    <div className="bg-blue-50/40">
+                  {activePanel === "anatomical" && (
+                    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                       <AnatomicalMap
                         zonages={zonages}
                         selectedZonages={consultationZonages}
@@ -381,8 +425,8 @@ export default function PrestationWorkflowZonages({
                         disabled={saving}
                       />
                     </div>
-                  </details>
-                </div>
+                  )}
+                </section>
               </div>
             </>
           )}

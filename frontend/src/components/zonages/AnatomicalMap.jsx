@@ -12,47 +12,65 @@ export default function AnatomicalMap({
   const [activeTab, setActiveTab] = useState("spine");
 
   return (
-    <div className="overflow-hidden rounded-xl border border-blue-100 bg-white">
-      {/* TABS */}
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+      {/* TABS FIXES */}
       <div
-        className="flex border-y border-blue-100 justify-around"
+        className="flex shrink-0 justify-around border-b border-blue-100 bg-white"
         role="tablist"
         aria-label="Région anatomique"
       >
         <TabButton
-          label="Colonne vertébrale"
+          label="Rachis"
           tab="spine"
           activeTab={activeTab}
           setActiveTab={setActiveTab}
         />
 
         <TabButton
-          label="Membres"
-          tab="members"
+          label="Antérieurs"
+          tab="anterior"
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+        />
+
+        <TabButton
+          label="Postérieurs"
+          tab="posterior"
           activeTab={activeTab}
           setActiveTab={setActiveTab}
         />
       </div>
 
-      {/* CONTENT */}
-      <div className="p-3">
-        <div role="tabpanel" hidden={activeTab !== "spine"}>
+      {/* CONTENU SCROLLABLE */}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-blue-50 p-3">
+        {activeTab === "spine" && (
           <AnatomicalSpine
             zonages={zonages}
             selectedZonages={selectedZonages}
             onToggle={onToggle}
             disabled={disabled}
           />
-        </div>
+        )}
 
-        <div role="tabpanel" hidden={activeTab !== "members"}>
+        {activeTab === "anterior" && (
           <AnatomicalMembers
+            type="anterior"
             zonages={zonages}
             selectedZonages={selectedZonages}
             onToggle={onToggle}
             disabled={disabled}
           />
-        </div>
+        )}
+
+        {activeTab === "posterior" && (
+          <AnatomicalMembers
+            type="posterior"
+            zonages={zonages}
+            selectedZonages={selectedZonages}
+            onToggle={onToggle}
+            disabled={disabled}
+          />
+        )}
       </div>
     </div>
   );

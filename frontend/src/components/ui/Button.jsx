@@ -64,7 +64,7 @@ export function TabButton ({
         }
       `}
     >
-      {number}. {label}
+      {number}{label}
     </button>
   );
 };
