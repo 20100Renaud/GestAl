@@ -38,6 +38,7 @@ export default function UsersModal({
             : "Ajouter un utilisateur"
       }
       onClose={onClose}
+      showSessionTimer={profileMode}
     >
       <form onSubmit={onSubmit} className="p-6">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

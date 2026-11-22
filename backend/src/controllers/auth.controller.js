@@ -70,8 +70,12 @@ export async function login(req, res) {
       path: "/",
     });
 
+    const decodedToken = jwt.decode(token);
+    const expiresAt = decodedToken.exp * 1000;
+
     return res.status(200).json({
       message: "Login successful",
+      expiresAt,
       user: {
         id: user.ID_User,
         role: user.Role_User,

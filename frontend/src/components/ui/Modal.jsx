@@ -1,8 +1,14 @@
 import { X } from "lucide-react";
 import Button from "./Button";
+import SessionTimer from "./SessionTimer.jsx";
 
-
-export default function Modal({ open, title, onClose, children }) {
+export default function Modal({
+  open,
+  title,
+  onClose,
+  children,
+  showSessionTimer = false,
+}) {
   if (!open) {
     return null;
   }
@@ -10,14 +16,20 @@ export default function Modal({ open, title, onClose, children }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black p-4">
       <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-blue-50 shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 bg-blue-950 text-blue-300 select-none">
-          <h2 className="m-0 text-lg font-semibold">{title}</h2>
+        {/* HEADER */}
+        <div className="flex items-center justify-between gap-3 px-4 py-4 bg-blue-950 text-blue-300 select-none sm:px-6">
+          <h2 className="m-0 min-w-0 text-lg font-semibold">{title}</h2>
 
-          <Button onClick={onClose} variant="ghost">
-            <X size={20} />
-          </Button>
+          <div className="flex shrink-0 items-center gap-2">
+            {showSessionTimer && <SessionTimer />}
+
+            <Button onClick={onClose} variant="ghost" className="!p-2">
+              <X size={20} />
+            </Button>
+          </div>
         </div>
 
+        {/* CONTENT */}
         <div className="overflow-y-auto py-2 md:p-6">{children}</div>
       </div>
     </div>

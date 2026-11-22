@@ -1,9 +1,27 @@
 const BONE_FILL = "#E2E8F0";
 const BONE_STROKE = "#8795A6";
 
+function buildHindlimbSilhouette() {
+  return `
+    M 107.184 128.913 C 84.842 140.385 76.39 163.302 72.722 176.129 C 65.608 208.869 62.926 222.397 112.61 278.971 C 124.695 294.41 114.374 314.38 110.44 326.729 C 102.413 358.21 101.868 343.558 95.787 355.764 C 86.683 369.718 93.747 370.744 101.214 370.689 C 112.616 370.424 108.809 370.434 120.48 347.624 C 134.506 299.008 141.082 307.471 143.816 289.011 C 143.665 277.899 139.65 266.141 134.862 273.273 C 123.514 198.598 107.151 207.76 115.324 203.264 C 143.105 184.812 172.851 138.725 172.037 125.114 C 169.978 100.237 162.777 81.762 144.359 67.045 C 131.599 57.772 120.158 55.901 70.008 55.377
+  `;
+}
+
 function Hindlimb({ flip = false }) {
   return (
     <g transform={flip ? "translate(440 0) scale(-1 1)" : undefined}>
+      {/* Silhouette du postérieur */}
+      <g transform="translate(8 -16) scale(1)">
+        <path
+          d={buildHindlimbSilhouette()}
+          transform="translate(40 -24)"
+          fill="#F8FAFC"
+          stroke="#E2E8F0"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+      </g>
+
       <g transform="translate(40 -24) scale(1)">
         {/* Ilium */}
         <g transform="translate(70 40) scale(1.2)">
@@ -24,7 +42,7 @@ function Hindlimb({ flip = false }) {
         </g>
 
         {/* SP */}
-        <g transform="translate(170 85) scale(0.2)">
+        <g transform="translate(170 84) scale(0.2)">
           <path
             d="M 16 127.5
             H 84

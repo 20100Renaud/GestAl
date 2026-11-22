@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import ErrorModal from "../components/modals/ErrorModal.jsx";
 import Button from "../components/ui/Button.jsx";
@@ -12,6 +13,9 @@ export default function Login() {
   const [error, setError] = useState("");
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const location = useLocation();
+  const sessionExpired = location.state?.sessionExpired;
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -48,6 +52,13 @@ export default function Login() {
 
             <p className="mt-1 text-sm text-blue-500">Espace professionnel.</p>
           </div>
+
+          {sessionExpired && (
+            <div className="mb-5 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Votre session a expiré pour des raisons de sécurité. Veuillez vous
+              reconnecter pour continuer.
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <Input

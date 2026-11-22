@@ -1,11 +1,28 @@
 const BONE_FILL = "#E2E8F0";
 const BONE_STROKE = "#8795A6";
 
+
+function buildForelimbSilhouette() {
+  return `
+    M 151.686 81.427 C 78.959 0.473 10.596 164.139 103.113 198.651 C 98.102 234.221 104.468 258.89 107.726 271.102 C 112.113 279.563 109.666 312.96 107.726 325.915 C 102.413 358.481 101.868 343.829 95.787 356.035 C 86.683 369.989 93.747 371.015 101.214 370.96 C 112.616 370.695 108.809 370.705 120.48 347.895 C 134.477 308.136 131.115 295.444 133.505 281.142 C 139.056 273.509 140.245 267.716 137.575 257.263 C 143.542 243.032 142.596 221.822 141.917 202.179 C 141.286 174.15 145.761 167.343 113.425 154.963
+  `;
+}
+
 function Forelimb({ flip = false }) {
   return (
     <g transform={flip ? "translate(440 0) scale(-1 1)" : undefined}>
+      {/* Silhouette de L'Antérieur */}
+      <g transform="translate(21 -25) scale(1)">
+        <path
+          d={buildForelimbSilhouette()}
+          transform="translate(40 -24)"
+          fill="#F8FAFC"
+          stroke="#E2E8F0"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+      </g>
       <g transform="translate(40 -24) scale(0.9)">
-
         {/* Scapula */}
         <g transform="translate(0 0)">
           <path

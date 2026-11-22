@@ -104,7 +104,6 @@ export default function Sidebar({ onNavigate, onOpenProfile }) {
                 onClick={() => onNavigate?.()}
                 className={item.child ? "w-full" : ""}
               >
-
                 {item.label}
               </NavLink>
             </div>
@@ -117,38 +116,35 @@ export default function Sidebar({ onNavigate, onOpenProfile }) {
       </nav>
 
       <div className="mt-auto p-4 border-t border-white/10">
-        <div className="flex items-center justify-between gap-2 mb-4">
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">
-              {user?.firstName} {user?.lastName}
-            </p>
-
-            {user?.role === "CLIENT" && user?.Pratique && (
-              <p className="truncate text-xs text-blue-200">{user.Pratique}</p>
-            )}
-          </div>
-
+        <div className="flex items-center justify-between gap-2">
           {user?.role === "CLIENT" && (
             <button
               type="button"
               onClick={onOpenProfile}
-              className="shrink-0 rounded-lg p-2 transition-colors hover:bg-white/10 cursor-pointer"
+              className="flex w-full items-center justify-between gap-2 mb-4 rounded-lg p-2 transition-colors hover:bg-white/10 cursor-pointer text-left"
               aria-label="Modifier mon profil"
               title="Modifier mon profil"
             >
-              <Settings size={20} />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">
+                  {user?.firstName} {user?.lastName}
+                </p>
+              </div>
+
+              <Settings size={20} className="shrink-0" />
             </button>
           )}
         </div>
 
         <Button
-          type="button"
           variant="ghost"
           onClick={async () => {
             await handleLogout();
             onNavigate?.();
           }}
-          className="w-full gap-2"
+          className="w-full gap-2 transition-colors hover:bg-white/10"
+          aria-label="Déconnexion"
+          title="Déconnexion"
         >
           <LogOut size={18} />
           <span>Déconnexion</span>

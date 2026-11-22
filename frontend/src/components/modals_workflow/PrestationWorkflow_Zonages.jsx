@@ -8,7 +8,15 @@ import { getZonages } from "../../api/zonages.js";
 import CommentaireZonageModal from "../modals/CommentaireZonageModal.jsx";
 import { getZonageKey } from "../zonages/anatomyConfig.js";
 import AnatomicalMap from "../zonages/AnatomicalMap.jsx";
-import { Check, ChevronDown, LayoutGrid, Bone } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  LayoutGrid,
+  Bone,
+  SquareCheck,
+  SquareX,
+  RefreshCw,
+} from "lucide-react";
 import {
   getConsultationZonages,
   createConsultationZonage,
@@ -33,6 +41,7 @@ export default function PrestationWorkflowZonages({
   const [commentModalZonageId, setCommentModalZonageId] = useState(null);
   const [commentDraft, setCommentDraft] = useState("");
   const [activePanel, setActivePanel] = useState("anatomical");
+  const [showSelectedOnly, setShowSelectedOnly] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -74,12 +83,18 @@ export default function PrestationWorkflowZonages({
   const filteredZonages = useMemo(() => {
     const value = search.trim().toLowerCase();
 
-    if (!value) {
-      return zonages;
-    }
+    return zonages.filter((zonage) => {
+      const selected = consultationZonages.some(
+        (item) => item.ID_Zonage === zonage.ID_Zonage,
+      );
 
-    return zonages.filter((zonage) =>
-      [
+      if (showSelectedOnly && !selected) {
+        return false;
+      }
+
+      if (!value) return true;
+
+      return [
         getZonageLabel(zonage),
         zonage.Nom_Zonage,
         zonage.Position_Zonage,
@@ -87,9 +102,9 @@ export default function PrestationWorkflowZonages({
         zonage.Technique_Zonage,
       ]
         .filter(Boolean)
-        .some((field) => String(field).toLowerCase().includes(value)),
-    );
-  }, [zonages, search]);
+        .some((field) => String(field).toLowerCase().includes(value));
+    });
+  }, [zonages, search, consultationZonages, showSelectedOnly]);
 
   function handleToggle(zonageId) {
     const existing = consultationZonages.find(
@@ -252,7 +267,7 @@ export default function PrestationWorkflowZonages({
             <>
               {/* CONTENU DES PANNEAUX */}
               <div className="flex min-h-0 flex-1 flex-col gap-3">
-                {/* 1. RECHERCHE PAR CARTES */}
+                {/* 1. RECHERCHE PAR ZONAGES */}
                 <section
                   className={`flex min-h-0 flex-col rounded-xl border border-blue-100 bg-white ${
                     activePanel === "cards" ? "flex-1" : "shrink-0"
@@ -266,11 +281,11 @@ export default function PrestationWorkflowZonages({
                       )
                     }
                     aria-expanded={activePanel === "cards"}
-                    className="flex shrink-0 cursor-pointer items-center justify-between rounded-xl bg-blue-300/50 px-4 py-1 sm:py-3 text-sm font-semibold text-blue-800 hover:bg-blue-500/60"
+                    className="flex shrink-0 cursor-pointer items-center justify-between rounded-xl bg-blue-300/50 px-1 sm:px-4 py-1 sm:py-3 text-sm font-semibold text-blue-800 hover:bg-blue-500/60"
                   >
-                    <div className="flex gap-4">
+                    <div className="flex gap-1 sm:gap-4">
                       <LayoutGrid />
-                      <span>Recherche par cartes</span>
+                      <span>Recherche par zonage</span>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -289,21 +304,75 @@ export default function PrestationWorkflowZonages({
                   </button>
 
                   {activePanel === "cards" && (
-                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4">
-                      <PageHeader
-                        search={search}
-                        onSearchChange={setSearch}
-                        searchPlaceholder="Rechercher un zonage..."
-                        className="mb-4"
-                      />
+                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable] p-1 sm:px-4">
+                      {/* Barre de recherche et actions */}
+                      <div className="mb-3 flex items-center gap-2">
+                        {/* Barre de recherche */}
+                        <div className="min-w-0 flex-1">
+                          <PageHeader
+                            search={search}
+                            onSearchChange={setSearch}
+                            searchPlaceholder="Rechercher un zonage..."
+                          />
+                        </div>
 
+                        {/* Boutons de présélection */}
+                        <div className="flex shrink-0 items-center gap-2">
+                          {/* Filtrer les sélectionnés */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowSelectedOnly((current) => !current)
+                            }
+                            title={
+                              showSelectedOnly
+                                ? "Afficher tous les zonages"
+                                : "Afficher uniquement les zonages sélectionnés"
+                            }
+                            aria-label={
+                              showSelectedOnly
+                                ? "Afficher tous les zonages"
+                                : "Afficher uniquement les zonages sélectionnés"
+                            }
+                            aria-pressed={showSelectedOnly}
+                            className={`flex h-10 w-10 items-center justify-center rounded-lg border transition-colors cursor-pointer ${
+                              showSelectedOnly
+                                ? "border-blue-500 bg-blue-100 text-blue-700"
+                                : "border-blue-200 bg-white text-blue-500 hover:bg-blue-50"
+                            }`}
+                          >
+                            {showSelectedOnly ? (
+                              <RefreshCw size={18} />
+                            ) : (
+                              <SquareCheck size={20} />
+                            )}
+                          </button>
+
+                          {/* Tout désélectionner */}
+                          <button
+                            type="button"
+                            onClick={() => setConsultationZonages([])}
+                            disabled={
+                              consultationZonages.length === 0 || saving
+                            }
+                            title="Désélectionner tous les zonages"
+                            aria-label="Désélectionner tous les zonages"
+                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 bg-white text-red-500 transition-colors hover:bg-red-50 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <SquareX size={20} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Compte des résultats */}
                       {filteredZonages.length > 0 && (
                         <div className="mb-3 text-sm text-blue-900">
                           {filteredZonages.length} résultat
                           {filteredZonages.length > 1 ? "s" : ""}
                         </div>
                       )}
-                      
+
+                      {/* Message si recherche vide sinon liste des cards*/}
                       {filteredZonages.length === 0 ? (
                         <p className="rounded-2xl p-6 text-center text-sm text-blue-900">
                           Aucun zonage ne correspond à la recherche.
@@ -387,7 +456,7 @@ export default function PrestationWorkflowZonages({
                   )}
                 </section>
 
-                {/* 2. SÉLECTION ANATOMIQUE */}
+                {/* 2. SCHEMAS ARTICULAIRES */}
                 <section
                   className={`flex min-h-0 flex-col rounded-xl border border-blue-100 bg-white ${
                     activePanel === "anatomical" ? "flex-1" : "shrink-0"
@@ -401,11 +470,11 @@ export default function PrestationWorkflowZonages({
                       )
                     }
                     aria-expanded={activePanel === "anatomical"}
-                    className="flex shrink-0 cursor-pointer items-center justify-between rounded-xl bg-blue-300/50 px-4 py-1 sm:py-3 text-sm font-semibold text-blue-800 hover:bg-blue-500/60"
+                    className="flex shrink-0 cursor-pointer items-center justify-between rounded-xl bg-blue-300/50 px-1 sm:px-4 py-1 sm:py-3 text-sm font-semibold text-blue-800 hover:bg-blue-500/60"
                   >
-                    <div className="flex gap-4">
+                    <div className="flex gap-1 sm:gap-4">
                       <Bone />
-                      <span>Anatomie articulaire</span>
+                      <span>Schémas articulaires</span>
                     </div>
 
                     <ChevronDown

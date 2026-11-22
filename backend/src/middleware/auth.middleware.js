@@ -33,6 +33,8 @@ export function authenticate(req, res, next) {
       role: payload.role,
     };
 
+    req.sessionExpiresAt = payload.exp * 1000;
+
     next();
   } catch {
     return res.status(401).json({

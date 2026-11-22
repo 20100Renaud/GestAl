@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar.jsx";
 import Topbar from "./Topbar.jsx";
 import UsersModal from "../modals/Users_Modal.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { getMyProfile, updateMyProfile } from "../../api/users.js";
 import { normalizeUpper, normalizeCamel } from "../../utils/normalizeField.js";
+import SessionExpirationBanner from "../modals/SessionExpirationBanner.jsx";
 import Alert from "../ui/Alert.jsx";
 
 const emptyProfile = {
@@ -23,7 +24,9 @@ const emptyProfile = {
 };
 
 export default function Layout() {
-  const { user } = useAuth();
+  const { user, logout, sessionTimeLeft, sessionExpired } = useAuth();
+  const navigate = useNavigate();
+  const [warningDismissed, setWarningDismissed] = useState(false);
 
   const [showProfile, setShowProfile] = useState(false);
   const [form, setForm] = useState(emptyProfile);
@@ -51,6 +54,42 @@ export default function Layout() {
 
     return () => clearTimeout(timer);
   }, [notification]);
+
+  const SESSION_WARNING_TIME = 120;
+  const SESSION_URGENT_TIME = 30;
+
+  const showSessionWarning =
+    sessionTimeLeft !== null &&
+    sessionTimeLeft > 0 &&
+    ((!warningDismissed && sessionTimeLeft <= SESSION_WARNING_TIME) ||
+      sessionTimeLeft <= SESSION_URGENT_TIME);
+
+  useEffect(() => {
+    if (sessionTimeLeft === null || sessionTimeLeft > 120) {
+      setWarningDismissed(false);
+    }
+  }, [sessionTimeLeft]);
+
+  useEffect(() => {
+    if (sessionExpired) {
+      navigate("/login", {
+        replace: true,
+        state: {
+          sessionExpired: true,
+        },
+      });
+    }
+  }, [sessionExpired, navigate]);
+
+  async function handleSessionLogout() {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      navigate("/login", { replace: true });
+    }
+  }
 
   async function openProfile() {
     setShowProfile(true);
@@ -158,7 +197,15 @@ export default function Layout() {
   }
 
   return (
-    <div className="flex h-screen">
+    <div className="relative flex h-screen">
+      {/* Bannière de fin de session */}
+      {showSessionWarning && (
+        <SessionExpirationBanner
+          timeLeft={sessionTimeLeft}
+          onLogout={handleSessionLogout}
+          onClose={() => setWarningDismissed(true)}
+        />
+      )}
       {/* Desktop sidebar */}
       <div className="hidden md:block">
         <Sidebar onOpenProfile={openProfile} />
@@ -193,6 +240,7 @@ export default function Layout() {
 
       {/* Main content */}
       <div className="flex-1 overflow-auto bg-blue-50">
+
         <Topbar onMenuClick={() => setSidebarOpen((open) => !open)} />
 
         <main className="p-8">

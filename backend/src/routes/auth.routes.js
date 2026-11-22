@@ -55,6 +55,7 @@ router.get("/me", authenticate, async (req, res) => {
         postalCode: user.CP_User,
         phone: user.Tel_User,
       },
+      expiresAt: req.sessionExpiresAt,
     });
   } catch (error) {
     console.error("Get current user error:", error);
