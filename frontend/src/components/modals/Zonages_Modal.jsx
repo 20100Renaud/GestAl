@@ -2,7 +2,7 @@ import Button from "../ui/Button.jsx";
 import Input from "../ui/Input.jsx";
 import Select from "../ui/Select.jsx";
 import Modal from "../ui/Modal";
-import Alert from "../ui/Alert.jsx";
+import Alert from "../alerts/Alert.jsx";
 import { CardZonage } from "../ui/Card.jsx";
 import {
   LayoutArrowRight,

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
 import { WorkflowModal } from "../ui/Modal.jsx";
-import Alert from "../ui/Alert.jsx";
-import ErrorModal from "../modals/ErrorModal.jsx";
+import Alert from "../alerts/Alert.jsx";
+import ErrorModal from "../alerts/ErrorModal.jsx";
 import PrestationWorkflowPrestation from "./PrestationWorkflow_Prestation.jsx";
 import { getConsultations } from "../../api/consultations.js";
 import PrestationWorkflowConsultations from "./PrestationWorkflow_Consultations.jsx";

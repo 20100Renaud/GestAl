@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import ErrorModal from "../components/modals/ErrorModal.jsx";
+import ErrorModal from "../components/alerts/ErrorModal.jsx";
 import Button from "../components/ui/Button.jsx";
 import Input from "../components/ui/Input.jsx";
 

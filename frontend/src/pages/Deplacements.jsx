@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import DeplacementsModal from "../components/modals/Deplacements_Modal.jsx";
-import ErrorModal from "../components/modals/ErrorModal.jsx";
+import ErrorModal from "../components/alerts/ErrorModal.jsx";
 import DeplacementsCopyModal from "../components/modals/DeplacementsCopyModal.jsx";
-import Alert from "../components/ui/Alert.jsx";
+import Alert from "../components/alerts/Alert.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
 import { Trash2 } from "lucide-react";
 import Button from "../components/ui/Button.jsx";

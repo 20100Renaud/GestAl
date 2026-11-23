@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { getConsultations } from "../api/consultations.js";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import AnimauxModal from "../components/modals/Animaux_Modal.jsx";
-import ErrorModal from "../components/modals/ErrorModal.jsx";
+import ErrorModal from "../components/alerts/ErrorModal.jsx";
 import { normalizeUpper, normalizeCamel } from "../utils/normalizeField.js";
-import Alert from "../components/ui/Alert.jsx";
+import Alert from "../components/alerts/Alert.jsx";
 import { formatDate } from "../utils/formatDate";
 import { calculateAge } from "../utils/calculateAge";
 

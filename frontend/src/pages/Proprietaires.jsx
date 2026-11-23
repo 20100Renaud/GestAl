@@ -5,8 +5,8 @@ import { getAnimaux } from "../api/animaux.js";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import ProprietairesModal from "../components/modals/Proprietaires_Modal.jsx";
 import { normalizeUpper, normalizeCamel } from "../utils/normalizeField.js";
-import Alert from "../components/ui/Alert.jsx";
-import ErrorModal from "../components/modals/ErrorModal.jsx";
+import Alert from "../components/alerts/Alert.jsx";
+import ErrorModal from "../components/alerts/ErrorModal.jsx";
 import Table, {
   Vide,
   TableHead,

@@ -6,8 +6,8 @@ import UsersModal from "../modals/Users_Modal.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { getMyProfile, updateMyProfile } from "../../api/users.js";
 import { normalizeUpper, normalizeCamel } from "../../utils/normalizeField.js";
-import SessionExpirationBanner from "../modals/SessionExpirationBanner.jsx";
-import Alert from "../ui/Alert.jsx";
+import SessionExpirationBanner from "../alerts/SessionExpirationBanner.jsx";
+import Alert from "../alerts/Alert.jsx";
 
 const emptyProfile = {
   ID_User: "",
@@ -240,7 +240,6 @@ export default function Layout() {
 
       {/* Main content */}
       <div className="flex-1 overflow-auto bg-blue-50">
-
         <Topbar onMenuClick={() => setSidebarOpen((open) => !open)} />
 
         <main className="p-8">

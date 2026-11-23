@@ -1,6 +1,6 @@
 import Button from "../ui/Button.jsx";
 import Input from "../ui/Input.jsx";
-import Alert from "../ui/Alert.jsx";
+import Alert from "../alerts/Alert.jsx";
 import Modal from "../ui/Modal.jsx";
 import { CalendarDays, CircleEuro, ClipboardPen } from "lucide-react";
 

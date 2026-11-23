@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import TarifsModal from "../components/modals/Tarifs_Modal.jsx";
 import TarifsCopyModal from "../components/modals/TarifsCopyModal.jsx";
-import ErrorModal from "../components/modals/ErrorModal.jsx"; // add
-import Alert from "../components/ui/Alert.jsx";
+import ErrorModal from "../components/alerts/ErrorModal.jsx"; // add
+import Alert from "../components/alerts/Alert.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
 import { Trash2 } from "lucide-react";
 import Button from "../components/ui/Button.jsx";

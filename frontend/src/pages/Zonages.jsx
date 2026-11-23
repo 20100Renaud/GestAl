@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import ZonageModal from "../components/modals/Zonages_Modal.jsx";
-import ErrorModal from "../components/modals/ErrorModal.jsx";
+import ErrorModal from "../components/alerts/ErrorModal.jsx";
 import { CardZonage } from "../components/ui/Card.jsx";
 import {
   getZonages,
