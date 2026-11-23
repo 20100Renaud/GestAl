@@ -11,6 +11,7 @@ import {
   updateConsultationZonage,
   deleteConsultationZonage,
 } from "../../api/consultation-zonages.js";
+import ConfirmModal from "../alerts/ConfirmModal.jsx";
 import {
   PawPrint,
   Tag,
@@ -26,6 +27,7 @@ import {
   Eye,
   Download,
   Pencil,
+  Trash2,
 } from "lucide-react";
 
 export default function ConsultationsModal({
@@ -52,6 +54,8 @@ export default function ConsultationsModal({
   const [commentModalZonage, setCommentModalZonage] = useState(null);
   const [commentDraft, setCommentDraft] = useState("");
   const [savingComment, setSavingComment] = useState(false);
+  const [showClearConfirmation, setShowClearConfirmation] = useState(false);
+  const [clearingZonages, setClearingZonages] = useState(false);
 
   function openCommentModal(zonage) {
     setCommentModalZonage(zonage);
@@ -90,6 +94,30 @@ export default function ConsultationsModal({
       await onZonagesUpdated?.();
     } catch (err) {
       console.error(err);
+    }
+  }
+
+  async function removeAllSelectedZonages() {
+    if (!editingId || clearingZonages || selectedZonages.length === 0) {
+      return;
+    }
+
+    try {
+      setClearingZonages(true);
+
+      await Promise.all(
+        selectedZonages.map((zonage) =>
+          deleteConsultationZonage(editingId, zonage.ID_Zonage),
+        ),
+      );
+
+      await onZonagesUpdated?.();
+
+      setShowClearConfirmation(false);
+    } catch (err) {
+      console.error("Erreur lors de la désélection des zonages :", err);
+    } finally {
+      setClearingZonages(false);
     }
   }
 
@@ -283,11 +311,26 @@ export default function ConsultationsModal({
                 {/* ZONAGES SÉLECTIONNÉS */}
 
                 <div className="mt-6">
-                  <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-blue-700">
-                    <Crosshair size={18} />
-                    <h3 className="text-sm font-semibold text-blue-700">
-                      Zonages sélectionnés ({selectedZonages.length})
-                    </h3>
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-blue-700">
+                      <Crosshair size={18} />
+
+                      <h3 className="text-sm font-semibold text-blue-700">
+                        Zonages sélectionnés ({selectedZonages.length})
+                      </h3>
+                    </div>
+
+                    {editingId && selectedZonages.length > 0 && (
+                      <Button
+                        variant="danger_clear"
+                        className="!px-2 !py-1 text-xs shadow-none mx-auto"
+                        onClick={() => setShowClearConfirmation(true)}
+                        disabled={saving || savingComment || clearingZonages}
+                      >
+                        <Trash2 size={15} className="mr-1" />
+                        Tout désélectionner
+                      </Button>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap justify-center gap-4 px-1 py-2">
@@ -384,7 +427,9 @@ export default function ConsultationsModal({
                               event.stopPropagation();
                               removeSelectedZonage(zonage);
                             }}
-                            disabled={saving || savingComment}
+                            disabled={
+                              saving || savingComment || clearingZonages
+                            }
                             aria-label={`Désélectionner le zonage ${title}`}
                             title="Désélectionner ce zonage"
                             className="absolute -right-1 -top-1 z-20 flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-red-300 bg-red-50 text-red-600 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
@@ -480,9 +525,17 @@ export default function ConsultationsModal({
         onClose={closeCommentModal}
         saving={savingComment}
         mode="textarea"
-        onDeselect={() => {
-          removeSelectedZonage(commentModalZonage);
-          closeCommentModal();
+      />
+
+      <ConfirmModal
+        type="clearZonages"
+        open={showClearConfirmation}
+        confirmLabel={clearingZonages ? "Désélection..." : undefined}
+        onConfirm={removeAllSelectedZonages}
+        onClose={() => {
+          if (!clearingZonages) {
+            setShowClearConfirmation(false);
+          }
         }}
       />
     </>

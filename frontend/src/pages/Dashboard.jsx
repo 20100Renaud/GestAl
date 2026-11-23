@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import Button from "../components/ui/Button.jsx";
-import Alert from "../components/ui/Alert.jsx";
+import Alert from "../components/alerts/Alert.jsx";
 import {
   CardDashboard,
   CardProprietairesInactifs,

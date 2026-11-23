@@ -14,7 +14,6 @@ export default function CommentaireZonageModal({
   onClose,
   saving = false,
   mode = "textarea",
-  onDeselect,
 }) {
   if (!zonage) return null;
 
@@ -79,33 +78,20 @@ export default function CommentaireZonageModal({
         )}
 
         {/* Actions */}
-        <div className="mt-6 flex items-center justify-around gap-3">
-          {onDeselect && (
-            <Button
-              type="button"
-              variant="danger"
-              onClick={onDeselect}
-              disabled={saving}
-            >
-              Désélectionner
-            </Button>
-          )}
+        <div className="mt-6 flex justify-end gap-3">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+            disabled={saving}
+            className="!hidden sm:!inline-flex"
+          >
+            Annuler
+          </Button>
 
-          <div className="ml-aut flex gap-3">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onClose}
-              disabled={saving}
-              className="!hidden sm:!inline-flex"
-            >
-              Annuler
-            </Button>
-
-            <Button type="button" onClick={onSave} disabled={saving}>
-              {saving ? "Enregistrement..." : "Enregistrer"}
-            </Button>
-          </div>
+          <Button type="button" onClick={onSave} disabled={saving}>
+            {saving ? "Enregistrement..." : "Enregistrer"}
+          </Button>
         </div>
       </div>
     </Modal>

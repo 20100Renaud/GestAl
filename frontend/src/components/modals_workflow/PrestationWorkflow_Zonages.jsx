@@ -8,6 +8,7 @@ import { getZonages } from "../../api/zonages.js";
 import CommentaireZonageModal from "../modals/CommentaireZonageModal.jsx";
 import { getZonageKey } from "../zonages/anatomyConfig.js";
 import AnatomicalMap from "../zonages/AnatomicalMap.jsx";
+import ConfirmModal from "../alerts/ConfirmModal.jsx";
 import {
   Check,
   ChevronDown,
@@ -43,6 +44,8 @@ export default function PrestationWorkflowZonages({
   const [commentDraft, setCommentDraft] = useState("");
   const [activePanel, setActivePanel] = useState("");
   const [showSelectedOnly, setShowSelectedOnly] = useState(false);
+  const [showClearConfirmation, setShowClearConfirmation] = useState(false);
+  const [clearingZonages, setClearingZonages] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -106,6 +109,15 @@ export default function PrestationWorkflowZonages({
         .some((field) => String(field).toLowerCase().includes(value));
     });
   }, [zonages, search, consultationZonages, showSelectedOnly]);
+
+  function handleClearAllZonages() {
+  if (clearingZonages || consultationZonages.length === 0) {
+    return;
+  }
+
+  setConsultationZonages([]);
+  setShowClearConfirmation(false);
+}
 
   function handleShowVisceralZones() {
     setActivePanel("cards");
@@ -364,9 +376,11 @@ export default function PrestationWorkflowZonages({
                           {/* Tout désélectionner */}
                           <button
                             type="button"
-                            onClick={() => setConsultationZonages([])}
+                            onClick={() => setShowClearConfirmation(true)}
                             disabled={
-                              consultationZonages.length === 0 || saving
+                              consultationZonages.length === 0 ||
+                              saving ||
+                              clearingZonages
                             }
                             title="Désélectionner tous les zonages"
                             aria-label="Désélectionner tous les zonages"
@@ -594,6 +608,17 @@ export default function PrestationWorkflowZonages({
         onDeselect={() => {
           handleToggle(commentModalZonageId);
           closeCommentModal();
+        }}
+      />
+
+      <ConfirmModal
+        type="clearZonages"
+        open={showClearConfirmation}
+        onConfirm={handleClearAllZonages}
+        onClose={() => {
+          if (!clearingZonages) {
+            setShowClearConfirmation(false);
+          }
         }}
       />
     </>
