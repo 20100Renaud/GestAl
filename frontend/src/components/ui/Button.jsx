@@ -35,13 +35,14 @@ export default function Button({
   );
 }
 
-export function TabButton ({
+export function TabButton({
   number,
   label,
   tab,
   activeTab,
   setActiveTab,
   disabled = false,
+  className = "",
 }) {
   const isActive = activeTab === tab;
 
@@ -51,7 +52,8 @@ export function TabButton ({
       disabled={disabled}
       onClick={() => setActiveTab(tab)}
       className={`
-        whitespace-nowrap border-b-2 px-2 md:px-4 py-3 text-sm font-medium rounded-t-xl
+        whitespace-nowrap border-b-2 px-2 md:px-4 pb-3 pt-3 text-sm font-medium rounded-t-xl
+        ${className}
         ${
           isActive
             ? "border-blue-600 text-blue-700 bg-blue-50 "
@@ -64,8 +66,8 @@ export function TabButton ({
         }
       `}
     >
-      {number}{label}
+      {number}
+      {label}
     </button>
   );
-};
-
+}

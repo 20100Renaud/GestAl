@@ -8,6 +8,7 @@ export default function Modal({
   onClose,
   children,
   showSessionTimer = false,
+  headerContent,
 }) {
   if (!open) {
     return null;
@@ -22,6 +23,7 @@ export default function Modal({
 
           <div className="flex shrink-0 items-center gap-2">
             {showSessionTimer && <SessionTimer />}
+            {headerContent}
 
             <Button onClick={onClose} variant="ghost" className="!p-2">
               <X size={20} />

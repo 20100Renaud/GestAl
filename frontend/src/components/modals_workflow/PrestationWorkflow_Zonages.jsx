@@ -13,6 +13,7 @@ import {
   ChevronDown,
   LayoutGrid,
   Bone,
+  Heart,
   SquareCheck,
   SquareX,
   RefreshCw,
@@ -40,12 +41,12 @@ export default function PrestationWorkflowZonages({
   const [loading, setLoading] = useState(false);
   const [commentModalZonageId, setCommentModalZonageId] = useState(null);
   const [commentDraft, setCommentDraft] = useState("");
-  const [activePanel, setActivePanel] = useState("anatomical");
+  const [activePanel, setActivePanel] = useState("");
   const [showSelectedOnly, setShowSelectedOnly] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    setActivePanel("anatomical");
+    setActivePanel("");
 
     async function loadData() {
       try {
@@ -105,6 +106,12 @@ export default function PrestationWorkflowZonages({
         .some((field) => String(field).toLowerCase().includes(value));
     });
   }, [zonages, search, consultationZonages, showSelectedOnly]);
+
+  function handleShowVisceralZones() {
+    setActivePanel("cards");
+    setSearch("Viscérale");
+    setShowSelectedOnly(false);
+  }
 
   function handleToggle(zonageId) {
     const existing = consultationZonages.find(
@@ -259,7 +266,17 @@ export default function PrestationWorkflowZonages({
 
   return (
     <>
-      <Modal open={open} title="Zonages associés" onClose={onClose}>
+      <Modal
+        open={open}
+        title="Zonages associés"
+        onClose={onClose}
+        headerContent={
+          <span className="rounded-full bg-blue-300/20 px-3 py-1 text-xs font-semibold text-blue-200">
+            {consultationZonages.length} sélectionné
+            {consultationZonages.length > 1 ? "s" : ""}
+          </span>
+        }
+      >
         <div className="flex h-[min(750px,80vh)] min-h-0 flex-col px-4 sm:px-6">
           {loading ? (
             <p className="text-sm text-blue-700">Chargement...</p>
@@ -281,19 +298,15 @@ export default function PrestationWorkflowZonages({
                       )
                     }
                     aria-expanded={activePanel === "cards"}
-                    className="flex shrink-0 cursor-pointer items-center justify-between rounded-xl bg-blue-300/50 px-1 sm:px-4 py-1 sm:py-3 text-sm font-semibold text-blue-800 hover:bg-blue-500/60"
+                    className="flex shrink-0 cursor-pointer items-center justify-between rounded-xl bg-blue-300/50 pr-4 py-1 text-sm font-semibold text-blue-800 hover:bg-blue-500/60"
                   >
-                    <div className="flex gap-1 sm:gap-4">
-                      <LayoutGrid />
+                    <div className="relative flex gap-4">
+                      <span className="absolute -left-2 -top-2 z-0 h-10 w-10 rounded-full bg-blue-200"></span>
+                      <LayoutGrid className="relative z-10" />
                       <span>Recherche par zonage</span>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-                        {consultationZonages.length} sélectionné
-                        {consultationZonages.length > 1 ? "s" : ""}
-                      </span>
-
                       <ChevronDown
                         size={18}
                         className={`transition-transform ${
@@ -470,10 +483,13 @@ export default function PrestationWorkflowZonages({
                       )
                     }
                     aria-expanded={activePanel === "anatomical"}
-                    className="flex shrink-0 cursor-pointer items-center justify-between rounded-xl bg-blue-300/50 px-1 sm:px-4 py-1 sm:py-3 text-sm font-semibold text-blue-800 hover:bg-blue-500/60"
+                    className="relative flex shrink-0 cursor-pointer items-center justify-between rounded-xl bg-blue-300/50 pr-4 py-1 text-sm font-semibold text-blue-800 hover:bg-blue-500/60"
                   >
-                    <div className="flex gap-1 sm:gap-4">
-                      <Bone />
+                    <div className="relative flex gap-4">
+                      <span className="absolute -left-2 -top-2 z-0 h-10 w-10 rounded-full bg-blue-200"></span>
+
+                      <Bone className="relative z-10" />
+
                       <span>Schémas articulaires</span>
                     </div>
 
@@ -492,6 +508,50 @@ export default function PrestationWorkflowZonages({
                         selectedZonages={consultationZonages}
                         onToggle={handleAnatomicalToggle}
                         disabled={saving}
+                      />
+                    </div>
+                  )}
+                </section>
+
+                {/* 3. SCHEMAS VISCERAUX */}
+                <section
+                  className={`flex min-h-0 flex-col rounded-xl border border-blue-100 bg-white ${
+                    activePanel === "viscera" ? "flex-1" : "shrink-0"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActivePanel((current) =>
+                        current === "viscera" ? "null" : "viscera",
+                      )
+                    }
+                    aria-expanded={activePanel === "viscera"}
+                    className="flex shrink-0 cursor-pointer items-center justify-between rounded-xl bg-blue-300/50 py-1 text-sm font-semibold text-blue-800 hover:bg-blue-500/60 pr-4"
+                  >
+                    <div className="relative flex gap-4">
+                      <span className="absolute -left-2 -top-2 z-0 h-10 w-10 rounded-full bg-blue-200"></span>
+                      <Heart className="relative z-10" />
+                      <span>Sélections viscérales</span>
+                    </div>
+
+                    <ChevronDown
+                      size={18}
+                      className={`transition-transform ${
+                        activePanel === "viscera" ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {activePanel === "viscera" && (
+                    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                      <AnatomicalMap
+                        mode="viscera"
+                        zonages={zonages}
+                        selectedZonages={consultationZonages}
+                        onToggle={handleAnatomicalToggle}
+                        disabled={saving}
+                        onShowVisceralZones={handleShowVisceralZones}
                       />
                     </div>
                   )}
