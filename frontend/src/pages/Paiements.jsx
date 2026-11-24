@@ -3,7 +3,8 @@ import { ChevronDown } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
-import { formatDateShort } from "../utils/formatDate";
+import { formatDateInput, formatDateShort } from "../utils/formatDate.js";
+import useConfirm from "../hooks/useConfirm.jsx";
 import PaiementsModal from "../components/modals/Paiements_Modal.jsx";
 import Alert from "../components/alerts/Alert.jsx";
 import ErrorModal from "../components/alerts/ErrorModal.jsx";
@@ -38,6 +39,8 @@ const emptyForm = {
 export default function Paiements() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { confirm, ConfirmDialog } = useConfirm();
+
   const [paiements, setPaiements] = useState([]);
   const [prestations, setPrestations] = useState([]);
   const [form, setForm] = useState(emptyForm);
@@ -112,6 +115,27 @@ export default function Paiements() {
     }
   }, [location.search, location.pathname, location.state, navigate]);
 
+  function getToday() {
+    const now = new Date();
+
+    return new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 10);
+  }
+
+  function openCreateForm() {
+    setEditingId(null);
+    setSelectedPrestation(null);
+
+    setForm({
+      ...emptyForm,
+      Date_Paiement: getToday(),
+    });
+
+    setError("");
+    setShowForm(true);
+  }
+
   function handleSearchChange(value) {
     setSearch(value);
 
@@ -148,19 +172,16 @@ export default function Paiements() {
     setForm({
       ID_Prestation: paiement.ID_Prestation ?? "",
 
-      Date_Paiement: paiement.Date_Paiement
-        ? paiement.Date_Paiement.slice(0, 10)
-        : "",
+      Date_Paiement: formatDateInput(paiement.Date_Paiement) ?? "",
 
-      Date_Encaissement: paiement.Date_Encaissement
-        ? paiement.Date_Encaissement.slice(0, 10)
-        : "",
+      Date_Encaissement: formatDateInput(paiement.Date_Encaissement) ?? "",
 
       Montant_Paiement: paiement.Montant_Paiement ?? "",
-      Moyen_Paiement: paiement.Moyen_Paiement || "",
-      E_Reporting_Paiement: paiement.E_Reporting_Paiement ?? false,
-      E_Facture_Paiement: paiement.E_Facture_Paiement ?? false,
-      E_Other_Paiement: paiement.E_Other_Paiement ?? false,
+      Moyen_Paiement: paiement.Moyen_Paiement ?? "",
+
+      E_Reporting_Paiement: Boolean(paiement.E_Reporting_Paiement),
+      E_Facture_Paiement: Boolean(paiement.E_Facture_Paiement),
+      E_Other_Paiement: Boolean(paiement.E_Other_Paiement),
     });
 
     setError("");
@@ -395,24 +416,56 @@ export default function Paiements() {
   }
 
   async function handleDelete(id) {
-    if (!window.confirm("Supprimer ce paiement ?")) {
+    const paiement = paiements.find(
+      (item) => String(item.ID_Paiement) === String(id),
+    );
+
+    if (!paiement) {
+      setError("Paiement introuvable.");
       return;
     }
 
-    try {
-      setError("");
+    await confirm({
+      title: "Supprimer ce paiement",
 
-      await deletePaiement(id);
-
-      if (editingId === id) {
-        closeForm();
+      message: `Le paiement de ${paiement.Montant_Paiement} €${
+        paiement.Moyen_Paiement ? ` (${paiement.Moyen_Paiement})` : ""
       }
 
-      await loadData();
-    } catch (err) {
-      setError(err.message);
-      setShowErrorModal(true);
+    ${
+      paiement.Date_Paiement
+        ? `- Reçu le ${formatDateShort(paiement.Date_Paiement)}`
+        : "- Non-perçu"
     }
+    ${
+      paiement.Date_Encaissement
+        ? `- Encaissé le ${formatDateShort(paiement.Date_Encaissement)}`
+        : "- Non-encaissé "
+    }
+
+    Va être définitivement supprimé.`,
+
+      onConfirm: async () => {
+        try {
+          setSaving(true);
+          setError("");
+
+          await deletePaiement(id);
+
+          if (String(editingId) === String(id)) {
+            closeForm();
+          }
+
+          await loadData();
+        } catch (err) {
+          setError(err.message);
+          setShowErrorModal(true);
+          throw err;
+        } finally {
+          setSaving(false);
+        }
+      },
+    });
   }
 
   return (
@@ -719,6 +772,8 @@ export default function Paiements() {
         onDelete={handleDelete}
         onOpenPrestation={() => openPrestation(selectedPrestation)}
       />
+
+      {ConfirmDialog}
 
       <ErrorModal
         open={showErrorModal}

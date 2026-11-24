@@ -6,7 +6,8 @@ import Select from "../ui/Select.jsx";
 import { ProprietaireOptions } from "../options/ProprietaireOptions.jsx";
 import DeplacementsModal from "../modals/Deplacements_Modal.jsx";
 import ProprietairesModal from "../modals/Proprietaires_Modal.jsx";
-
+import useConfirm from "../../hooks/useConfirm.jsx";
+import { formatDateShort } from "../../utils/formatDate.js";
 import {
   File,
   CalendarDays,
@@ -62,6 +63,8 @@ export default function PrestationWorkflowPrestation({
   onDeleted,
   onError,
 }) {
+  const { confirm, ConfirmDialog } = useConfirm();
+
   const [proprietaires, setProprietaires] = useState([]);
   const [deplacements, setDeplacements] = useState([]);
   const [animaux, setAnimaux] = useState([]);
@@ -343,27 +346,60 @@ export default function PrestationWorkflowPrestation({
       return;
     }
 
-    const confirmed = window.confirm(
-      "Êtes-vous sûr de vouloir supprimer cette prestation ? Cette action est irréversible.",
+    const proprietaire = proprietaires.find(
+      (item) =>
+        String(item.ID_Proprietaire) === String(prestation.ID_Proprietaire),
     );
 
-    if (!confirmed) {
-      return;
-    }
+    const proprietaireName = proprietaire
+      ? proprietaire.Etablissement
+        ? `${proprietaire.Raison_sociale} ${proprietaire.Etablissement}`.trim()
+        : `${proprietaire.Prenom_Proprietaire} ${proprietaire.Nom_Proprietaire}`.trim()
+      : "ce propriétaire";
 
-    try {
-      setDeleting(true);
-      onError?.("");
+    const lieu = proprietaires.find(
+      (item) => String(item.ID_Proprietaire) === String(prestation.ID_Lieu),
+    );
 
-      await deletePrestation(prestation.ID_Prestation);
+    await confirm({
+      title: "Supprimer cette prestation",
 
-      // Notify the parent so it can refresh its data or close the modal.
-      onDeleted?.(prestation.ID_Prestation);
-    } catch (err) {
-      onError?.(err.message);
-    } finally {
-      setDeleting(false);
-    }
+      message: `La prestation de ${proprietaireName}
+        ${
+          prestation.Date_Prestation
+            ? `- Date : ${formatDateShort(prestation.Date_Prestation)}`
+            : ""
+        }
+        ${
+          lieu
+            ? `- Lieu : ${
+                lieu.Etablissement
+                  ? `${lieu.Raison_sociale} ${lieu.Etablissement}`.trim()
+                  : `${lieu.Prenom_Proprietaire} ${lieu.Nom_Proprietaire}`.trim()
+              }`
+            : ""
+        }
+        - Montant total : ${prestation.Montant_Prestation} €
+
+        Va être définitivement supprimée.`,
+
+      onConfirm: async () => {
+        try {
+          setDeleting(true);
+          onError?.("");
+
+          await deletePrestation(prestation.ID_Prestation);
+
+          onDeleted?.(prestation.ID_Prestation);
+        } catch (err) {
+          console.error("Erreur lors de la suppression :", err);
+          onError?.(err.message);
+          throw err;
+        } finally {
+          setDeleting(false);
+        }
+      },
+    });
   }
 
   // Changes ?
@@ -574,6 +610,8 @@ export default function PrestationWorkflowPrestation({
         onChange={handleDeplacementChange}
         onDelete={() => {}}
       />
+
+      {ConfirmDialog}
 
       <ProprietairesModal
         open={showProprietaireForm}

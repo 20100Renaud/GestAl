@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import UsersModal from "../components/modals/Users_Modal.jsx";
-
+import useConfirm from "../hooks/useConfirm.jsx";
 import Table, {
   Vide,
   TableHead,
@@ -30,6 +30,8 @@ const emptyForm = {
 };
 
 export default function Users() {
+  const { confirm, ConfirmDialog } = useConfirm();
+
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
 
@@ -187,27 +189,36 @@ export default function Users() {
   async function handleDelete(user) {
     const name = `${user.Prenom_User} ${user.Nom_User}`.trim();
 
-    if (
-      !window.confirm(`Supprimer l'utilisateur ${name} (${user.Pratique}) ?`)
-    ) {
-      return;
-    }
+    await confirm({
+      title: "Supprimer cet utilisateur",
+      message: `L'utilisateur ${name}${
+        user.Pratique ? ` (${user.Pratique})` : ""
+      } va être définitivement supprimé.`,
 
-    try {
-      clearNotification();
+      onConfirm: async () => {
+        try {
+          setSaving(true);
+          clearNotification();
 
-      await deleteUser(user.ID_User);
+          await deleteUser(user.ID_User);
 
-      notify("Utilisateur supprimé avec succès.", "success");
+          notify("Utilisateur supprimé avec succès.", "success");
 
-      if (editingId === user.ID_User) {
-        closeForm();
-      }
+          if (String(editingId) === String(user.ID_User)) {
+            setShowForm(false);
+            setEditingId(null);
+            setForm({ ...emptyForm });
+          }
 
-      await loadData();
-    } catch (err) {
-      notify(err.message, "error");
-    }
+          await loadData();
+        } catch (err) {
+          notify(err.message, "error");
+          throw err;
+        } finally {
+          setSaving(false);
+        }
+      },
+    });
   }
 
   const filteredUsers = useMemo(() => {
@@ -312,6 +323,8 @@ export default function Users() {
         onBlur={handleBlur}
         onDelete={handleDelete}
       />
+
+      {ConfirmDialog}
     </div>
   );
 }

@@ -36,6 +36,7 @@ export default function ProprietairesModal({
   onDelete,
 }) {
   const navigate = useNavigate();
+
   const [showAnimalModal, setShowAnimalModal] = useState(false);
   const [selectedAnimal, setSelectedAnimal] = useState(null);
   const [savingAnimal, setSavingAnimal] = useState(false);
@@ -139,20 +140,37 @@ export default function ProprietairesModal({
   }
 
   async function handleAnimalDelete(id) {
-    if (!window.confirm("Supprimer cet animal ?")) return;
+    const animal = animaux.find(
+      (animal) => String(animal.ID_Animal) === String(id),
+    );
 
-    try {
-      setSavingAnimal(true);
+    if (!animal) return;
 
-      await deleteAnimal(id);
+    const proprietaireName = form.etablissement?.trim()
+      ? `${form.raisonSociale ?? ""} ${form.etablissement}`.trim()
+      : `${form.prenom ?? ""} ${form.nom ?? ""}`.trim();
 
-      setShowAnimalModal(false);
-      setSelectedAnimal(null);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSavingAnimal(false);
-    }
+    await confirm({
+      title: "Supprimer cet animal",
+      message: `${animal.Nom_Animal} (${animal.Genre_Animal || "-"}), appartenant à ${proprietaireName} va être définitivement supprimé.`,
+      confirmLabel: "Supprimer",
+
+      onConfirm: async () => {
+        try {
+          setSavingAnimal(true);
+
+          await deleteAnimal(id);
+
+          setShowAnimalModal(false);
+          setSelectedAnimal(null);
+        } catch (err) {
+          console.error(err);
+          throw err;
+        } finally {
+          setSavingAnimal(false);
+        }
+      },
+    });
   }
 
   function getConsultationCount() {
@@ -166,6 +184,27 @@ export default function ProprietairesModal({
     }).length;
   }
 
+  function getLieuPrestationCount() {
+    if (!editingId) return 0;
+
+    const prestationsIds = new Set(
+      consultations
+        .filter((consultation) => {
+          const lieu = consultation.Prestation_Consultation?.Lieu_Prestation;
+
+          return String(lieu?.ID_Proprietaire) === String(editingId);
+        })
+        .map(
+          (consultation) =>
+            consultation.ID_Prestation ??
+            consultation.Prestation_Consultation?.ID_Prestation,
+        )
+        .filter(Boolean),
+    );
+
+    return prestationsIds.size;
+  }
+
   function handleOpenConsultations() {
     const proprietaireName = form.etablissement?.trim()
       ? `${form.raisonSociale ?? ""} ${form.etablissement}`.trim()
@@ -176,6 +215,19 @@ export default function ProprietairesModal({
     );
   }
 
+  function handleOpenLieuPrestations() {
+    let lieuName = "";
+
+    if (form.raisonSociale !== "Particulier") {
+      lieuName = `${form.raisonSociale ?? ""} ${
+        form.etablissement ?? ""
+      }`.trim();
+    } else {
+      lieuName = `${form.prenom ?? ""} ${form.nom ?? ""}`.trim();
+    }
+
+    navigate(`/consultations?search=${encodeURIComponent(lieuName)}`);
+  }
   return (
     <>
       <Modal
@@ -312,7 +364,7 @@ export default function ProprietairesModal({
             <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-3">
               <h3 className="text-sm font-semibold text-blue-700">
                 {animauxProprietaire.length === 0
-                  ? "Aucun animal associé à ce propriétaire."
+                  ? "Aucun animal associé."
                   : `${animauxProprietaire.length} ${
                       animauxProprietaire.length > 1 ? "animaux" : "animal"
                     }`}
@@ -325,7 +377,7 @@ export default function ProprietairesModal({
                       key={animal.ID_Animal}
                       type="button"
                       onClick={() => handleOpenAnimal(animal)}
-                      className="cursor-pointer rounded-full border border-blue-200 bg-white px-3 py-1 text-sm text-blue-800 hover:bg-blue-100"
+                      className="cursor-pointer rounded-full border border-blue-200 bg-white px-3 text-sm text-blue-800 hover:bg-blue-100"
                     >
                       {`${animal.Nom_Animal} - ${animal.Genre_Animal} ${
                         animal.Sexe_Animal ?? ""
@@ -342,7 +394,7 @@ export default function ProprietairesModal({
             <div className="flex items-center justify-between mt-6 rounded-xl border border-blue-200 bg-blue-50 p-3">
               <h3 className="text-sm font-semibold text-blue-700">
                 {getConsultationCount() === 0
-                  ? "Aucune consultation associée à ce propriétaire."
+                  ? "Aucune consultation associée."
                   : `${getConsultationCount()} consultation${
                       getConsultationCount() > 1 ? "s" : ""
                     }`}
@@ -353,9 +405,34 @@ export default function ProprietairesModal({
                   <button
                     type="button"
                     onClick={handleOpenConsultations}
-                    className="cursor-pointer rounded-full border border-blue-200 bg-white px-3 py-1 text-sm text-blue-800 hover:bg-blue-100"
+                    className="cursor-pointer rounded-full border border-blue-200 bg-white px-3 text-sm text-blue-800 hover:bg-blue-100"
                   >
                     Voir les consultations
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Lieux de prestation */}
+          {editingId && (
+            <div className="flex items-center justify-between mt-6 rounded-xl border border-blue-200 bg-blue-50 p-3">
+              <h3 className="text-sm font-semibold text-blue-700">
+                {getLieuPrestationCount() === 0
+                  ? "Aucune prestation réalisée à ce lieu."
+                  : `${getLieuPrestationCount()} prestation${
+                      getLieuPrestationCount() > 1 ? "s" : ""
+                  }`}
+              </h3>
+
+              {getLieuPrestationCount() > 0 && (
+                <div className="flex flex-1 flex-wrap justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleOpenLieuPrestations}
+                    className="cursor-pointer rounded-full border border-blue-200 bg-white px-3 text-sm text-blue-800 hover:bg-blue-100"
+                  >
+                    Voir les prestations
                   </button>
                 </div>
               )}

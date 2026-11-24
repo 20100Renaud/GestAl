@@ -650,27 +650,6 @@ export default function Prestations() {
     }
   }
 
-  async function handleDelete(id) {
-    if (!window.confirm("Supprimer cette prestation ?")) {
-      return;
-    }
-
-    try {
-      setError("");
-
-      await deletePrestation(id);
-
-      if (editingId === id) {
-        closeForm();
-      }
-
-      await loadData();
-    } catch (err) {
-      setError(err.message);
-      setShowErrorModal(true);
-    }
-  }
-
   return (
     <div className="w-full">
       {error && <Alert variant="error">{error}</Alert>}

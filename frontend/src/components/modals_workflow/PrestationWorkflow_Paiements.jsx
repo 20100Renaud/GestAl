@@ -4,7 +4,7 @@ import { formatDateInput, formatDateShort } from "../../utils/formatDate.js";
 import PrestationAmountHeader from "../headers/PrestationAmountHeader.jsx";
 import { MOYENS_PAIEMENT } from "../../constants/paiement.js";
 import { Plus } from "lucide-react";
-
+import useConfirm from "../../hooks/useConfirm.jsx";
 import {
   getPaiements,
   createPaiement,
@@ -37,13 +37,11 @@ export default function PrestationWorkflowPaiements({
   onError,
   onPrestationUpdated,
 }) {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [paiements, setPaiements] = useState([]);
-
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-
   const [form, setForm] = useState(emptyForm);
-
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -140,29 +138,57 @@ export default function PrestationWorkflowPaiements({
   }
 
   async function handleDelete(id) {
-    if (!window.confirm("Supprimer ce paiement ?")) {
+    const paiement = paiements.find(
+      (item) => String(item.ID_Paiement) === String(id),
+    );
+
+    if (!paiement) {
+      onError?.("Paiement introuvable.");
       return;
     }
 
-    try {
-      setSaving(true);
-      onError?.("");
-
-      await deletePaiement(id);
-
-      if (editingId === id) {
-        setShowForm(false);
-        setEditingId(null);
-        setForm(emptyForm);
+    await confirm({
+      title: "Supprimer ce paiement",
+      message: `Le paiement de ${paiement.Montant_Paiement} €${
+        paiement.Moyen_Paiement ? ` (${paiement.Moyen_Paiement}) : ` : ""
       }
+      ${
+        paiement.Date_Paiement
+          ? `- Reçu le ${formatDateShort(paiement.Date_Paiement)}`
+          : ""
+      }
+      ${
+        paiement.Date_Encaissement
+          ? `- Encaissé le ${formatDateShort(paiement.Date_Encaissement)}`
+          : ""
+      }
+      
+      Va être définitivement supprimé.`,
 
-      await loadData();
-      await onPrestationUpdated?.();
-    } catch (err) {
-      onError?.(err.message);
-    } finally {
-      setSaving(false);
-    }
+      onConfirm: async () => {
+        try {
+          setSaving(true);
+          onError?.("");
+
+          await deletePaiement(id);
+
+          if (String(editingId) === String(id)) {
+            setShowForm(false);
+            setEditingId(null);
+            setForm(emptyForm);
+          }
+
+          await loadData();
+          await onPrestationUpdated?.();
+        } catch (err) {
+          console.error("Erreur lors de la suppression :", err);
+          onError?.(err.message);
+          throw err;
+        } finally {
+          setSaving(false);
+        }
+      },
+    });
   }
 
   return (
@@ -266,6 +292,8 @@ export default function PrestationWorkflowPaiements({
         onSubmit={handleSubmit}
         onDelete={handleDelete}
       />
+
+      {ConfirmDialog}
     </>
   );
 }

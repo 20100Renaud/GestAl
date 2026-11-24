@@ -4,6 +4,7 @@ import Input from "../ui/Input.jsx";
 import Select from "../ui/Select.jsx";
 import Textarea from "../ui/Textarea.jsx";
 import Modal from "../ui/Modal.jsx";
+
 import PrestationHeader from "../headers/PrestationHeader.jsx";
 import { CardZonage, techniqueCardColors } from "../ui/Card.jsx";
 import CommentaireZonageModal from "./CommentaireZonageModal.jsx";
@@ -56,6 +57,7 @@ export default function ConsultationsModal({
   const [savingComment, setSavingComment] = useState(false);
   const [showClearConfirmation, setShowClearConfirmation] = useState(false);
   const [clearingZonages, setClearingZonages] = useState(false);
+
 
   function openCommentModal(zonage) {
     setCommentModalZonage(zonage);
@@ -539,7 +541,6 @@ export default function ConsultationsModal({
       <ConfirmModal
         type="clearZonages"
         open={showClearConfirmation}
-        confirmLabel={clearingZonages ? "Désélection..." : undefined}
         onConfirm={removeAllSelectedZonages}
         onClose={() => {
           if (!clearingZonages) {

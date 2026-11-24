@@ -8,6 +8,7 @@ import ErrorModal from "../components/alerts/ErrorModal.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
 import { formatDateShort } from "../utils/formatDate";
 import PrestationWorkflowZonages from "../components/modals_workflow/PrestationWorkflow_Zonages.jsx";
+import useConfirm from "../hooks/useConfirm.jsx";
 import Table, {
   Vide,
   TableHead,
@@ -53,6 +54,7 @@ export default function Consultations() {
   const { user: currentUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const [consultations, setConsultations] = useState([]);
   const [animaux, setAnimaux] = useState([]);
@@ -550,22 +552,28 @@ export default function Consultations() {
   }
 
   function getProprietaireName(consultation) {
-    const proprietaire =
-      consultation.Prestation_Consultation?.Proprietaire_Prestation;
+    const prestation = consultation.Prestation_Consultation;
 
-    if (!proprietaire) {
-      return "";
-    }
+    const proprietaire = prestation?.Proprietaire_Prestation;
+    const lieu = prestation?.Lieu_Prestation;
 
-    if (proprietaire.Etablissement) {
-      return `${proprietaire.Raison_sociale ?? ""} ${
-        proprietaire.Etablissement ?? ""
+    function formatName(item) {
+      if (!item) return "";
+
+      if (item.Raison_sociale !== "Particulier") {
+        return `${item.Raison_sociale ?? ""} ${
+          item.Etablissement ?? ""
+        }`.trim();
+      }
+
+      return `${item.Prenom_Proprietaire ?? ""} ${
+        item.Nom_Proprietaire ?? ""
       }`.trim();
     }
 
-    return `${proprietaire.Prenom_Proprietaire ?? ""} ${
-      proprietaire.Nom_Proprietaire ?? ""
-    }`.trim();
+    return [formatName(proprietaire), formatName(lieu)]
+      .filter(Boolean)
+      .join(" ");
   }
 
   function getTarifName(consultation) {
@@ -780,25 +788,79 @@ export default function Consultations() {
   }
 
   async function handleDelete(id) {
-    if (!window.confirm("Supprimer cette consultation ?")) {
-      return;
-    }
+    const consultation = consultations.find(
+      (item) => String(item.ID_Consultation) === String(id),
+    );
 
-    try {
-      setError("");
+    if (!consultation) return;
 
-      await deleteConsultation(id);
+    const animal = animaux.find(
+      (item) => String(item.ID_Animal) === String(consultation.ID_Animal),
+    );
 
-      if (editingId === id) {
-        closeForm();
-      }
+    const prestation =
+      consultation.Prestation_Consultation ??
+      prestations.find(
+        (item) =>
+          String(item.ID_Prestation) === String(consultation.ID_Prestation),
+      );
 
-      await loadData();
-    } catch (err) {
-      setError(err.message);
-      setShowErrorModal(true);
-      setShowErrorModal(true);
-    }
+    const proprietaire =
+      prestation?.Proprietaire_Prestation ??
+      proprietaires.find(
+        (item) =>
+          String(item.ID_Proprietaire) === String(prestation?.ID_Proprietaire),
+      );
+
+    const proprietaireName = proprietaire
+      ? proprietaire.Etablissement
+        ? `${proprietaire.Raison_sociale} ${proprietaire.Etablissement}`.trim()
+        : `${proprietaire.Prenom_Proprietaire} ${proprietaire.Nom_Proprietaire}`.trim()
+      : "";
+
+    const animalName = animal?.Nom_Animal ?? "cet animal";
+
+    const motif = consultation.Motif_Consultation || "non précisé";
+
+    const datePrestation = prestation?.Date_Prestation
+      ? formatDateShort(prestation.Date_Prestation)
+      : "";
+
+    await confirm({
+      title: "Supprimer cette consultation",
+
+      message: `La consultation de ${animalName}
+        - Propriétaire : ${proprietaireName ? ` ${proprietaireName}` : " - "}
+        - Motif : ${motif}${
+          datePrestation
+            ? `
+        -  Date : ${datePrestation}`
+            : " - "
+        }
+
+        Va être définitivement supprimée.`,
+
+      onConfirm: async () => {
+        try {
+          setSaving(true);
+          setError("");
+
+          await deleteConsultation(id);
+
+          if (String(editingId) === String(id)) {
+            closeForm();
+          }
+
+          await loadData();
+        } catch (err) {
+          setError(err.message);
+          setShowErrorModal(true);
+          throw err;
+        } finally {
+          setSaving(false);
+        }
+      },
+    });
   }
 
   const zonagesByConsultation = useMemo(
@@ -1015,6 +1077,8 @@ export default function Consultations() {
         onChange={handleAnimalChange}
         onDelete={() => {}}
       />
+
+      {ConfirmDialog}
 
       <ErrorModal
         open={showErrorModal}

@@ -4,9 +4,9 @@ import { AlertTriangle } from "lucide-react";
 
 export default function ConfirmModal({
   open,
-  title,
-  message,
-  confirmLabel,
+  title = "Demande de confirmation",
+  message = "Demande de confirmation",
+  confirmLabel = "Confirmer",
   cancelLabel = "Annuler",
   onConfirm,
   onClose,
@@ -14,19 +14,15 @@ export default function ConfirmModal({
   loading,
 }) {
   if (type === "clearZonages") {
-    title ??= "Désélectionner tous les zonages";
-    message ??= `Attention :  tous les zonages vont être désélectionnés.`;
-    confirmLabel ??= "Confirmer";
+    title = "Désélectionner tous les zonages";
+    message = `Attention :  tous les zonages vont être désélectionnés.`;
   }
 
   return (
     <Modal open={open} title={title} onClose={onClose}>
       <div className="p-6">
         <div className="flex items-start gap-2">
-          <AlertTriangle
-            size={40}
-            className="-mt-2 shrink-0 text-orange-500"
-          />
+          <AlertTriangle size={40} className="-mt-2 shrink-0 text-orange-500" />
 
           <p className="text-blue-900 whitespace-pre-line">{message}</p>
         </div>

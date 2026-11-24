@@ -221,7 +221,6 @@ export default function PaiementsModal({
           <div>
             {editingId && (
               <Button
-                type="button"
                 variant="danger"
                 onClick={() => onDelete(editingId)}
                 disabled={saving}
@@ -233,7 +232,6 @@ export default function PaiementsModal({
 
           <div className="flex gap-3">
             <Button
-              type="button"
               onClick={onClose}
               variant="secondary"
               disabled={saving}

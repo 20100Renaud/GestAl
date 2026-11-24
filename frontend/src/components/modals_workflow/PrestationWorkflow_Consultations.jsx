@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { createConsultationPdfHandler } from "../../utils/consultationPdfHandler.js";
-
+import useConfirm from "../../hooks/useConfirm.jsx";
 import ConsultationsModal from "../modals/Consultations_Modal.jsx";
 import PrestationHeader from "../headers/PrestationHeader.jsx";
 import PrestationWorkflowZonages from "./PrestationWorkflow_Zonages.jsx";
 import { Eye, Download, Plus } from "lucide-react";
 import Button from "../ui/Button.jsx";
 import { getProprietaires } from "../../api/proprietaires.js";
+import { formatDateShort } from "../../utils/formatDate.js";
 import {
   getConsultations,
   createConsultation,
@@ -45,6 +46,8 @@ export default function PrestationWorkflowConsultations({
   onPrestationUpdated,
   onOpenPrestation,
 }) {
+  const { confirm, ConfirmDialog } = useConfirm();
+
   const [proprietaires, setProprietaires] = useState([]);
   const [consultations, setConsultations] = useState([]);
   const [animaux, setAnimaux] = useState([]);
@@ -221,33 +224,60 @@ export default function PrestationWorkflowConsultations({
 
   // Delete a consultation
   async function handleDelete(id) {
-    if (!window.confirm("Supprimer cette consultation ?")) {
-      return;
-    }
+    const consultation = consultations.find(
+      (item) => String(item.ID_Consultation) === String(id),
+    );
 
-    try {
-      setSaving(true);
-      onError?.("");
+    if (!consultation) return;
 
-      await deleteConsultation(id);
+    const animal = animaux.find(
+      (item) => String(item.ID_Animal) === String(consultation.ID_Animal),
+    );
 
-      if (String(editingId) === String(id)) {
-        setShowForm(false);
-        setEditingId(null);
-        setForm({
-          ...emptyForm,
-          ID_Prestation: prestationId,
-        });
-      }
+    await confirm({
+      title: "Supprimer cette consultation",
 
-      await loadData();
-      await onPrestationUpdated?.();
-    } catch (err) {
-      console.error("Erreur lors de la suppression :", err);
-      onError?.(err.message);
-    } finally {
-      setSaving(false);
-    }
+      message: `La consultation de ${animal?.Nom_Animal ?? "cet animal"}
+        ${
+          consultation.Motif_Consultation
+            ? `- Motif : ${consultation.Motif_Consultation}`
+            : ""
+        }
+        ${
+          prestation.Date_Prestation
+            ? `- Date : ${formatDateShort(prestation.Date_Prestation)}`
+            : ""
+        }
+
+        Va être définitivement supprimée.`,
+
+      onConfirm: async () => {
+        try {
+          setSaving(true);
+          onError?.("");
+
+          await deleteConsultation(id);
+
+          if (String(editingId) === String(id)) {
+            setShowForm(false);
+            setEditingId(null);
+            setForm({
+              ...emptyForm,
+              ID_Prestation: prestationId,
+            });
+          }
+
+          await loadData();
+          await onPrestationUpdated?.();
+        } catch (err) {
+          console.error("Erreur lors de la suppression :", err);
+          onError?.(err.message);
+          throw err;
+        } finally {
+          setSaving(false);
+        }
+      },
+    });
   }
 
   // On close the consultation modal
@@ -550,6 +580,8 @@ export default function PrestationWorkflowConsultations({
         onSaved={loadData}
         onError={onError}
       />
+
+      {ConfirmDialog}
     </>
   );
 }

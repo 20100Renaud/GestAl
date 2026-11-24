@@ -4,6 +4,7 @@ import DeplacementsModal from "../components/modals/Deplacements_Modal.jsx";
 import ErrorModal from "../components/alerts/ErrorModal.jsx";
 import DeplacementsCopyModal from "../components/modals/DeplacementsCopyModal.jsx";
 import Alert from "../components/alerts/Alert.jsx";
+import useConfirm from "../hooks/useConfirm.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
 import { Trash2 } from "lucide-react";
 import Button from "../components/ui/Button.jsx";
@@ -29,6 +30,8 @@ const emptyForm = {
 };
 
 export default function Deplacements() {
+  const { confirm, ConfirmDialog } = useConfirm();
+
   const [deplacements, setDeplacements] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -176,23 +179,43 @@ export default function Deplacements() {
   }
 
   async function handleDelete(id) {
-    if (!window.confirm("Supprimer ce déplacement ?")) {
+    const deplacement = deplacements.find(
+      (item) => String(item.ID_Deplacement) === String(id),
+    );
+
+    if (!deplacement) {
+      setError("Déplacement introuvable.");
       return;
     }
 
-    try {
-      setError("");
+    await confirm({
+      title: "Supprimer ce déplacement",
+      message: `Le déplacement "${deplacement.Denomination_Deplacement}"
+      - Montant :  ${deplacement.Montant_Deplacement} €
+      - Année ${deplacement.Annee_Deplacement}
+      
+      Va être définitivement supprimé.`,
 
-      await deleteDeplacement(id);
+      onConfirm: async () => {
+        try {
+          setSaving(true);
+          setError("");
 
-      if (editingId === id) {
-        closeForm();
-      }
+          await deleteDeplacement(id);
 
-      await loadDeplacements();
-    } catch (err) {
-      setError(err.message);
-    }
+          if (String(editingId) === String(id)) {
+            closeForm();
+          }
+
+          await loadDeplacements();
+        } catch (err) {
+          setError(err.message);
+          throw err;
+        } finally {
+          setSaving(false);
+        }
+      },
+    });
   }
 
   async function handleCopyDeplacements(event) {
@@ -377,6 +400,9 @@ export default function Deplacements() {
         }}
         onSubmit={handleCopyDeplacements}
       />
+
+      {ConfirmDialog}
+
       <ErrorModal
         open={showErrorModal}
         message={error}

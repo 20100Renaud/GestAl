@@ -18,6 +18,7 @@ export default function ZonageModal({
   form,
   saving,
   error,
+  nombreAssociations = 0,
   onChange,
   onSubmit,
   onClose,
@@ -94,6 +95,21 @@ export default function ZonageModal({
           </div>
         </div>
 
+        {editingId && (
+          <div className="mt-4 rounded-lg bg-blue-50 border border-blue-200 p-3 text-blue-700 text-sm ">
+            {nombreAssociations === 0 ? (
+              <p>
+                Ce zonage n'est pas associé et peut donc être supprimé.
+              </p>
+            ) : (
+              <p>
+                Ce zonage est associé {nombreAssociations} fois et ne peut donc
+                pas être supprimé.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Btns */}
         <div className="flex items-center justify-between gap-3 mt-6">
           <div>
@@ -102,7 +118,7 @@ export default function ZonageModal({
                 type="button"
                 variant="danger"
                 onClick={() => onDelete(editingId)}
-                disabled={saving}
+                disabled={saving || nombreAssociations > 0}
               >
                 Supprimer
               </Button>

@@ -37,9 +37,22 @@ export async function getZonages(req, res) {
           Nom_Zonage: "asc",
         },
       ],
+      include: {
+        _count: {
+          select: {
+            Consultations_Zonage: true,
+          },
+        },
+      },
     });
 
-    return res.json(zonages);
+    return res.json(
+      zonages.map((zonage) => ({
+        ...zonage,
+        nombreAssociations: zonage._count.Consultations_Zonage,
+        _count: undefined,
+      })),
+    );
   } catch (error) {
     console.error("Get zonages error:", error);
 

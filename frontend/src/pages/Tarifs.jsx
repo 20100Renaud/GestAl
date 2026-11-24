@@ -4,6 +4,7 @@ import TarifsModal from "../components/modals/Tarifs_Modal.jsx";
 import TarifsCopyModal from "../components/modals/TarifsCopyModal.jsx";
 import ErrorModal from "../components/alerts/ErrorModal.jsx"; // add
 import Alert from "../components/alerts/Alert.jsx";
+import useConfirm from "../hooks/useConfirm.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
 import { Trash2 } from "lucide-react";
 import Button from "../components/ui/Button.jsx";
@@ -30,6 +31,8 @@ const emptyForm = {
 };
 
 export default function Tarifs() {
+  const { confirm, ConfirmDialog } = useConfirm();
+
   const [tarifs, setTarifs] = useState([]);
 
   const [form, setForm] = useState(emptyForm);
@@ -176,23 +179,41 @@ export default function Tarifs() {
   }
 
   async function handleDelete(id) {
-    if (!window.confirm("Supprimer ce tarif ?")) {
+    const tarif = tarifs.find((item) => String(item.ID_Tarif) === String(id));
+
+    if (!tarif) {
+      setError("Tarif introuvable.");
       return;
     }
 
-    try {
-      setError("");
+    await confirm({
+      title: "Supprimer ce tarif",
+      message: `Le tarif "${tarif.Denomination_Tarif}" de ${
+        tarif.Montant_Tarif
+      } € pour l'année ${tarif.Annee_Tarif} va être définitivement supprimé.`,
 
-      await deleteTarif(id);
+      onConfirm: async () => {
+        try {
+          setSaving(true);
+          setError("");
 
-      if (editingId === id) {
-        closeForm();
-      }
+          await deleteTarif(id);
 
-      await loadTarifs();
-    } catch (err) {
-      setError(err.message);
-    }
+          if (String(editingId) === String(id)) {
+            setShowForm(false);
+            setEditingId(null);
+            setForm(emptyForm);
+          }
+
+          await loadTarifs();
+        } catch (err) {
+          setError(err.message);
+          throw err;
+        } finally {
+          setSaving(false);
+        }
+      },
+    });
   }
 
   async function handleCopyTarifs(event) {
@@ -367,7 +388,9 @@ export default function Tarifs() {
         onSubmit={handleCopyTarifs}
       />
 
-      <ErrorModal // add
+{ConfirmDialog}
+
+      <ErrorModal
         open={showErrorModal}
         message={error}
         onClose={() => {

@@ -7,6 +7,7 @@ import ProprietairesModal from "../components/modals/Proprietaires_Modal.jsx";
 import { normalizeUpper, normalizeCamel } from "../utils/normalizeField.js";
 import Alert from "../components/alerts/Alert.jsx";
 import ErrorModal from "../components/alerts/ErrorModal.jsx";
+import useConfirm from "../hooks/useConfirm.jsx";
 import Table, {
   Vide,
   TableHead,
@@ -35,6 +36,7 @@ const emptyForm = {
 };
 
 export default function Proprietaires() {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [proprietaires, setProprietaires] = useState([]);
   const [consultations, setConsultations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -191,24 +193,42 @@ export default function Proprietaires() {
   }
 
   async function handleDelete(id) {
-    if (!window.confirm("Supprimer ce propriétaire ?")) {
-      return;
-    }
+    const proprietaire = proprietaires.find(
+      (proprietaire) => String(proprietaire.ID_Proprietaire) === String(id),
+    );
 
-    try {
-      setError("");
+    
+    if (!proprietaire) return;
 
-      await deleteProprietaire(id);
+    const proprietaireName = proprietaire.Etablissement
+      ? `${proprietaire.Raison_sociale} ${proprietaire.Etablissement}`.trim()
+      : `${proprietaire.Prenom_Proprietaire} ${proprietaire.Nom_Proprietaire}`.trim();
 
-      if (editingId === id) {
-        closeForm();
-      }
+    await confirm({
+      title: "Supprimer ce propriétaire",
+      message: `${proprietaireName} va être définitivement supprimé.`,
 
-      await loadProprietaires();
-    } catch (err) {
-      setError(err.message);
-      setShowErrorModal(true);
-    }
+      onConfirm: async () => {
+        try {
+          setSaving(true);
+          setError("");
+
+          await deleteProprietaire(id);
+
+          if (editingId === id) {
+            closeForm();
+          }
+
+          await loadProprietaires();
+        } catch (err) {
+          setError(err.message);
+          setShowErrorModal(true);
+          throw err;
+        } finally {
+          setSaving(false);
+        }
+      },
+    });
   }
 
   return (
@@ -314,6 +334,21 @@ export default function Proprietaires() {
         onChange={handleChange}
         onDelete={handleDelete}
       />
+
+      <ProprietairesModal
+        open={showForm}
+        editingId={editingId}
+        form={form}
+        proprietaires={proprietaires}
+        animaux={animaux}
+        saving={saving}
+        onClose={closeForm}
+        onSubmit={handleSubmit}
+        onChange={handleChange}
+        onDelete={handleDelete}
+      />
+
+      {ConfirmDialog}
 
       <ErrorModal
         open={showErrorModal}

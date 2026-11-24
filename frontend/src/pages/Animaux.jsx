@@ -4,6 +4,7 @@ import { getConsultations } from "../api/consultations.js";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import AnimauxModal from "../components/modals/Animaux_Modal.jsx";
 import ErrorModal from "../components/alerts/ErrorModal.jsx";
+import useConfirm from "../hooks/useConfirm.jsx";
 import { normalizeUpper, normalizeCamel } from "../utils/normalizeField.js";
 import Alert from "../components/alerts/Alert.jsx";
 import { formatDate } from "../utils/formatDate";
@@ -36,6 +37,8 @@ const emptyForm = {
 };
 
 export default function Animaux() {
+  const { confirm, ConfirmDialog } = useConfirm();
+  
   const [animaux, setAnimaux] = useState([]);
   const navigate = useNavigate();
   const [proprietaires, setProprietaires] = useState([]);
@@ -139,7 +142,7 @@ export default function Animaux() {
         ? `${proprietaire.Prenom_Proprietaire} ${proprietaire.Nom_Proprietaire}`
         : "";
 
-      const date = formatDate(animaux.Date_Naissance_Animal);
+      const date = formatDate(animal.Date_Naissance_Animal);
 
       return [
         animal.Nom_Animal,
@@ -185,24 +188,46 @@ export default function Animaux() {
   }
 
   async function handleDelete(id) {
-    if (!window.confirm("Supprimer cet animal ?")) {
-      return;
-    }
+    const animal = animaux.find(
+      (animal) => String(animal.ID_Animal) === String(id),
+    );
 
-    try {
-      setError("");
+    if (!animal) return;
 
-      await deleteAnimal(id);
+    const proprietaire = animal.Proprietaire_Animal;
 
-      if (editingId === id) {
-        closeForm();
-      }
+    const proprietaireName = proprietaire
+      ? proprietaire.Etablissement
+        ? `${proprietaire.Raison_sociale} ${proprietaire.Etablissement}`
+        : `${proprietaire.Prenom_Proprietaire} ${proprietaire.Nom_Proprietaire}`
+      : "Non renseigné";
 
-      await loadData();
-    } catch (err) {
-      setError(err.message);
-      setShowErrorModal(true);
-    }
+    await confirm({
+      title: "Supprimer cet animal",
+      message: `${animal.Nom_Animal} (${animal.Genre_Animal || "-"}), appartenant à ${proprietaireName} va être déffinitivement supprimé.`,
+      confirmLabel: "Supprimer",
+
+      onConfirm: async () => {
+        try {
+          setSaving(true);
+          setError("");
+
+          await deleteAnimal(id);
+
+          if (editingId === id) {
+            closeForm();
+          }
+
+          await loadData();
+        } catch (err) {
+          setError(err.message);
+          setShowErrorModal(true);
+          throw err;
+        } finally {
+          setSaving(false);
+        }
+      },
+    });
   }
 
   function getProprietaireLabel(animal) {
@@ -338,6 +363,8 @@ export default function Animaux() {
         onDelete={handleDelete}
         onOpenConsultation={handleOpenConsultation}
       />
+
+      {ConfirmDialog}
 
       <ErrorModal
         open={showErrorModal}

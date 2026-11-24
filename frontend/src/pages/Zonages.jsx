@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import ZonageModal from "../components/modals/Zonages_Modal.jsx";
 import ErrorModal from "../components/alerts/ErrorModal.jsx";
+import useConfirm from "../hooks/useConfirm.jsx";
 import { CardZonage } from "../components/ui/Card.jsx";
 import {
   getZonages,
@@ -24,6 +25,8 @@ const techniqueColors = {
 };
 
 export default function Zonages() {
+  const { confirm, ConfirmDialog } = useConfirm();
+
   const [zonages, setZonages] = useState([]);
 
   const [form, setForm] = useState(emptyForm);
@@ -148,24 +151,46 @@ export default function Zonages() {
   }
 
   async function handleDelete(id) {
-    if (!window.confirm("Supprimer ce zonage ?")) {
+    const zonage = zonages.find(
+      (item) => String(item.ID_Zonage) === String(id),
+    );
+
+    if (!zonage) {
+      setError("Zonage introuvable.");
       return;
     }
 
-    try {
-      setError("");
+    const label = getZonageLabel(zonage);
 
-      await deleteZonage(id);
+    await confirm({
+      title: "Supprimer ce zonage",
+      message: `Le zonage "${label}"${
+        zonage.Technique_Zonage ? ` (${zonage.Technique_Zonage})` : ""
+      } va être définitivement supprimé.`,
 
-      if (editingId === id) {
-        closeForm();
-      }
+      onConfirm: async () => {
+        try {
+          setSaving(true);
+          setError("");
 
-      await loadZonages();
-    } catch (err) {
-      setError(err.message);
-      setShowErrorModal(true);
-    }
+          await deleteZonage(id);
+
+          if (String(editingId) === String(id)) {
+            setShowForm(false);
+            setEditingId(null);
+            setForm(emptyForm);
+          }
+
+          await loadZonages();
+        } catch (err) {
+          setError(err.message);
+          setShowErrorModal(true);
+          throw err;
+        } finally {
+          setSaving(false);
+        }
+      },
+    });
   }
 
   return (
@@ -222,11 +247,17 @@ export default function Zonages() {
         form={form}
         saving={saving}
         error={error}
+        nombreAssociations={
+          zonages.find((z) => z.ID_Zonage === editingId)?.nombreAssociations ??
+          0
+        }
         onChange={handleChange}
         onSubmit={handleSubmit}
         onClose={closeForm}
         onDelete={handleDelete}
       />
+
+      {ConfirmDialog}
 
       <ErrorModal
         open={showErrorModal}
