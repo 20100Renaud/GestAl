@@ -24,10 +24,10 @@ import {
   Crosshair,
   Check,
   X,
+  SquareX,
   Eye,
   Download,
   Pencil,
-  Trash2,
 } from "lucide-react";
 
 export default function ConsultationsModal({
@@ -327,7 +327,7 @@ export default function ConsultationsModal({
                         onClick={() => setShowClearConfirmation(true)}
                         disabled={saving || savingComment || clearingZonages}
                       >
-                        <Trash2 size={15} className="mr-1" />
+                        <SquareX size={15} className="mr-1" />
                         Tout désélectionner
                       </Button>
                     )}

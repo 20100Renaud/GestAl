@@ -342,7 +342,7 @@ export default function PrestationWorkflowZonages({
                         </div>
 
                         {/* Boutons de présélection */}
-                        <div className="flex shrink-0 items-center gap-2">
+                        <div className="flex shrink-0 items-center gap-2 ">
                           {/* Filtrer les sélectionnés */}
                           <button
                             type="button"
@@ -360,7 +360,7 @@ export default function PrestationWorkflowZonages({
                                 : "Afficher uniquement les zonages sélectionnés"
                             }
                             aria-pressed={showSelectedOnly}
-                            className={`flex h-10 w-10 items-center justify-center rounded-lg border transition-colors cursor-pointer ${
+                            className={`flex h-10 w-10 items-center justify-center rounded-md border transition-colors cursor-pointer shadow-lg ${
                               showSelectedOnly
                                 ? "border-blue-500 bg-blue-100 text-blue-700"
                                 : "border-blue-200 bg-white text-blue-500 hover:bg-blue-50"
@@ -374,8 +374,8 @@ export default function PrestationWorkflowZonages({
                           </button>
 
                           {/* Tout désélectionner */}
-                          <button
-                            type="button"
+                          <Button
+                            variant="danger_clear"
                             onClick={() => setShowClearConfirmation(true)}
                             disabled={
                               consultationZonages.length === 0 ||
@@ -384,10 +384,10 @@ export default function PrestationWorkflowZonages({
                             }
                             title="Désélectionner tous les zonages"
                             aria-label="Désélectionner tous les zonages"
-                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 bg-white text-red-500 transition-colors hover:bg-red-50 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                            className="flex h-10 w-10 !px-0 items-center justify-center border border-red-200 bg-white text-red-500 transition-colors hover:bg-red-50 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                           >
                             <SquareX size={20} />
-                          </button>
+                          </Button>
                         </div>
                       </div>
 
@@ -576,20 +576,11 @@ export default function PrestationWorkflowZonages({
 
           {/* BOUTONS FIXES */}
           <div className="mt-3 flex shrink-0 justify-end gap-3 border-t border-blue-100 pt-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={onClose}
-              disabled={saving}
-            >
+            <Button variant="secondary" onClick={onClose} disabled={saving}>
               Annuler
             </Button>
 
-            <Button
-              type="button"
-              onClick={handleSave}
-              disabled={saving || loading}
-            >
+            <Button onClick={handleSave} disabled={saving || loading}>
               {saving ? "Enregistrement..." : "Enregistrer"}
             </Button>
           </div>

@@ -15,12 +15,8 @@ export default function ConfirmModal({
 }) {
   if (type === "clearZonages") {
     title ??= "Désélectionner tous les zonages";
-    message ??=
-      `Attention : vous êtes sur le point de désélectionner tous les zonages.
-
-      Cette action est irréversible.
-      Voulez-vous continuer ?`;
-    confirmLabel ??= "Oui, tout désélectionner";
+    message ??= `Attention :  tous les zonages vont être désélectionnés.`;
+    confirmLabel ??= "Confirmer";
   }
 
   return (
