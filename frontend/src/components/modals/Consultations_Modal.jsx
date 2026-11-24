@@ -323,7 +323,7 @@ export default function ConsultationsModal({
                     {editingId && selectedZonages.length > 0 && (
                       <Button
                         variant="danger_clear"
-                        className="!px-2 !py-1 text-xs shadow-none mx-auto"
+                        className="!px-2 !py-1 text-xs shadow-none mx-auto border border-red-300"
                         onClick={() => setShowClearConfirmation(true)}
                         disabled={saving || savingComment || clearingZonages}
                       >
@@ -331,6 +331,15 @@ export default function ConsultationsModal({
                         Tout désélectionner
                       </Button>
                     )}
+                    <Button
+                      variant="clear_blue"
+                      className="!px-2 !py-1 text-xs shadow-none mx-auto "
+                      onClick={() => onOpenZonages?.(editingId ?? null)}
+                      disabled={saving}
+                    >
+                      <Plus size={15} className="mr-1" />
+                      Ajouter
+                    </Button>
                   </div>
 
                   <div className="flex flex-wrap justify-center gap-4 px-1 py-2">
@@ -341,7 +350,7 @@ export default function ConsultationsModal({
                       disabled={saving}
                       className="relative flex min-h-18 w-28 flex-col items-center justify-center gap-1 rounded-3xl border-2 border-dashed border-t-4 border-green [border-top-style:solid] bg-green-50/50 p-3 text-green-600 transition-colors hover:border-green-500 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                     >
-                      <Crosshair size={22} />
+                      <Plus size={22} />
                       <span className="text-xs font-medium">AJOUTER</span>
 
                       {/* Fake badge */}
