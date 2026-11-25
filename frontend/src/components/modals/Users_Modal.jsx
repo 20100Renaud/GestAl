@@ -187,7 +187,7 @@ export default function UsersModal({
 
           {/* SIRET / SIREN */}
           <div className="relative">
-            <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center justify-between mb-2">
               <label
                 htmlFor="Siret_User"
                 className="flex items-center gap-2 text-sm font-semibold text-blue-700"
