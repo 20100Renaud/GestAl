@@ -12,6 +12,7 @@ export default function ConfirmModal({
   onClose,
   type,
   loading,
+  hideConfirm = false,
 }) {
   if (type === "clearZonages") {
     title = "Désélectionner tous les zonages";
@@ -28,22 +29,24 @@ export default function ConfirmModal({
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onClose}
-            disabled={loading}
-          >
-            {cancelLabel}
-          </Button>
+          {!hideConfirm && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onClose}
+              disabled={loading}
+            >
+              {cancelLabel}
+            </Button>
+          )}
 
           <Button
             type="button"
-            variant="danger"
-            onClick={onConfirm}
+            variant={hideConfirm ? "secondary" : "danger"}
+            onClick={hideConfirm ? onClose : onConfirm}
             disabled={loading}
           >
-            {loading ? "Traitement..." : confirmLabel}
+            {hideConfirm ? "Compris" : loading ? "Traitement..." : confirmLabel}
           </Button>
         </div>
       </div>

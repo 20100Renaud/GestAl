@@ -21,6 +21,7 @@ const emptyForm = {
   E_Facture_Paiement: false,
   E_Other_Paiement: false,
   Date_Encaissement: "",
+  Date_Declaration: "",
 };
 
 function getToday() {
@@ -93,6 +94,7 @@ export default function PrestationWorkflowPaiements({
       E_Facture_Paiement: Boolean(paiement.E_Facture_Paiement),
       E_Other_Paiement: Boolean(paiement.E_Other_Paiement),
       Date_Encaissement: formatDateInput(paiement.Date_Encaissement) ?? "",
+      Date_Declaration: formatDateInput(paiement.Date_Declaration) ?? "",
     });
 
     onError?.("");
@@ -147,23 +149,36 @@ export default function PrestationWorkflowPaiements({
       return;
     }
 
+    if (paiement.Date_Declaration) {
+      await confirm({
+        title: "Suppression impossible",
+        message: `Ce paiement a été déclaré le ${formatDateShort(
+          paiement.Date_Declaration,
+        )}.
+        Un paiement ne peut pas être supprimé une fois qu'il a été déclaré.`,
+        hideConfirm: true,
+      });
+
+      return;
+    }
+
     await confirm({
       title: "Supprimer ce paiement",
       message: `Le paiement de ${paiement.Montant_Paiement} €${
         paiement.Moyen_Paiement ? ` (${paiement.Moyen_Paiement}) : ` : ""
       }
-      ${
-        paiement.Date_Paiement
-          ? `- Reçu le ${formatDateShort(paiement.Date_Paiement)}`
-          : ""
-      }
-      ${
-        paiement.Date_Encaissement
-          ? `- Encaissé le ${formatDateShort(paiement.Date_Encaissement)}`
-          : ""
-      }
-      
-      Va être définitivement supprimé.`,
+    ${
+      paiement.Date_Paiement
+        ? `- Reçu le ${formatDateShort(paiement.Date_Paiement)}`
+        : ""
+    }
+    ${
+      paiement.Date_Encaissement
+        ? `- Encaissé le ${formatDateShort(paiement.Date_Encaissement)}`
+        : ""
+    }
+
+    Va être définitivement supprimé.`,
 
       onConfirm: async () => {
         try {

@@ -51,6 +51,7 @@ export default function useConfirm() {
       onConfirm={handleConfirm}
       onClose={handleClose}
       loading={loading}
+      hideConfirm={options?.hideConfirm}
     />
   );
 
