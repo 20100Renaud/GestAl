@@ -1,4 +1,5 @@
 import { generateConsultationPdf } from "./generateConsultationPdf.js";
+import { updateConsultation } from "../api/consultations.js";
 
 export function createConsultationPdfHandler({
   consultations,
@@ -20,7 +21,9 @@ export function createConsultationPdfHandler({
       }
 
       const consultation = consultations.find(
-        (item) => String(item.ID_Consultation) === String(consultationId),
+        (item) =>
+          String(item.ID_Consultation) ===
+          String(consultationId),
       );
 
       if (!consultation) {
@@ -28,11 +31,25 @@ export function createConsultationPdfHandler({
         return;
       }
 
+      // Date d'édition
+      const dateEdition = new Date().toISOString();
+
+      const updatedConsultation = await updateConsultation(consultationId, {
+        Date_Edition_Consultation: dateEdition,
+      });
+
+      const consultationForPdf = {
+        ...consultation,
+        ...updatedConsultation,
+        Date_Edition_Consultation: dateEdition,
+      };
+
       const prestation =
-        consultation.Prestation_Consultation ??
+        consultationForPdf.Prestation_Consultation ??
         prestations.find(
           (item) =>
-            String(item.ID_Prestation) === String(consultation.ID_Prestation),
+            String(item.ID_Prestation) ===
+            String(consultationForPdf.ID_Prestation),
         );
 
       if (!prestation) {
@@ -41,15 +58,17 @@ export function createConsultationPdfHandler({
       }
 
       const animal =
-        consultation.Animal_Consultation ??
+        consultationForPdf.Animal_Consultation ??
         animaux.find(
-          (item) => String(item.ID_Animal) === String(consultation.ID_Animal),
+          (item) =>
+            String(item.ID_Animal) === String(consultationForPdf.ID_Animal),
         );
 
       const tarif =
-        consultation.Tarif_Consultation ??
+        consultationForPdf.Tarif_Consultation ??
         tarifs.find(
-          (item) => String(item.ID_Tarif) === String(consultation.ID_Tarif),
+          (item) =>
+            String(item.ID_Tarif) === String(consultationForPdf.ID_Tarif),
         );
 
       const proprietaire =
@@ -71,7 +90,7 @@ export function createConsultationPdfHandler({
       await generateConsultationPdf({
         user: currentUser,
         prestation,
-        consultation,
+        consultation: consultationForPdf,
         animal,
         tarif,
         proprietaire,

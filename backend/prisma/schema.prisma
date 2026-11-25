@@ -26,6 +26,7 @@ model T_Users {
   Ville_User         String?
   CP_User            String?
   Tel_User           String?
+  Siret_User         String?
 
   Proprietaires_User T_Proprietaires[]
   Tarifs_User        T_Tarifs[]
@@ -104,6 +105,8 @@ model T_Consultations {
   Motif_Consultation       String
   Description_Consultation String
   Commentaire_Consultation String?
+  Preconisation_Consultation String?
+  Date_Edition_Consultation DateTime?
 
   Prestation_Consultation T_Prestations @relation(fields: [ID_Prestation], references: [ID_Prestation], onDelete: Cascade)
 

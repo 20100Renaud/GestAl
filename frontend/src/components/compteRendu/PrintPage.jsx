@@ -24,7 +24,11 @@ const ConsultationPrintPage = forwardRef(
         data-consultation-print
         className="box-border w-[794px] bg-white p-[53px] font-sans text-blue-900"
       >
-        <ConsultationHeader prestation={prestation} animal={animal} />
+        <ConsultationHeader
+          prestation={prestation}
+          animal={animal}
+          consultation={consultation}
+        />
 
         <ConsultationInfoBlocks
           user={user}

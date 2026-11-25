@@ -29,6 +29,7 @@ import {
   Eye,
   Download,
   Pencil,
+  ListOrdered,
 } from "lucide-react";
 
 export default function ConsultationsModal({
@@ -57,7 +58,6 @@ export default function ConsultationsModal({
   const [savingComment, setSavingComment] = useState(false);
   const [showClearConfirmation, setShowClearConfirmation] = useState(false);
   const [clearingZonages, setClearingZonages] = useState(false);
-
 
   function openCommentModal(zonage) {
     setCommentModalZonage(zonage);
@@ -297,7 +297,19 @@ export default function ConsultationsModal({
                     />
                   </div>
 
-                  {/* COMMENTAIRE */}
+                  {/* PRECONISATION */}
+                  <div className="md:col-span-2">
+                    <Textarea
+                      label="Préconisation"
+                      icon={ListOrdered}
+                      name="Preconisation_Consultation"
+                      value={form.Preconisation_Consultation}
+                      onChange={onChange}
+                      rows="4"
+                    />
+                  </div>
+
+                  {/* COMMENTAIRE PERSO */}
                   <div className="md:col-span-2">
                     <Textarea
                       label="Commentaire personnel"
@@ -470,7 +482,7 @@ export default function ConsultationsModal({
                 )}
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 {editingId && (
                   <>
                     <Button

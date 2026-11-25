@@ -16,6 +16,7 @@ CREATE TABLE "T_Users" (
     "Ville_User" TEXT,
     "CP_User" TEXT,
     "Tel_User" TEXT,
+    "Siret_User" TEXT,
 
     CONSTRAINT "T_Users_pkey" PRIMARY KEY ("ID_User")
 );
@@ -77,6 +78,8 @@ CREATE TABLE "T_Consultations" (
     "Motif_Consultation" TEXT NOT NULL,
     "Description_Consultation" TEXT NOT NULL,
     "Commentaire_Consultation" TEXT,
+    "Preconisation_Consultation" TEXT,
+    "Date_Edition_Consultation" TIMESTAMP(3),
 
     CONSTRAINT "T_Consultations_pkey" PRIMARY KEY ("ID_Consultation")
 );
@@ -108,6 +111,7 @@ CREATE TABLE "T_Paiements" (
     "ID_Prestation" TEXT NOT NULL,
     "Date_Paiement" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "Date_Encaissement" TIMESTAMP(3),
+    "Date_Declaration" TIMESTAMP(3),
     "Montant_Paiement" DECIMAL(65,30) NOT NULL DEFAULT 0,
     "Moyen_Paiement" TEXT,
     "E_Reporting_Paiement" BOOLEAN NOT NULL DEFAULT false,

@@ -71,8 +71,8 @@ export async function getConsultation(req, res) {
         ID_Consultation: id,
         ...consultationOwnerWhere(req.user.userId),
       },
-      include: consultationInclude,
     });
+
 
     if (!consultation) {
       return res.status(404).json({
@@ -82,7 +82,7 @@ export async function getConsultation(req, res) {
 
     return res.json(consultation);
   } catch (error) {
-    console.error("Get consultation error:", error);
+    console.error("GET CONSULTATION ERROR:", error);
 
     return res.status(500).json({
       error: "Internal server error",
@@ -99,6 +99,7 @@ export async function createConsultation(req, res) {
       Quantite_Consultation,
       Motif_Consultation,
       Description_Consultation,
+      Preconisation_Consultation,
       Commentaire_Consultation,
     } = req.body;
 
@@ -195,6 +196,11 @@ export async function createConsultation(req, res) {
         Quantite_Consultation: quantite,
         Motif_Consultation: Motif_Consultation.trim(),
         Description_Consultation: Description_Consultation.trim(),
+        Preconisation_Consultation:
+          typeof Preconisation_Consultation === "string" &&
+          Preconisation_Consultation.trim()
+            ? Preconisation_Consultation.trim()
+            : null,
         Commentaire_Consultation:
           typeof Commentaire_Consultation === "string" &&
           Commentaire_Consultation.trim()
@@ -242,6 +248,8 @@ export async function updateConsultation(req, res) {
       Quantite_Consultation,
       Motif_Consultation,
       Description_Consultation,
+      Preconisation_Consultation,
+      Date_Edition_Consultation,
       Commentaire_Consultation,
     } = req.body;
 
@@ -371,6 +379,26 @@ export async function updateConsultation(req, res) {
       }
     }
 
+    // Date d'édition
+    let dateEdition;
+
+    if (Date_Edition_Consultation !== undefined) {
+      if (
+        Date_Edition_Consultation === null ||
+        Date_Edition_Consultation === ""
+      ) {
+        dateEdition = null;
+      } else {
+        dateEdition = new Date(Date_Edition_Consultation);
+
+        if (Number.isNaN(dateEdition.getTime())) {
+          return res.status(400).json({
+            error: "Date d'édition invalide",
+          });
+        }
+      }
+    }
+
     const consultation = await prisma.t_Consultations.update({
       where: {
         ID_Consultation: id,
@@ -400,6 +428,20 @@ export async function updateConsultation(req, res) {
               Description_Consultation: Description_Consultation.trim(),
             }
           : {}),
+
+        ...(Preconisation_Consultation !== undefined
+          ? {
+              Preconisation_Consultation:
+                typeof Preconisation_Consultation === "string" &&
+                Preconisation_Consultation.trim()
+                  ? Preconisation_Consultation.trim()
+                  : null,
+            }
+          : {}),
+
+        ...(dateEdition !== undefined && {
+          Date_Edition_Consultation: dateEdition,
+        }),
 
         ...(Commentaire_Consultation !== undefined
           ? {
@@ -432,7 +474,12 @@ export async function updateConsultation(req, res) {
 
     return res.json(updatedConsultation);
   } catch (error) {
-    console.error("Update consultation error:", error);
+    console.error("Update consultation error:", {
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+      stack: error.stack,
+    });
 
     return res.status(500).json({
       error: "Internal server error",

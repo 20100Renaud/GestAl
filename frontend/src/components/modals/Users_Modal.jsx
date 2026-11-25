@@ -155,8 +155,17 @@ export default function UsersModal({
             disabled={saving}
           />
 
-          {/* PASSWORD */}
+          <Input
+            id="Siret_User"
+            name="Siret_User"
+            label="SIRET"
+            type="text"
+            value={form.Siret_User || ""}
+            onChange={onChange}
+            maxLength={14}
+          />
 
+          {/* PASSWORD */}
           <div className="space-y-1">
             <Input
               id="password"

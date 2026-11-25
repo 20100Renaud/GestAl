@@ -42,6 +42,7 @@ export async function createConsultation(data) {
 }
 
 export async function updateConsultation(id, data) {
+
   const response = await fetch(`${API_URL}/consultations/${id}`, {
     method: "PUT",
     credentials: "include",

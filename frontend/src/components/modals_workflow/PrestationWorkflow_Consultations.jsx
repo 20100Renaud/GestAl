@@ -29,6 +29,7 @@ const emptyForm = {
   Quantite_Consultation: "1",
   Motif_Consultation: "",
   Description_Consultation: "",
+  Preconisation_Consultation: "",
   Commentaire_Consultation: "",
 };
 
@@ -216,6 +217,7 @@ export default function PrestationWorkflowConsultations({
       Quantite_Consultation: String(consultation.Quantite_Consultation ?? "1"),
       Motif_Consultation: consultation.Motif_Consultation || "",
       Description_Consultation: consultation.Description_Consultation || "",
+      Preconisation_Consultation: consultation.Preconisation_Consultation || "",
       Commentaire_Consultation: consultation.Commentaire_Consultation || "",
     });
 
