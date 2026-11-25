@@ -163,6 +163,7 @@ export async function createPaiement(req, res) {
     const {
       ID_Prestation,
       Date_Encaissement,
+      Date_Declaration,
       Montant_Paiement,
       Moyen_Paiement,
       E_Reporting_Paiement,
@@ -253,6 +254,22 @@ export async function createPaiement(req, res) {
       data.Date_Encaissement = encaissementDate;
     }
 
+    const declarationDate = parseDate(Date_Declaration, "Date_Declaration", {
+      nullable: true,
+    });
+
+    if (
+      declarationDate &&
+      typeof declarationDate === "object" &&
+      declarationDate.error
+    ) {
+      return res.status(400).json(declarationDate);
+    }
+
+    if (declarationDate !== undefined) {
+      data.Date_Declaration = declarationDate;
+    }
+
     const paiement = await prisma.t_Paiements.create({
       data,
       include: paiementInclude,
@@ -289,6 +306,7 @@ export async function updatePaiement(req, res) {
       ID_Prestation,
       Date_Paiement,
       Date_Encaissement,
+      Date_Declaration,
       Montant_Paiement,
       Moyen_Paiement,
       E_Reporting_Paiement,
@@ -395,6 +413,22 @@ export async function updatePaiement(req, res) {
       data.Date_Encaissement = encaissementDate;
     }
 
+    if (Date_Declaration !== undefined) {
+      const declarationDate = parseDate(Date_Declaration, "Date_Declaration", {
+        nullable: true,
+      });
+
+      if (
+        declarationDate &&
+        typeof declarationDate === "object" &&
+        declarationDate.error
+      ) {
+        return res.status(400).json(declarationDate);
+      }
+
+      data.Date_Declaration = declarationDate;
+    }
+    
     const paiement = await prisma.t_Paiements.update({
       where: {
         ID_Paiement: id,

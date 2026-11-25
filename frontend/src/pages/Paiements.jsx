@@ -29,6 +29,7 @@ const emptyForm = {
   ID_Prestation: "",
   Date_Paiement: "",
   Date_Encaissement: "",
+  Date_Declaration: "",
   Montant_Paiement: "",
   Moyen_Paiement: "",
   E_Reporting_Paiement: false,
@@ -175,6 +176,8 @@ export default function Paiements() {
       Date_Paiement: formatDateInput(paiement.Date_Paiement) ?? "",
 
       Date_Encaissement: formatDateInput(paiement.Date_Encaissement) ?? "",
+
+      Date_Declaration: formatDateInput(paiement.Date_Declaration) ?? "",
 
       Montant_Paiement: paiement.Montant_Paiement ?? "",
       Moyen_Paiement: paiement.Moyen_Paiement ?? "",
