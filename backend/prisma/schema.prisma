@@ -48,6 +48,7 @@ model T_Proprietaires {
   Ville_Proprietaire    String
   CP_Proprietaire       String
   Tel_Proprietaire      String
+  Commentaire_Proprietaire String?
 
   User_Proprietaires T_Users @relation(fields: [ID_User], references: [ID_User], onDelete: Cascade)
 

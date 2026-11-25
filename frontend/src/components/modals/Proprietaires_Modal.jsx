@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { updateAnimal, deleteAnimal } from "../../api/animaux.js";
 import AnimauxModal from "./Animaux_Modal.jsx";
@@ -9,6 +9,7 @@ import { getTarifs } from "../../api/tarifs.js";
 import Button from "../ui/Button.jsx";
 import Input from "../ui/Input.jsx";
 import Select from "../ui/Select.jsx";
+import Textarea from "../ui/Textarea.jsx";
 import Modal from "../ui/Modal.jsx";
 import {
   Warehouse,
@@ -21,11 +22,13 @@ import {
   MapPinned,
   Hash,
   Phone,
+  AlertCircle,
 } from "lucide-react";
 
 export default function ProprietairesModal({
   open,
   editingId,
+  allowDelete = true,
   form,
   proprietaires = [],
   animaux = [],
@@ -34,8 +37,10 @@ export default function ProprietairesModal({
   onSubmit,
   onChange,
   onDelete,
+  scrollToComment = false,
 }) {
   const navigate = useNavigate();
+  const formBottomRef = useRef(null);
 
   const [showAnimalModal, setShowAnimalModal] = useState(false);
   const [selectedAnimal, setSelectedAnimal] = useState(null);
@@ -60,6 +65,19 @@ export default function ProprietairesModal({
       });
     }
   };
+
+  useEffect(() => {
+    if (!open || !scrollToComment) return;
+
+    requestAnimationFrame(() => {
+      formBottomRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
+    });
+
+    return;
+  }, [open, scrollToComment]);
 
   const animauxProprietaire = animaux.filter(
     (animal) => String(animal.ID_Proprietaire) === String(editingId),
@@ -210,9 +228,7 @@ export default function ProprietairesModal({
       ? `${form.raisonSociale ?? ""} ${form.etablissement}`.trim()
       : `${form.prenom ?? ""} ${form.nom ?? ""}`.trim();
 
-    navigate(
-      `/consultations?search=${encodeURIComponent(proprietaireName)}`,
-    );
+    navigate(`/consultations?search=${encodeURIComponent(proprietaireName)}`);
   }
 
   function handleOpenLieuPrestations() {
@@ -237,7 +253,7 @@ export default function ProprietairesModal({
         }
         onClose={onClose}
       >
-        <form onSubmit={onSubmit} className="p-6">
+        <form ref={formBottomRef} onSubmit={onSubmit} className="p-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Select
               id="raisonSociale"
@@ -422,7 +438,7 @@ export default function ProprietairesModal({
                   ? "Aucune prestation réalisée à ce lieu."
                   : `${getLieuPrestationCount()} prestation${
                       getLieuPrestationCount() > 1 ? "s" : ""
-                  }`}
+                    }`}
               </h3>
 
               {getLieuPrestationCount() > 0 && (
@@ -439,9 +455,28 @@ export default function ProprietairesModal({
             </div>
           )}
 
+          {/* Commentaire perso */}
+          <div className="mt-5">
+            <Textarea
+              id="commentaire"
+              icon={AlertCircle}
+              label="Commentaire personnel"
+              name="commentaire"
+              value={form.commentaire}
+              onChange={onChange}
+              placeholder="ex. Préfère les rendez-vous le matin."
+              rows={4}
+              iconClassName={
+                form.commentaire?.trim() ? "text-red-600" : "text-blue-700"
+              }
+              className="placeholder:text-gray-400"
+            />
+          </div>
+
+          {/* Btns */}
           <div className="mt-6 flex items-center justify-between gap-3">
             <div>
-              {editingId && (
+              {editingId && allowDelete && (
                 <Button
                   type="button"
                   variant="danger"

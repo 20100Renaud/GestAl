@@ -20,6 +20,8 @@ import {
   SavePlus,
   Save,
   Trash2,
+  AlertCircle,
+  Pencil,
 } from "lucide-react";
 
 import {
@@ -31,6 +33,7 @@ import {
 import {
   getProprietaires,
   createProprietaire,
+  updateProprietaire,
 } from "../../api/proprietaires.js";
 
 import { getDeplacements, createDeplacement } from "../../api/deplacements.js";
@@ -54,6 +57,7 @@ const emptyProprietaireForm = {
   ville: "",
   cp: "",
   tel: "",
+  commentaire: "",
 };
 
 export default function PrestationWorkflowPrestation({
@@ -68,12 +72,13 @@ export default function PrestationWorkflowPrestation({
   const [proprietaires, setProprietaires] = useState([]);
   const [deplacements, setDeplacements] = useState([]);
   const [animaux, setAnimaux] = useState([]);
-
+  const [scrollToComment, setScrollToComment] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [initialForm, setInitialForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [customLieu, setCustomLieu] = useState(false);
+  const [editingProprietaireId, setEditingProprietaireId] = useState(null);
 
   const [showDeplacementForm, setShowDeplacementForm] = useState(false);
   const [savingDeplacement, setSavingDeplacement] = useState(false);
@@ -199,8 +204,9 @@ export default function PrestationWorkflowPrestation({
   }
 
   /* PROPRIETAIRE */
-
   function openProprietaireForm() {
+    setEditingProprietaireId(null);
+
     setProprietaireForm({
       ...emptyProprietaireForm,
     });
@@ -208,12 +214,38 @@ export default function PrestationWorkflowPrestation({
     setShowProprietaireForm(true);
   }
 
+  function openEditProprietaireForm(scroll = false) {
+    const proprietaire = proprietaires.find(
+      (item) => String(item.ID_Proprietaire) === String(form.ID_Proprietaire),
+    );
+
+    if (!proprietaire) return;
+
+    setEditingProprietaireId(proprietaire.ID_Proprietaire);
+
+    setProprietaireForm({
+      raisonSociale: proprietaire.Raison_sociale ?? "",
+      etablissement: proprietaire.Etablissement ?? "",
+      civilite: proprietaire.Civilite_Proprietaire ?? "",
+      nom: proprietaire.Nom_Proprietaire ?? "",
+      prenom: proprietaire.Prenom_Proprietaire ?? "",
+      email: proprietaire.Email_Proprietaire ?? "",
+      adresse: proprietaire.Adresse_Proprietaire ?? "",
+      ville: proprietaire.Ville_Proprietaire ?? "",
+      cp: proprietaire.CP_Proprietaire ?? "",
+      tel: proprietaire.Tel_Proprietaire ?? "",
+      commentaire: proprietaire.Commentaire_Proprietaire ?? "",
+    });
+
+    setScrollToComment(scroll);
+    setShowProprietaireForm(true);
+  }
+
   function closeProprietaireForm() {
-    if (savingProprietaire) {
-      return;
-    }
+    if (savingProprietaire) return;
 
     setShowProprietaireForm(false);
+    setEditingProprietaireId(null);
   }
 
   function handleProprietaireFormChange(event) {
@@ -232,22 +264,17 @@ export default function PrestationWorkflowPrestation({
       setSavingProprietaire(true);
       onError?.("");
 
-      const newProprietaire = await createProprietaire(proprietaireForm);
-      const newProprietaireId = String(
-        newProprietaire.proprietaire.ID_Proprietaire,
-      );
+      if (editingProprietaireId) {
+        await updateProprietaire(editingProprietaireId, proprietaireForm);
+      } else {
+        await createProprietaire(proprietaireForm);
+      }
 
       const proprietairesData = await getProprietaires();
 
       setProprietaires(proprietairesData);
-
-      setForm((current) => ({
-        ...current,
-        ID_Proprietaire: newProprietaireId,
-        ID_Lieu: customLieu ? current.ID_Lieu : newProprietaireId,
-      }));
-
       setShowProprietaireForm(false);
+      setEditingProprietaireId(null);
     } catch (err) {
       onError?.(err.message);
     } finally {
@@ -426,15 +453,54 @@ export default function PrestationWorkflowPrestation({
               <ProprietaireOptions proprietaires={proprietaires} />
             </Select>
 
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={openProprietaireForm}
-              disabled={saving || Boolean(prestation?.ID_Prestation)}
-              className="absolute right-0 top-0 !p-1"
-            >
-              <Plus size={16} />
-            </Button>
+            <div className="absolute right-0 top-0 flex items-center gap-1">
+              {/* Modifier le propriétaire */}
+              {form.ID_Proprietaire &&
+                (() => {
+                  const proprietaire = proprietaires.find(
+                    (item) =>
+                      String(item.ID_Proprietaire) ===
+                      String(form.ID_Proprietaire),
+                  );
+
+                  const hasComment = Boolean(
+                    proprietaire?.Commentaire_Proprietaire?.trim(),
+                  );
+
+                  return (
+                    <Button
+                      type="button"
+                      variant={hasComment ? "danger_clear" : "secondary"}
+                      onClick={() => openEditProprietaireForm(hasComment)}
+                      disabled={saving || !proprietaire}
+                      title={
+                        hasComment
+                          ? "Voir le commentaire du propriétaire"
+                          : "Modifier le propriétaire"
+                      }
+                      aria-label="Modifier le propriétaire"
+                      className="!p-1"
+                    >
+                      {hasComment ? (
+                        <AlertCircle size={16} />
+                      ) : (
+                        <Pencil size={16} />
+                      )}
+                    </Button>
+                  );
+                })()}
+
+              {/* Ajouter un propriétaire */}
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={openProprietaireForm}
+                disabled={saving || Boolean(prestation?.ID_Prestation)}
+                className="!p-1"
+              >
+                <Plus size={16} />
+              </Button>
+            </div>
           </div>
 
           {/* LIEU */}
@@ -615,7 +681,8 @@ export default function PrestationWorkflowPrestation({
 
       <ProprietairesModal
         open={showProprietaireForm}
-        editingId={null}
+        editingId={editingProprietaireId}
+        allowDelete={false}
         form={proprietaireForm}
         proprietaires={proprietaires}
         animaux={animaux}
@@ -624,6 +691,7 @@ export default function PrestationWorkflowPrestation({
         onSubmit={handleProprietaireSubmit}
         onChange={handleProprietaireFormChange}
         onDelete={() => {}}
+        scrollToComment={scrollToComment}
       />
     </>
   );

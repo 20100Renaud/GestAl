@@ -1,13 +1,11 @@
-import {
-  fieldClasses,
-  fieldWrapperClasses,
-} from "./fieldStyles";
+import { fieldClasses, fieldWrapperClasses } from "./fieldStyles";
 
 export default function Textarea({
   label,
   icon: Icon,
   required = false,
   className = "",
+  iconClassName = "",
   ...props
 }) {
   return (
@@ -15,9 +13,9 @@ export default function Textarea({
       {label && (
         <label
           htmlFor={props.id}
-          className="flex items-center gap-2 text-sm font-semibold text-blue-700"
+          className={`flex items-center gap-2 text-sm font-semibold text-blue-700`}
         >
-          {Icon && <Icon size={18} />}
+          {Icon && <Icon size={18} className={iconClassName} />}
 
           <span>
             {label}

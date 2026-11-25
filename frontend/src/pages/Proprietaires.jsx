@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getConsultations } from "../api/consultations.js";
-import { PawPrint, ClipboardList } from "lucide-react";
+import { PawPrint, ClipboardList, AlertCircle } from "lucide-react";
 import { getAnimaux } from "../api/animaux.js";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import ProprietairesModal from "../components/modals/Proprietaires_Modal.jsx";
@@ -33,6 +33,7 @@ const emptyForm = {
   ville: "",
   cp: "",
   tel: "",
+  commentaire: "",
 };
 
 export default function Proprietaires() {
@@ -48,6 +49,7 @@ export default function Proprietaires() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [scrollToComment, setScrollToComment] = useState(false);
 
   async function loadProprietaires() {
     try {
@@ -92,7 +94,7 @@ export default function Proprietaires() {
     setShowForm(true);
   }
 
-  function openEditForm(proprietaire) {
+  function openEditForm(proprietaire, scrollToComment = false) {
     setEditingId(proprietaire.ID_Proprietaire);
 
     setForm({
@@ -106,8 +108,10 @@ export default function Proprietaires() {
       ville: proprietaire.Ville_Proprietaire ?? "",
       cp: proprietaire.CP_Proprietaire ?? "",
       tel: proprietaire.Tel_Proprietaire ?? "",
+      commentaire: proprietaire.Commentaire_Proprietaire ?? "",
     });
 
+    setScrollToComment(scrollToComment);
     setError("");
     setShowForm(true);
   }
@@ -197,7 +201,6 @@ export default function Proprietaires() {
       (proprietaire) => String(proprietaire.ID_Proprietaire) === String(id),
     );
 
-    
     if (!proprietaire) return;
 
     const proprietaireName = proprietaire.Etablissement
@@ -300,13 +303,29 @@ export default function Proprietaires() {
                 </TableCell>
 
                 <TableCell>
-                  {[
-                    proprietaire.Civilite_Proprietaire,
-                    proprietaire.Prenom_Proprietaire,
-                    proprietaire.Nom_Proprietaire,
-                  ]
-                    .filter(Boolean)
-                    .join(" ") || "-"}
+                  <div className="relative pr-5">
+                    {[
+                      proprietaire.Civilite_Proprietaire,
+                      proprietaire.Prenom_Proprietaire,
+                      proprietaire.Nom_Proprietaire,
+                    ]
+                      .filter(Boolean)
+                      .join(" ") || "-"}
+
+                    {proprietaire.Commentaire_Proprietaire?.trim() && (
+                      <button
+                        type="button"
+                        title="Voir le commentaire"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openEditForm(proprietaire, true);
+                        }}
+                        className="absolute -top-1 -right-1 z-10 text-red-600 hover:text-red-800 cursor-pointer hover:bg-red-100 p-1 rounded-full"
+                      >
+                        <AlertCircle size={16} />
+                      </button>
+                    )}
+                  </div>
                 </TableCell>
 
                 <TableCell className="hidden lg:table-cell">
@@ -333,19 +352,7 @@ export default function Proprietaires() {
         onSubmit={handleSubmit}
         onChange={handleChange}
         onDelete={handleDelete}
-      />
-
-      <ProprietairesModal
-        open={showForm}
-        editingId={editingId}
-        form={form}
-        proprietaires={proprietaires}
-        animaux={animaux}
-        saving={saving}
-        onClose={closeForm}
-        onSubmit={handleSubmit}
-        onChange={handleChange}
-        onDelete={handleDelete}
+        scrollToComment={scrollToComment}
       />
 
       {ConfirmDialog}

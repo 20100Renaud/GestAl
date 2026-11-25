@@ -75,6 +75,11 @@ function normalizeData(body) {
     Ville_Proprietaire: body.ville.trim(),
     CP_Proprietaire: body.cp.trim(),
     Tel_Proprietaire: body.tel.trim(),
+
+    Commentaire_Proprietaire:
+      typeof body.commentaire === "string"
+        ? body.commentaire.trim() || null
+        : null,
   };
 }
 
