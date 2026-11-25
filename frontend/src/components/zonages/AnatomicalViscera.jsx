@@ -694,24 +694,24 @@ export default function AnatomicalViscera({
               const unavailable = !available || disabled;
 
               return (
-                <button
+                <Button
                   key={name}
-                  type="button"
+                  variant="badge_blue"
                   disabled={unavailable}
                   aria-pressed={selected}
                   onClick={() => handleOrganToggle(name)}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${
+                  className={
                     selected
                       ? "border-blue-600 bg-blue-600 text-white shadow-sm"
                       : available
                         ? "border-blue-200 bg-blue-50 text-blue-800 hover:border-blue-400 hover:bg-blue-100"
                         : "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 opacity-60"
-                  }`}
+                  }
                 >
                   {name}
                   {BILATERAL.has(name) && ` ${activeFace}`}
                   {selected && " ✓"}
-                </button>
+                </Button>
               );
             })}
           </div>

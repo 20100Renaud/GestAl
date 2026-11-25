@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Button from "../ui/Button.jsx";
 import Input from "../ui/Input.jsx";
 import Select from "../ui/Select.jsx";
@@ -13,7 +14,18 @@ import {
   Contact,
   MapPinned,
   Hash,
+  Building2,
+  ArrowLeft,
+  ArrowLeftRight,
 } from "lucide-react";
+
+const formatSiret = (value) => {
+  const digits = value.replace(/\D/g, "").slice(0, 14);
+
+  return digits.replace(/^(\d{3})(\d{3})(\d{3})(\d{0,5})$/, (_, a, b, c, d) =>
+    [a, b, c, d].filter(Boolean).join(" "),
+  );
+};
 
 export default function UsersModal({
   open,
@@ -27,6 +39,24 @@ export default function UsersModal({
   onDelete,
   profileMode = false,
 }) {
+  const [siretMode, setSiretMode] = useState("siret");
+  const [siretFocused, setSiretFocused] = useState(false);
+  const [siretTouched, setSiretTouched] = useState(false);
+  const siretDigits = (form.Siret_User || "").replace(/\D/g, "");
+  const siretInvalid = siretDigits.length > 0 && siretDigits.length !== 14;
+
+  const formatSiret = (value, mode = "siret") => {
+    const digits = value.replace(/\D/g, "").slice(0, 14);
+
+    if (mode === "siren") {
+      return digits.slice(0, 9).replace(/(\d{3})(?=\d)/g, "$1 ");
+    }
+
+    return digits.replace(/^(\d{3})(\d{3})(\d{3})(\d{0,5})$/, (_, a, b, c, d) =>
+      [a, b, c, d].filter(Boolean).join(" "),
+    );
+  };
+
   return (
     <Modal
       open={open}
@@ -155,15 +185,73 @@ export default function UsersModal({
             disabled={saving}
           />
 
-          <Input
-            id="Siret_User"
-            name="Siret_User"
-            label="SIRET"
-            type="text"
-            value={form.Siret_User || ""}
-            onChange={onChange}
-            maxLength={14}
-          />
+          {/* SIRET / SIREN */}
+          <div className="relative">
+            <div className="flex items-center justify-between mb-1">
+              <label
+                htmlFor="Siret_User"
+                className="flex items-center gap-2 text-sm font-semibold text-blue-700"
+              >
+                <Building2 size={18} />
+                {siretMode === "siret" ? "SIRET" : "SIREN"}
+              </label>
+
+              <Button
+                variant="badge_Mini_blue"
+                onClick={() =>
+                  setSiretMode((prev) => (prev === "siret" ? "siren" : "siret"))
+                }
+                disabled={saving}
+                className="w-16 !px-1 !py-0 flex justify-start gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
+                title={
+                  siretMode === "siret"
+                    ? "Afficher uniquement le SIREN"
+                    : "Revenir au SIRET complet"
+                }
+              >
+                <ArrowLeftRight size={14} />
+                {siretMode === "siret" ? <>SIREN</> : <>SIRET</>}
+              </Button>
+            </div>
+
+            <Input
+              id="Siret_User"
+              name="Siret_User"
+              type="text"
+              value={formatSiret(form.Siret_User || "", siretMode)}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, "");
+
+                onChange({
+                  target: {
+                    name: "Siret_User",
+                    value: digits.slice(0, 14),
+                  },
+                });
+              }}
+              onFocus={() => setSiretFocused(true)}
+              onBlur={() => {
+                setSiretFocused(false);
+                setSiretTouched(true);
+              }}
+              placeholder={
+                siretFocused
+                  ? ""
+                  : siretMode === "siret"
+                    ? "123 456 789 00012"
+                    : "123 456 789"
+              }
+              maxLength={siretMode === "siret" ? 17 : 11}
+              disabled={saving}
+              className="placeholder:text-gray-400"
+            />
+
+            {siretInvalid && siretTouched && !siretFocused && (
+              <p className="absolute left-0 top-full mt-1 text-xs text-red-600">
+                Le SIRET doit contenir exactement 14 chiffres.
+              </p>
+            )}
+          </div>
 
           {/* PASSWORD */}
           <div className="space-y-1">
@@ -182,13 +270,15 @@ export default function UsersModal({
               autoComplete="new-password"
               minLength={6}
             />
+          </div>
 
-            {editingId && (
+          {editingId && (
+            <div className="flex items-end">
               <p className="text-xs text-blue-700">
                 Laissez ce champ vide pour conserver le mot de passe actuel.
               </p>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* ACTIONS */}
