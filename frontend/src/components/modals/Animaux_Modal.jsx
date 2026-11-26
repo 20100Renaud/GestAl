@@ -38,7 +38,7 @@ export default function AnimauxModal({
   useEffect(() => {
     setVisibleConsultations(3);
   }, [editingId, open]);
-  
+
   const consultationsAnimal = consultations
     .filter(
       (consultation) => String(consultation.ID_Animal) === String(editingId),
@@ -160,7 +160,7 @@ export default function AnimauxModal({
 
             <div className="md:col-span-2">
               <Textarea
-                label="Notes"
+                label="Notes personnelles"
                 icon={ClipboardPen}
                 name="Memo_Animal"
                 value={form.Memo_Animal}
@@ -277,7 +277,6 @@ export default function AnimauxModal({
             <div>
               {editingId && (
                 <Button
-                  type="button"
                   variant="danger"
                   onClick={() => onDelete(editingId)}
                   disabled={saving}
@@ -289,7 +288,6 @@ export default function AnimauxModal({
 
             <div className="flex gap-3">
               <Button
-                type="button"
                 onClick={onClose}
                 variant="secondary"
                 disabled={saving}

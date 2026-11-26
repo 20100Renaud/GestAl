@@ -3,13 +3,19 @@ import { useEffect, useState } from "react";
 import { WorkflowModal } from "../ui/Modal.jsx";
 import Alert from "../alerts/Alert.jsx";
 import ErrorModal from "../alerts/ErrorModal.jsx";
+import useConfirm from "../../hooks/useConfirm.jsx";
 import PrestationWorkflowPrestation from "./PrestationWorkflow_Prestation.jsx";
 import { getConsultations } from "../../api/consultations.js";
 import PrestationWorkflowConsultations from "./PrestationWorkflow_Consultations.jsx";
 import PrestationWorkflowPaiements from "./PrestationWorkflow_Paiements.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { getPrestation } from "../../api/prestations.js";
-import { createAnimal, updateAnimal, getAnimaux } from "../../api/animaux.js";
+import {
+  getAnimaux,
+  createAnimal,
+  updateAnimal,
+  deleteAnimal,
+} from "../../api/animaux.js";
 import { createTarif } from "../../api/tarifs.js";
 import AnimauxModal from "../modals/Animaux_Modal.jsx";
 import TarifsModal from "../modals/Tarifs_Modal.jsx";
@@ -39,6 +45,7 @@ export default function PrestationWorkflowModal({
 }) {
   const [error, setError] = useState("");
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const { user: currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState("prestation");
@@ -89,6 +96,7 @@ export default function PrestationWorkflowModal({
     }
   }, [open, initialPrestation]);
 
+  // Create prestation
   function handleCreatedPrestation(newPrestation) {
     setPrestation(newPrestation);
     setPrestationId(newPrestation.ID_Prestation);
@@ -142,7 +150,7 @@ export default function PrestationWorkflowModal({
     }
   }
 
-  // Add animal
+  // Create animal
   function handleAddAnimal(proprietaireId) {
     setError("");
     setEditingAnimalId(null);
@@ -190,20 +198,6 @@ export default function PrestationWorkflowModal({
     }
   }
 
-  // Add tarif
-  function handleAddTarif() {
-    setError("");
-    setTarifError("");
-
-    setTarifForm({
-      ...emptyTarifForm,
-      Annee_Tarif: String(new Date().getFullYear()),
-    });
-
-    setCreatedTarif(null);
-    setShowTarifModal(true);
-  }
-
   // Update animal
   function handleAnimalChange(event) {
     const { name, value } = event.target;
@@ -214,17 +208,59 @@ export default function PrestationWorkflowModal({
     }));
   }
 
-  // Update tarif
-  function handleTarifChange(event) {
-    const { name, value } = event.target;
+  // Delete animal
+  async function handleDeleteAnimal(id) {
+    const animal = animalForm.Nom_Animal || "cet animal";
 
-    setTarifForm((current) => ({
-      ...current,
-      [name]: value,
-    }));
+    const consultationsCount = consultations.filter(
+      (consultation) => String(consultation.ID_Animal) === String(id),
+    ).length;
+
+    await confirm({
+      title: "Supprimer cet animal",
+
+      message: `L'animal ${animal} va être définitivement supprimé.
+
+      Attention : ${
+        consultationsCount === 0
+          ? "Aucune consultation n'est associée à cet animal."
+          : consultationsCount === 1
+            ? "La consultation associée va également être supprimée."
+            : `Les ${consultationsCount} consultations associées vont également être supprimées.`
+      }`,
+
+      onConfirm: async () => {
+        try {
+          setAnimalSaving(true);
+          setError("");
+
+          await deleteAnimal(id);
+
+          setCreatedAnimal(null);
+          setShowAnimalModal(false);
+          setEditingAnimalId(null);
+
+          window.dispatchEvent(
+            new CustomEvent("animal-deleted", {
+              detail: { animalId: id },
+            }),
+          );
+        } catch (err) {
+          console.error("Erreur lors de la suppression de l'animal :", err);
+
+          setError(err.message || "Impossible de supprimer cet animal.");
+
+          setShowErrorModal(true);
+
+          throw err;
+        } finally {
+          setAnimalSaving(false);
+        }
+      },
+    });
   }
 
-  // On save animal
+  // save animal
   async function handleAnimalSubmit(event) {
     event.preventDefault();
 
@@ -265,7 +301,31 @@ export default function PrestationWorkflowModal({
     }
   }
 
-  // On tarif save
+  // Create tarif
+  function handleAddTarif() {
+    setError("");
+    setTarifError("");
+
+    setTarifForm({
+      ...emptyTarifForm,
+      Annee_Tarif: String(new Date().getFullYear()),
+    });
+
+    setCreatedTarif(null);
+    setShowTarifModal(true);
+  }
+
+  // Update tarif
+  function handleTarifChange(event) {
+    const { name, value } = event.target;
+
+    setTarifForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  }
+
+  // Save tarif
   async function handleTarifSubmit(event) {
     event.preventDefault();
 
@@ -408,7 +468,7 @@ export default function PrestationWorkflowModal({
         }}
         onSubmit={handleAnimalSubmit}
         onChange={handleAnimalChange}
-        onDelete={() => {}}
+        onDelete={handleDeleteAnimal}
       />
 
       <TarifsModal
@@ -422,6 +482,8 @@ export default function PrestationWorkflowModal({
         onChange={handleTarifChange}
         onDelete={() => {}}
       />
+
+      {ConfirmDialog}
 
       <ErrorModal
         open={showErrorModal}

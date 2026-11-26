@@ -24,6 +24,7 @@ export default function useConfirm() {
 
       resolver(true);
     } catch (error) {
+      console.error("Erreur de confirmation :", error);
       options?.onError?.(error);
     } finally {
       setOptions(null);

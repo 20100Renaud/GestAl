@@ -312,7 +312,7 @@ export default function ConsultationsModal({
                   {/* COMMENTAIRE PERSO */}
                   <div className="md:col-span-2">
                     <Textarea
-                      label="Commentaire personnel"
+                      label="Notes personnelles"
                       icon={ClipboardPen}
                       name="Commentaire_Consultation"
                       value={form.Commentaire_Consultation}

@@ -226,7 +226,6 @@ export async function deleteProprietaire(req, res) {
   try {
     const { id } = req.params;
 
-    // Vérifier que le propriétaire appartient à l'utilisateur connecté
     const existing = await prisma.t_Proprietaires.findFirst({
       where: {
         ID_Proprietaire: id,
@@ -236,43 +235,30 @@ export async function deleteProprietaire(req, res) {
 
     if (!existing) {
       return res.status(404).json({
-        error: "Proprietaire not found",
+        error: "Propriétaire introuvable.",
       });
     }
 
-    // Vérifier les relations avec les animaux
-    const animaux = await prisma.t_Animaux.count({
-      where: {
-        ID_Proprietaire: id,
-      },
-    });
+    const [prestationsProprietaire, prestationsLieu] = await Promise.all([
+      prisma.t_Prestations.count({
+        where: { ID_Proprietaire: id },
+      }),
+      prisma.t_Prestations.count({
+        where: { ID_Lieu: id },
+      }),
+    ]);
 
-    // Vérifier les relations avec les prestations
-    const prestationsProprietaire = await prisma.t_Prestations.count({
-      where: {
-        ID_Proprietaire: id,
-      },
-    });
-
-    const prestationsLieu = await prisma.t_Prestations.count({
-      where: {
-        ID_Lieu: id,
-      },
-    });
-
-    if (animaux > 0 || prestationsProprietaire > 0 || prestationsLieu > 0) {
+    if (prestationsProprietaire > 0 || prestationsLieu > 0) {
       return res.status(409).json({
         error:
-          "Impossible de supprimer ce propriétaire : des données sont encore associées.",
+          "Impossible de supprimer ce propriétaire : des prestations lui sont encore associées.",
         details: {
-          animaux,
           prestationsProprietaire,
           prestationsLieu,
         },
       });
     }
 
-    // Suppression définitive
     await prisma.t_Proprietaires.delete({
       where: {
         ID_Proprietaire: id,
@@ -281,16 +267,12 @@ export async function deleteProprietaire(req, res) {
 
     return res.status(204).send();
   } catch (error) {
-    console.error("Delete proprietaire error:", {
-      message: error.message,
-      code: error.code,
-      meta: error.meta,
-    });
+    console.error("Delete proprietaire error:", error);
 
-    if (error.code === "P2003") {
+    if (error.code === "P2003" || error.code === "P2014") {
       return res.status(409).json({
         error:
-          "Impossible de supprimer ce propriétaire : une relation existe encore.",
+          "Impossible de supprimer ce propriétaire : une relation avec des prestations existe encore.",
       });
     }
 

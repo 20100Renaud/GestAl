@@ -184,6 +184,27 @@ export default function PrestationWorkflowConsultations({
     }));
   }, [createdTarif]);
 
+  // Delete animal
+  useEffect(() => {
+    function handleAnimalDeleted() {
+      setShowForm(false);
+      setEditingId(null);
+
+      setForm({
+        ...emptyForm,
+        ID_Prestation: prestationId,
+      });
+
+      loadData();
+    }
+
+    window.addEventListener("animal-deleted", handleAnimalDeleted);
+
+    return () => {
+      window.removeEventListener("animal-deleted", handleAnimalDeleted);
+    };
+  }, [prestationId]);
+
   // Update
   function handleChange(event) {
     const { name, value } = event.target;

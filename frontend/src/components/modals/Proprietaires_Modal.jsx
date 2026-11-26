@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { updateAnimal, deleteAnimal } from "../../api/animaux.js";
+import { createAnimal, updateAnimal, deleteAnimal } from "../../api/animaux.js";
+import useConfirm from "../../hooks/useConfirm.jsx";
 import AnimauxModal from "./Animaux_Modal.jsx";
 import { getConsultations } from "../../api/consultations.js";
 import { calculateAge } from "../../utils/calculateAge";
-import { getPrestations } from "../../api/prestations.js";
-import { getTarifs } from "../../api/tarifs.js";
 import Button from "../ui/Button.jsx";
 import Input from "../ui/Input.jsx";
 import Select from "../ui/Select.jsx";
@@ -37,20 +36,18 @@ export default function ProprietairesModal({
   onSubmit,
   onChange,
   onDelete,
+  onAnimalsChange,
   scrollToComment = false,
 }) {
   const navigate = useNavigate();
   const formBottomRef = useRef(null);
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const [showAnimalModal, setShowAnimalModal] = useState(false);
   const [selectedAnimal, setSelectedAnimal] = useState(null);
   const [savingAnimal, setSavingAnimal] = useState(false);
+  const [animalError, setAnimalError] = useState("");
   const [consultations, setConsultations] = useState([]);
-  const [prestations, setPrestations] = useState([]);
-  const [tarifs, setTarifs] = useState([]);
-  const [selectedConsultation, setSelectedConsultation] = useState(null);
-  const [showConsultationModal, setShowConsultationModal] = useState(false);
-  const [savingConsultation, setSavingConsultation] = useState(false);
 
   const onRaisonChange = (event) => {
     const { name, value } = event.target;
@@ -106,18 +103,13 @@ export default function ProprietairesModal({
   }, [open, editingId]);
 
   async function loadConsultationData() {
-    const [consultationsData, prestationsData, tarifsData] = await Promise.all([
-      getConsultations(),
-      getPrestations(),
-      getTarifs(),
-    ]);
+    const consultationsData = await getConsultations();
 
     setConsultations(consultationsData);
-    setPrestations(prestationsData);
-    setTarifs(tarifsData);
   }
 
   async function handleOpenAnimal(animal) {
+    setAnimalError("");
     setSelectedAnimal(animal);
 
     setAnimalForm({
@@ -130,28 +122,48 @@ export default function ProprietairesModal({
       Memo_Animal: animal.Memo_Animal ?? "",
     });
 
+    setAnimalError("");
+
     try {
       await loadConsultationData();
       setShowAnimalModal(true);
     } catch (err) {
-      console.error(err);
+      setAnimalError(err.message);
     }
+  }
+
+  function handleAddAnimal() {
+    setAnimalError("");
+    setSelectedAnimal(null);
+
+    setAnimalForm({
+      ...emptyAnimalForm,
+      ID_Proprietaire: editingId,
+    });
+
+    setShowAnimalModal(true);
   }
 
   async function handleAnimalSubmit(event) {
     event.preventDefault();
 
-    if (!selectedAnimal?.ID_Animal) return;
-
     try {
       setSavingAnimal(true);
 
-      await updateAnimal(selectedAnimal.ID_Animal, animalForm);
+      if (selectedAnimal?.ID_Animal) {
+        await updateAnimal(selectedAnimal.ID_Animal, animalForm);
+      } else {
+        await createAnimal(animalForm);
+      }
+
+      await onAnimalsChange?.();
 
       setShowAnimalModal(false);
       setSelectedAnimal(null);
+      setAnimalForm(emptyAnimalForm);
     } catch (err) {
-      console.error(err);
+      console.error("Erreur enregistrement animal :", err);
+      setAnimalError(err.message);
     } finally {
       setSavingAnimal(false);
     }
@@ -159,10 +171,14 @@ export default function ProprietairesModal({
 
   async function handleAnimalDelete(id) {
     const animal = animaux.find(
-      (animal) => String(animal.ID_Animal) === String(id),
+      (item) => String(item.ID_Animal) === String(id),
     );
 
     if (!animal) return;
+
+    const consultationCount = consultations.filter(
+      (consultation) => String(consultation.ID_Animal) === String(id),
+    ).length;
 
     const proprietaireName = form.etablissement?.trim()
       ? `${form.raisonSociale ?? ""} ${form.etablissement}`.trim()
@@ -170,19 +186,31 @@ export default function ProprietairesModal({
 
     await confirm({
       title: "Supprimer cet animal",
-      message: `${animal.Nom_Animal} (${animal.Genre_Animal || "-"}), appartenant à ${proprietaireName} va être définitivement supprimé.`,
-      confirmLabel: "Supprimer",
+
+      message: [
+        `${animal.Nom_Animal} (${animal.Genre_Animal || "-"}) appartenant à ${proprietaireName} va être définitivement supprimé.`,
+        "",
+        consultationCount === 0
+          ? "Aucune consultation n'est associée à cet animal."
+          : consultationCount === 1
+            ? "Attention : 1 consultation associée sera également supprimée."
+            : `Attention : ${consultationCount} consultations associées seront également supprimées.`,
+      ].join("\n"),
 
       onConfirm: async () => {
         try {
           setSavingAnimal(true);
+          setAnimalError("");
 
           await deleteAnimal(id);
 
+          await onAnimalsChange?.();
+
           setShowAnimalModal(false);
           setSelectedAnimal(null);
+          setAnimalForm(emptyAnimalForm);
         } catch (err) {
-          console.error(err);
+          setAnimalError(err.message);
           throw err;
         } finally {
           setSavingAnimal(false);
@@ -378,22 +406,28 @@ export default function ProprietairesModal({
           {/* Owner's animals */}
           {editingId && (
             <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-3">
-              <h3 className="text-sm font-semibold text-blue-700">
-                {animauxProprietaire.length === 0
-                  ? "Aucun animal associé."
-                  : `${animauxProprietaire.length} ${
-                      animauxProprietaire.length > 1 ? "animaux" : "animal"
-                    }`}
-              </h3>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold text-blue-700">
+                  {animauxProprietaire.length === 0
+                    ? "Aucun animal associé."
+                    : `${animauxProprietaire.length} ${
+                        animauxProprietaire.length > 1 ? "animaux" : "animal"
+                      }`}
+                </h3>
+
+                <Button onClick={handleAddAnimal}>
+                  + Ajouter un animal
+                </Button>
+              </div>
 
               {animauxProprietaire.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3 justify-center">
+                <div className="mt-3 flex flex-wrap justify-center gap-2">
                   {animauxProprietaire.map((animal) => (
                     <button
                       key={animal.ID_Animal}
                       type="button"
                       onClick={() => handleOpenAnimal(animal)}
-                      className="cursor-pointer rounded-full border border-blue-200 bg-white px-3 text-sm text-blue-800 hover:bg-blue-100"
+                      className="cursor-pointer rounded-full border border-blue-200 bg-white px-3 py-2 text-sm text-blue-800 hover:bg-blue-100"
                     >
                       {`${animal.Nom_Animal} - ${animal.Genre_Animal} ${
                         animal.Sexe_Animal ?? ""
@@ -460,7 +494,7 @@ export default function ProprietairesModal({
             <Textarea
               id="commentaire"
               icon={AlertCircle}
-              label="Commentaire personnel"
+              label="Notes personnelles"
               name="commentaire"
               value={form.commentaire}
               onChange={onChange}
@@ -510,6 +544,12 @@ export default function ProprietairesModal({
         </form>
       </Modal>
 
+      {showAnimalModal && animalError && (
+        <div className="fixed bottom-4 right-4 z-[100] max-w-md rounded-lg border border-red-200 bg-white p-4 text-sm text-red-700 shadow-lg">
+          {animalError}
+        </div>
+      )}
+
       <AnimauxModal
         open={showAnimalModal}
         editingId={selectedAnimal?.ID_Animal ?? null}
@@ -520,6 +560,7 @@ export default function ProprietairesModal({
         onClose={() => {
           setShowAnimalModal(false);
           setSelectedAnimal(null);
+          setAnimalError("");
         }}
         onChange={(event) => {
           const { name, value } = event.target;
@@ -532,10 +573,17 @@ export default function ProprietairesModal({
         onSubmit={handleAnimalSubmit}
         onDelete={handleAnimalDelete}
         onOpenConsultation={(consultation) => {
-          setSelectedConsultation(consultation);
-          setShowConsultationModal(true);
+          const prestation = consultation.Prestation_Consultation;
+
+          navigate("/consultations", {
+            state: {
+              openConsultationId: consultation.ID_Consultation,
+            },
+          });
         }}
       />
+
+      {ConfirmDialog}
     </>
   );
 }

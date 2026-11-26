@@ -352,6 +352,7 @@ export default function Proprietaires() {
         onSubmit={handleSubmit}
         onChange={handleChange}
         onDelete={handleDelete}
+        onAnimalsChange={loadProprietaires}
         scrollToComment={scrollToComment}
       />
 
