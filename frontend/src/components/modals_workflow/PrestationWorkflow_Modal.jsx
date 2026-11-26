@@ -59,6 +59,7 @@ export default function PrestationWorkflowModal({
   const [animalSaving, setAnimalSaving] = useState(false);
   const [animalForm, setAnimalForm] = useState(emptyAnimalForm);
   const [editingAnimalId, setEditingAnimalId] = useState(null);
+  const [animaux, setAnimaux] = useState([]);
 
   const [createdTarif, setCreatedTarif] = useState(null);
   const [showTarifModal, setShowTarifModal] = useState(false);
@@ -235,7 +236,11 @@ export default function PrestationWorkflowModal({
           setError("");
 
           await deleteAnimal(id);
+          await refreshAnimaux();
 
+          const updatedAnimaux = await getAnimaux();
+
+          setAnimaux(updatedAnimaux);
           setCreatedAnimal(null);
           setShowAnimalModal(false);
           setEditingAnimalId(null);
@@ -260,7 +265,7 @@ export default function PrestationWorkflowModal({
     });
   }
 
-  // save animal
+  // Save animal
   async function handleAnimalSubmit(event) {
     event.preventDefault();
 
@@ -274,13 +279,15 @@ export default function PrestationWorkflowModal({
         ? await updateAnimal(editingAnimalId, animalForm)
         : await createAnimal(animalForm);
 
-      const animaux = await getAnimaux();
+      const updatedAnimaux = await getAnimaux();
+
+      setAnimaux(updatedAnimaux);
 
       const animalId = isEditingAnimal
         ? editingAnimalId
         : savedAnimal?.ID_Animal;
 
-      const refreshedAnimal = animaux.find(
+      const refreshedAnimal = updatedAnimaux.find(
         (item) => String(item.ID_Animal) === String(animalId),
       );
 
@@ -290,6 +297,7 @@ export default function PrestationWorkflowModal({
         );
       }
 
+      setAnimaux(updatedAnimaux);
       setCreatedAnimal(refreshedAnimal);
       setShowAnimalModal(false);
       setEditingAnimalId(null);
@@ -298,6 +306,20 @@ export default function PrestationWorkflowModal({
       setShowErrorModal(true);
     } finally {
       setAnimalSaving(false);
+    }
+  }
+
+  // Refresh animal
+  async function refreshAnimaux() {
+    try {
+      const data = await getAnimaux();
+
+      setAnimaux([...data]);
+
+      return data;
+    } catch (err) {
+      console.error("Erreur lors du chargement des animaux :", err);
+      throw err;
     }
   }
 
@@ -412,6 +434,8 @@ export default function PrestationWorkflowModal({
               onUpdated={handleUpdatedPrestation}
               onDeleted={handleDeletedPrestation}
               onError={handleError}
+              onProprietaireUpdated={refreshPrestation}
+              onAnimalsChange={refreshAnimaux}
             />
           </div>
 
@@ -432,6 +456,8 @@ export default function PrestationWorkflowModal({
                 createdAnimal={createdAnimal}
                 createdTarif={createdTarif}
                 onPrestationUpdated={refreshPrestation}
+                animaux={animaux}
+                refreshAnimaux={refreshAnimaux}
               />
             </div>
           )}

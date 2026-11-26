@@ -66,6 +66,8 @@ export default function PrestationWorkflowPrestation({
   onUpdated,
   onDeleted,
   onError,
+  onProprietaireUpdated,
+  onAnimalsChange,
 }) {
   const { confirm, ConfirmDialog } = useConfirm();
 
@@ -140,6 +142,7 @@ export default function PrestationWorkflowPrestation({
     setCustomLieu(false);
   }, [prestation]);
 
+  // Now()
   function getToday() {
     const now = new Date();
 
@@ -148,6 +151,7 @@ export default function PrestationWorkflowPrestation({
       .slice(0, 10);
   }
 
+  // Refresh data
   async function loadData() {
     try {
       const [proprietairesData, deplacementsData, animauxData] =
@@ -165,6 +169,22 @@ export default function PrestationWorkflowPrestation({
     }
   }
 
+  // Refresh animaux
+  async function refreshAnimaux() {
+    try {
+      const animauxData = await getAnimaux();
+
+      setAnimaux([...animauxData]);
+
+      await onAnimalsChange?.(animauxData);
+
+      return animauxData;
+    } catch (err) {
+      onError?.(err.message);
+    }
+  }
+
+  // Update
   function handleChange(event) {
     const { name, value } = event.target;
 
@@ -174,6 +194,7 @@ export default function PrestationWorkflowPrestation({
     }));
   }
 
+  // Update Propriétaire
   function handleProprietaireChange(event) {
     const value = String(event.target.value);
 
@@ -184,6 +205,7 @@ export default function PrestationWorkflowPrestation({
     }));
   }
 
+  // Update Lieu different
   function handleLieuDifferent() {
     setCustomLieu(true);
 
@@ -194,6 +216,7 @@ export default function PrestationWorkflowPrestation({
     }));
   }
 
+  // Update Prorpiétaire
   function handleLieuProprietaire() {
     setCustomLieu(false);
 
@@ -203,7 +226,7 @@ export default function PrestationWorkflowPrestation({
     }));
   }
 
-  /* PROPRIETAIRE */
+  // Open Propriétaire Form
   function openProprietaireForm() {
     setEditingProprietaireId(null);
 
@@ -214,6 +237,7 @@ export default function PrestationWorkflowPrestation({
     setShowProprietaireForm(true);
   }
 
+  // Open Propriétaire Form
   function openEditProprietaireForm(scroll = false) {
     const proprietaire = proprietaires.find(
       (item) => String(item.ID_Proprietaire) === String(form.ID_Proprietaire),
@@ -241,13 +265,17 @@ export default function PrestationWorkflowPrestation({
     setShowProprietaireForm(true);
   }
 
+  // Close propriétaire Form
   function closeProprietaireForm() {
     if (savingProprietaire) return;
 
     setShowProprietaireForm(false);
     setEditingProprietaireId(null);
+    setProprietaireForm(emptyProprietaireForm);
+    setScrollToComment(false);
   }
 
+  // Update Propriétaire Form
   function handleProprietaireFormChange(event) {
     const { name, value } = event.target;
 
@@ -257,6 +285,19 @@ export default function PrestationWorkflowPrestation({
     }));
   }
 
+  // Refresh propriétaire
+  async function refreshProprietaires() {
+    try {
+      const data = await getProprietaires();
+      setProprietaires(data);
+      return data;
+    } catch (err) {
+      onError?.(err.message);
+      throw err;
+    }
+  }
+
+  // Save Propriétaire Form
   async function handleProprietaireSubmit(event) {
     event.preventDefault();
 
@@ -272,7 +313,14 @@ export default function PrestationWorkflowPrestation({
 
       const proprietairesData = await getProprietaires();
 
-      setProprietaires(proprietairesData);
+      setProprietaires([...proprietairesData]);
+
+      await refreshAnimaux();
+
+      if (editingProprietaireId) {
+        await onProprietaireUpdated?.();
+      }
+
       setShowProprietaireForm(false);
       setEditingProprietaireId(null);
     } catch (err) {
@@ -429,7 +477,7 @@ export default function PrestationWorkflowPrestation({
     });
   }
 
-  // Changes ?
+  // Changement détectés
   const hasChanges = JSON.stringify(form) !== JSON.stringify(initialForm);
 
   return (
@@ -691,6 +739,7 @@ export default function PrestationWorkflowPrestation({
         onSubmit={handleProprietaireSubmit}
         onChange={handleProprietaireFormChange}
         onDelete={() => {}}
+        onAnimalsChange={refreshAnimaux}
         scrollToComment={scrollToComment}
       />
     </>

@@ -46,12 +46,13 @@ export default function PrestationWorkflowConsultations({
   createdTarif,
   onPrestationUpdated,
   onOpenPrestation,
+  animaux,
+  refreshAnimaux,
 }) {
   const { confirm, ConfirmDialog } = useConfirm();
 
   const [proprietaires, setProprietaires] = useState([]);
   const [consultations, setConsultations] = useState([]);
-  const [animaux, setAnimaux] = useState([]);
   const [tarifs, setTarifs] = useState([]);
 
   const [form, setForm] = useState({
@@ -66,6 +67,7 @@ export default function PrestationWorkflowConsultations({
   const [saving, setSaving] = useState(false);
   const [zonagesByConsultation, setZonagesByConsultation] = useState({});
   const [draftZonages, setDraftZonages] = useState([]);
+
 
   async function loadData() {
     try {
@@ -84,6 +86,9 @@ export default function PrestationWorkflowConsultations({
       ]);
 
       setProprietaires(proprietairesData);
+
+      // Actualiser les animaux dans le workflow parent
+      await refreshAnimaux?.();
 
       const filteredConsultations = consultationsData.filter(
         (item) => String(item.ID_Prestation) === String(prestationId),
@@ -115,11 +120,11 @@ export default function PrestationWorkflowConsultations({
       );
 
       setConsultations(filteredConsultations);
-      setAnimaux(animauxData);
       setTarifs(tarifsData);
       setZonagesByConsultation(Object.fromEntries(associations));
 
       onConsultationsChange?.(filteredConsultations);
+
       return {
         consultations: filteredConsultations,
         animaux: animauxData,
@@ -129,40 +134,15 @@ export default function PrestationWorkflowConsultations({
       };
     } catch (err) {
       onError?.(err.message);
+      throw err;
     }
   }
 
   // Initialize prestation
   useEffect(() => {
     loadData();
+    refreshAnimaux?.();
   }, [prestationId]);
-
-  // New animal
-  useEffect(() => {
-    if (!createdAnimal?.ID_Animal) {
-      return;
-    }
-
-    setAnimaux((current) => {
-      const exists = current.some(
-        (animal) =>
-          String(animal.ID_Animal) === String(createdAnimal.ID_Animal),
-      );
-
-      return exists
-        ? current.map((animal) =>
-            String(animal.ID_Animal) === String(createdAnimal.ID_Animal)
-              ? { ...animal, ...createdAnimal }
-              : animal,
-          )
-        : [...current, createdAnimal];
-    });
-
-    setForm((current) => ({
-      ...current,
-      ID_Animal: String(createdAnimal.ID_Animal),
-    }));
-  }, [createdAnimal]);
 
   // New tarif
   useEffect(() => {
@@ -376,6 +356,7 @@ export default function PrestationWorkflowConsultations({
       }
 
       await loadData();
+      await refreshAnimaux?.();
       await onPrestationUpdated?.();
       closeForm();
     } catch (err) {
@@ -418,6 +399,7 @@ export default function PrestationWorkflowConsultations({
 
       const data = await loadData();
 
+      await refreshAnimaux?.();
       await onPrestationUpdated?.();
 
       const updatedPdfHandler = createConsultationPdfHandler({
