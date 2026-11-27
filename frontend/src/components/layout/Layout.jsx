@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar.jsx";
 import Topbar from "./Topbar.jsx";
@@ -41,9 +41,9 @@ export default function Layout() {
     setNotification({ message, variant });
   }, []);
 
-  function clearNotification() {
+  const clearNotification = useCallback(() => {
     setNotification(null);
-  }
+  }, []);
 
   useEffect(() => {
     if (!notification) return;
@@ -196,6 +196,14 @@ export default function Layout() {
     }
   }
 
+  const outletContext = useMemo(
+    () => ({
+      notify,
+      clearNotification,
+    }),
+    [notify, clearNotification],
+  );
+
   return (
     <div className="relative flex h-screen">
       {/* Bannière de fin de session */}
@@ -243,12 +251,7 @@ export default function Layout() {
         <Topbar onMenuClick={() => setSidebarOpen((open) => !open)} />
 
         <main className="p-8">
-          <Outlet
-            context={{
-              notify,
-              clearNotification,
-            }}
-          />
+          <Outlet context={outletContext} />
         </main>
       </div>
 

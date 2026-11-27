@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import DeplacementsModal from "../components/modals/Deplacements_Modal.jsx";
-import ErrorModal from "../components/alerts/ErrorModal.jsx";
 import DeplacementsCopyModal from "../components/modals/DeplacementsCopyModal.jsx";
-import Alert from "../components/alerts/Alert.jsx";
+import ErrorModal from "../components/alerts/ErrorModal.jsx";
 import useConfirm from "../hooks/useConfirm.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
 import { Trash2 } from "lucide-react";
@@ -15,6 +15,7 @@ import Table, {
   TableRow,
   TableCell,
 } from "../components/ui/Table.jsx";
+
 import {
   getDeplacements,
   createDeplacement,
@@ -30,46 +31,50 @@ const emptyForm = {
 };
 
 export default function Deplacements() {
+  const { notify, clearNotification } = useOutletContext();
   const { confirm, ConfirmDialog } = useConfirm();
 
   const [deplacements, setDeplacements] = useState([]);
+  const [deplacementsToCopy, setDeplacementsToCopy] = useState([]);
+
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
 
   const [showForm, setShowForm] = useState(false);
 
   const currentYear = new Date().getFullYear();
-  const [search, setSearch] = useState(String(new Date().getFullYear()));
-  const [selectedYear, setSelectedYear] = useState(
-    String(new Date().getFullYear()),
-  );
+
+  const [search, setSearch] = useState(String(currentYear));
+  const [selectedYear, setSelectedYear] = useState(String(currentYear));
+
   const [showCopyModal, setShowCopyModal] = useState(false);
   const [sourceYear, setSourceYear] = useState(String(currentYear));
   const [targetYear, setTargetYear] = useState(String(currentYear + 1));
+
   const [copying, setCopying] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
   const [error, setError] = useState("");
   const [showErrorModal, setShowErrorModal] = useState(false);
 
   async function loadDeplacements() {
     try {
       setLoading(true);
-      setError("");
 
       const data = await getDeplacements();
+
       setDeplacements(data);
-    } catch (err) {
-      setError(err.message);
-      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadDeplacements();
+    loadDeplacements().catch((err) => {
+      notify(err.message, "error");
+    });
   }, []);
 
   function handleChange(event) {
@@ -81,11 +86,16 @@ export default function Deplacements() {
     }));
   }
 
+  function isDeplacementAssociated(deplacement) {
+    return (deplacement?._count?.Prestations_Deplacement ?? 0) > 0;
+  }
+
   function openCreateForm() {
     setEditingId(null);
     setForm(emptyForm);
     setError("");
     setShowForm(true);
+    setSearch(String(currentYear));
   }
 
   function openEditForm(deplacement) {
@@ -102,9 +112,7 @@ export default function Deplacements() {
   }
 
   function closeForm() {
-    if (saving) {
-      return;
-    }
+    if (saving) return;
 
     setShowForm(false);
     setEditingId(null);
@@ -141,9 +149,7 @@ export default function Deplacements() {
   }, [deplacements]);
 
   useEffect(() => {
-    if (availableYears.length === 0) {
-      return;
-    }
+    if (availableYears.length === 0) return;
 
     setSelectedYear((current) => {
       if (availableYears.includes(Number(current))) {
@@ -185,16 +191,27 @@ export default function Deplacements() {
 
     if (!deplacement) {
       setError("Déplacement introuvable.");
+      setShowErrorModal(true);
+      return;
+    }
+
+    if (isDeplacementAssociated(deplacement)) {
+      setError(
+        "Impossible de supprimer ce déplacement car il est utilisé par une ou plusieurs prestations.",
+      );
+      setShowErrorModal(true);
       return;
     }
 
     await confirm({
       title: "Supprimer ce déplacement",
+
       message: `Le déplacement "${deplacement.Denomination_Deplacement}"
-      - Montant :  ${deplacement.Montant_Deplacement} €
-      - Année ${deplacement.Annee_Deplacement}
-      
-      Va être définitivement supprimé.`,
+
+    - Montant : ${deplacement.Montant_Deplacement} €
+    - Année : ${deplacement.Annee_Deplacement}
+
+    Va être définitivement supprimé.`,
 
       onConfirm: async () => {
         try {
@@ -204,18 +221,42 @@ export default function Deplacements() {
           await deleteDeplacement(id);
 
           if (String(editingId) === String(id)) {
-            closeForm();
+            setShowForm(false);
+            setEditingId(null);
+            setForm(emptyForm);
           }
 
           await loadDeplacements();
         } catch (err) {
           setError(err.message);
+          setShowErrorModal(true);
           throw err;
         } finally {
           setSaving(false);
         }
       },
     });
+  }
+
+  function openCopyModal() {
+    setError("");
+
+    const selectedDeplacements = deplacements.filter(
+      (item) => Number(item.Annee_Deplacement) === Number(sourceYear),
+    );
+
+    setDeplacementsToCopy(selectedDeplacements);
+    setShowCopyModal(true);
+  }
+
+  function handleSourceYearChange(year) {
+    setSourceYear(year);
+
+    const selectedDeplacements = deplacements.filter(
+      (item) => Number(item.Annee_Deplacement) === Number(year),
+    );
+
+    setDeplacementsToCopy(selectedDeplacements);
   }
 
   async function handleCopyDeplacements(event) {
@@ -228,51 +269,71 @@ export default function Deplacements() {
       destinationYear < 2000 ||
       destinationYear > 2100
     ) {
-      setError("Année destination invalide");
+      notify("Année destination invalide.", "error");
       return;
     }
 
     if (availableYears.includes(destinationYear)) {
-      setError("Des déplacements existent déjà pour cette année");
+      notify("Des déplacements existent déjà pour cette année.", "error");
+      return;
+    }
+
+    if (deplacementsToCopy.length === 0) {
+      notify("Veuillez sélectionner au moins un déplacement.", "error");
       return;
     }
 
     try {
       setCopying(true);
-      setError("");
+      clearNotification();
 
-      const result = await copyDeplacements(sourceYear, destinationYear);
+      const deplacementIds = deplacementsToCopy.map(
+        (item) => item.ID_Deplacement,
+      );
+
+      const result = await copyDeplacements(
+        sourceYear,
+        destinationYear,
+        deplacementIds,
+      );
 
       setShowCopyModal(false);
+      setDeplacementsToCopy([]);
+
       setSelectedYear(String(destinationYear));
       setSearch(String(destinationYear));
 
       await loadDeplacements();
 
-      window.alert(result.message);
+      notify(result.message, "success");
     } catch (err) {
-      setError(err.message);
+      if (err.message) {
+        notify(err.message, "error");
+      }
     } finally {
       setCopying(false);
     }
   }
 
-  //
-  //
-  //
-  //
-  //
-  // -------Return --------
-  //
-  //
-  //
-  //
-  //
+  function handleRemoveDeplacement(deplacementId) {
+    setDeplacementsToCopy((prev) =>
+      prev.filter((item) => item.ID_Deplacement !== deplacementId),
+    );
+  }
+
+  const editingDeplacement = deplacements.find(
+    (item) => String(item.ID_Deplacement) === String(editingId),
+  );
+
+  const editingDeplacementAssociated = isDeplacementAssociated(
+    editingDeplacement || {},
+  );
+
+  const editingDeplacementPrestations =
+    editingDeplacement?._count?.Prestations_Deplacement ?? 0;
 
   return (
     <div className="w-full">
-      {error && <Alert variant="error">{error}</Alert>}
-
       <PageHeader
         title={
           <>
@@ -286,15 +347,12 @@ export default function Deplacements() {
         createLabel="Nouveau déplacement"
         onAction={openCreateForm}
         secondaryActionLabel="Copier les déplacements"
-        onSecondaryAction={() => {
-          setError("");
-          setShowCopyModal(true);
-        }}
+        onSecondaryAction={openCopyModal}
         secondaryActionDisabled={availableYears.length === 0}
         className="mb-6"
       />
 
-      <div className="mb-6 flex flex-wrap gap-3 justify-center">
+      <div className="mb-4 flex flex-wrap gap-3 justify-center">
         {availableYears.map((year) => (
           <CardFilter
             key={year}
@@ -313,12 +371,15 @@ export default function Deplacements() {
         ))}
       </div>
 
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-sm text-blue-900">
-          {filteredDeplacements.length} déplacement
-          {filteredDeplacements.length > 1 ? "s" : ""}
-        </p>
-      </div>
+      {!loading && (
+        <div className="flex justify-center">
+          <span className="rounded-t-lg bg-blue-200 px-3 text-xs font-medium text-blue-700">
+            {filteredDeplacements.length} déplacement
+            {filteredDeplacements.length > 1 ? "s" : ""} disponible
+            {filteredDeplacements.length > 1 ? "s" : ""}
+          </span>
+        </div>
+      )}
 
       {loading ? (
         <p>Chargement...</p>
@@ -331,9 +392,7 @@ export default function Deplacements() {
               <TableHeader>Année</TableHeader>
               <TableHeader>Désignation</TableHeader>
               <TableHeader>Montant</TableHeader>
-              <TableHeader className="text-right hidden sm:table-cell">
-                Action
-              </TableHeader>
+              <TableHeader></TableHeader>
             </TableRow>
           </TableHead>
 
@@ -350,20 +409,31 @@ export default function Deplacements() {
                 <TableCell>
                   {Number(deplacement.Montant_Deplacement)} €
                 </TableCell>
-                <TableCell className="text-right hidden sm:table-cell">
-                  <Button
-                    type="button"
-                    variant="danger_clear"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleDelete(deplacement.ID_Deplacement);
-                    }}
-                    className="px-3 py-2"
-                    aria-label={`Supprimer ${deplacement.Denomination_Deplacement}`}
-                    title="Supprimer ce déplacement"
-                  >
-                    <Trash2 size={16} />
-                  </Button>
+
+                <TableCell>
+                  {isDeplacementAssociated(deplacement) ? (
+                    <span
+                      className="inline-flex items-center justify-center rounded-full bg-blue-100 w-5 h-5 text-xs font-medium text-blue-700"
+                      title="Nombre de prestations associées"
+                    >
+                      {deplacement._count.Prestations_Deplacement}
+                    </span>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="danger_clear"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDelete(deplacement.ID_Deplacement);
+                      }}
+                      disabled={saving}
+                      className="px-3 py-2 shadow-none"
+                      aria-label={`Supprimer ${deplacement.Denomination_Deplacement}`}
+                      title="Supprimer ce déplacement"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -377,6 +447,8 @@ export default function Deplacements() {
         form={form}
         saving={saving}
         error={error}
+        isAssociated={editingDeplacementAssociated}
+        prestationsCount={editingDeplacementPrestations}
         onClose={closeForm}
         onSubmit={handleSubmit}
         onChange={handleChange}
@@ -385,16 +457,19 @@ export default function Deplacements() {
 
       <DeplacementsCopyModal
         open={showCopyModal}
+        deplacements={deplacementsToCopy}
         availableYears={availableYears}
         sourceYear={sourceYear}
         targetYear={targetYear}
         copying={copying}
         error={error}
-        onSourceYearChange={setSourceYear}
+        onSourceYearChange={handleSourceYearChange}
         onTargetYearChange={setTargetYear}
+        onRemoveDeplacement={handleRemoveDeplacement}
         onClose={() => {
           if (!copying) {
             setShowCopyModal(false);
+            setDeplacementsToCopy([]);
             setError("");
           }
         }}

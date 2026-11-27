@@ -25,7 +25,7 @@ export default function ConfirmModal({
         <div className="flex items-start gap-2">
           <AlertTriangle size={40} className="-mt-2 shrink-0 text-orange-500" />
 
-          <p className="text-blue-900 whitespace-pre-line">{message}</p>
+          <p className="text-blue-900 whitespace-pre-line text-sm">{message}</p>
         </div>
 
         <div className="mt-6 flex justify-end gap-3">

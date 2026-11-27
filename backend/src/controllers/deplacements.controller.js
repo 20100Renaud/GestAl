@@ -1,6 +1,6 @@
 import prisma from "../lib/prisma.js";
 
-// Deplacements all
+// Deplacements and count all
 export async function getDeplacements(req, res) {
   try {
     const deplacements = await prisma.t_Deplacements.findMany({
@@ -11,6 +11,13 @@ export async function getDeplacements(req, res) {
         { Annee_Deplacement: "desc" },
         { Denomination_Deplacement: "asc" },
       ],
+      include: {
+        _count: {
+          select: {
+            Prestations_Deplacement: true,
+          },
+        },
+      },
     });
 
     return res.status(200).json({
@@ -229,9 +236,10 @@ export async function deleteDeplacement(req, res) {
   }
 }
 
+
 export async function copyDeplacements(req, res) {
   try {
-    const { sourceYear, targetYear } = req.body;
+    const { sourceYear, targetYear, deplacementIds } = req.body;
     const userId = req.user.userId;
 
     if (
@@ -253,17 +261,31 @@ export async function copyDeplacements(req, res) {
       });
     }
 
+    if (
+      !Array.isArray(deplacementIds) ||
+      deplacementIds.length === 0 ||
+      !deplacementIds.every((id) => typeof id === "string" && id.trim()) ||
+      new Set(deplacementIds).size !== deplacementIds.length
+    ) {
+      return res.status(400).json({
+        error: "Veuillez sélectionner au moins un déplacement valide",
+      });
+    }
+
     const count = await prisma.$transaction(
       async (tx) => {
         const source = await tx.t_Deplacements.findMany({
           where: {
             ID_User: userId,
             Annee_Deplacement: sourceYear,
+            ID_Deplacement: {
+              in: deplacementIds,
+            },
           },
         });
 
-        if (source.length === 0) {
-          throw new Error("SOURCE_YEAR_EMPTY");
+        if (source.length !== deplacementIds.length) {
+          throw new Error("INVALID_SOURCE_SELECTION");
         }
 
         const destination = await tx.t_Deplacements.findFirst({
@@ -302,9 +324,9 @@ export async function copyDeplacements(req, res) {
       targetYear,
     });
   } catch (error) {
-    if (error.message === "SOURCE_YEAR_EMPTY") {
+    if (error.message === "INVALID_SOURCE_SELECTION") {
       return res.status(400).json({
-        error: "Aucun déplacement trouvé pour l'année à copier",
+        error: "Un ou plusieurs déplacements sélectionnés sont introuvables",
       });
     }
 
@@ -321,3 +343,4 @@ export async function copyDeplacements(req, res) {
     });
   }
 }
+

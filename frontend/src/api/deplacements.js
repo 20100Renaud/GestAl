@@ -65,7 +65,8 @@ export async function deleteDeplacement(id) {
   return handleResponse(response);
 }
 
-export async function copyDeplacements(sourceYear, targetYear) {
+
+export async function copyDeplacements(sourceYear, targetYear, deplacementIds) {
   const response = await fetch(`${API_URL}/deplacements/copy`, {
     method: "POST",
     credentials: "include",
@@ -75,8 +76,10 @@ export async function copyDeplacements(sourceYear, targetYear) {
     body: JSON.stringify({
       sourceYear: Number(sourceYear),
       targetYear: Number(targetYear),
+      deplacementIds,
     }),
   });
 
   return handleResponse(response);
 }
+

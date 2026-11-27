@@ -74,8 +74,8 @@ export async function deleteTarif(id) {
   return null;
 }
 
-// Copy
-export async function copyTarifs(sourceYear, targetYear) {
+// Copy selected tarifs
+export async function copyTarifs(sourceYear, targetYear, tarifIds) {
   const response = await fetch(`${API_URL}/tarifs/copy`, {
     method: "POST",
     credentials: "include",
@@ -85,6 +85,7 @@ export async function copyTarifs(sourceYear, targetYear) {
     body: JSON.stringify({
       sourceYear: Number(sourceYear),
       targetYear: Number(targetYear),
+      tarifIds,
     }),
   });
 

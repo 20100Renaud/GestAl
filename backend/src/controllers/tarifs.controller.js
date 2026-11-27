@@ -1,13 +1,23 @@
 import prisma from "../lib/prisma.js";
 
-// Read all
+// Read and count all
 export async function getTarifs(req, res) {
   try {
     const tarifs = await prisma.t_Tarifs.findMany({
       where: {
         ID_User: req.user.userId,
       },
-      orderBy: [{ Annee_Tarif: "desc" }, { Denomination_Tarif: "asc" }],
+      orderBy: [
+        { Annee_Tarif: "desc" },
+        { Denomination_Tarif: "asc" },
+      ],
+      include: {
+        _count: {
+          select: {
+            Consultations_Tarif: true,
+          },
+        },
+      },
     });
 
     return res.status(200).json({
@@ -220,12 +230,13 @@ export async function deleteTarif(req, res) {
   }
 }
 
-// Copy
+// Copy selected tarifs
 export async function copyTarifs(req, res) {
   try {
-    const { sourceYear, targetYear } = req.body;
+    const { sourceYear, targetYear, tarifIds } = req.body;
     const userId = req.user.userId;
 
+    // Validation des années
     if (
       !Number.isInteger(sourceYear) ||
       sourceYear < 2000 ||
@@ -245,19 +256,37 @@ export async function copyTarifs(req, res) {
       });
     }
 
+    // Validation de la sélection
+    if (
+      !Array.isArray(tarifIds) ||
+      tarifIds.length === 0 ||
+      tarifIds.some((id) => typeof id !== "string") ||
+      new Set(tarifIds).size !== tarifIds.length
+    ) {
+      return res.status(400).json({
+        error: "Sélection de tarifs invalide",
+      });
+    }
+
     const result = await prisma.$transaction(
       async (tx) => {
+        // Vérifier que les tarifs sélectionnés appartiennent
+        // bien à l'utilisateur et à l'année source
         const sourceTarifs = await tx.t_Tarifs.findMany({
           where: {
             ID_User: userId,
             Annee_Tarif: sourceYear,
+            ID_Tarif: {
+              in: tarifIds,
+            },
           },
         });
 
-        if (sourceTarifs.length === 0) {
-          throw new Error("SOURCE_YEAR_EMPTY");
+        if (sourceTarifs.length !== tarifIds.length) {
+          throw new Error("INVALID_SELECTED_TARIFS");
         }
 
+        // Vérifier que l'année destination est disponible
         const existingTarget = await tx.t_Tarifs.findFirst({
           where: {
             ID_User: userId,
@@ -272,6 +301,7 @@ export async function copyTarifs(req, res) {
           throw new Error("TARGET_YEAR_EXISTS");
         }
 
+        // Copier uniquement les tarifs sélectionnés
         const copied = await tx.t_Tarifs.createMany({
           data: sourceTarifs.map((tarif) => ({
             ID_User: userId,
@@ -294,9 +324,9 @@ export async function copyTarifs(req, res) {
       targetYear,
     });
   } catch (error) {
-    if (error.message === "SOURCE_YEAR_EMPTY") {
+    if (error.message === "INVALID_SELECTED_TARIFS") {
       return res.status(400).json({
-        error: "Aucun tarif trouvé pour l'année à copier",
+        error: "Un ou plusieurs tarifs sélectionnés sont invalides",
       });
     }
 

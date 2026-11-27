@@ -2,10 +2,59 @@ import Modal from "../ui/Modal.jsx";
 import Input from "../ui/Input.jsx";
 import Select from "../ui/Select.jsx";
 import Button from "../ui/Button.jsx";
-import { FileOutput } from "lucide-react";
+import { ArrowRight, X } from "lucide-react";
+
+function formatAmount(amount) {
+  return (
+    Number(amount).toLocaleString("fr-FR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }) + " €"
+  );
+}
+
+function DeplacementList({ items, onRemoveDeplacement, disabled }) {
+  return (
+    <div className="rounded-lg bg-blue-50">
+      <span className="flex ml-1 text-xs font-normal text-blue-700 pr-4 py-1">
+        Déplacements sélectionnés : {items.length}
+      </span>
+
+      <div className="max-h-56 overflow-y-auto space-y-1">
+        {items.map((deplacement) => (
+          <div
+            key={deplacement.ID_Deplacement}
+            className="flex items-center justify-between gap-2 rounded-lg border border-blue-100 bg-white px-3 py-2"
+          >
+            <span className="min-w-0 truncate text-xs text-blue-900">
+              {deplacement.Denomination_Deplacement}
+            </span>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-xs font-semibold text-blue-900">
+                {formatAmount(deplacement.Montant_Deplacement)}
+              </span>
+
+              <button
+                type="button"
+                title="Désélectionner ce déplacement"
+                onClick={() => onRemoveDeplacement(deplacement.ID_Deplacement)}
+                disabled={disabled}
+                className="rounded p-1 text-red-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-40"
+              >
+                <X size={15} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function DeplacementsCopyModal({
   open,
+  deplacements = [],
   availableYears,
   sourceYear,
   targetYear,
@@ -13,13 +62,10 @@ export default function DeplacementsCopyModal({
   error,
   onSourceYearChange,
   onTargetYearChange,
+  onRemoveDeplacement,
   onClose,
   onSubmit,
 }) {
-  if (!open) {
-    return null;
-  }
-
   const targetYearExists = availableYears.includes(Number(targetYear));
 
   const invalidTargetYear =
@@ -36,25 +82,25 @@ export default function DeplacementsCopyModal({
         if (!copying) onClose();
       }}
     >
-      <form onSubmit={onSubmit} className="space-y-6 p-6">
-        <p className="text-sm text-blue-700">
+      <form onSubmit={onSubmit} className="p-6">
+        <p className="text-sm text-blue-700 text-center mb-4">
           Copiez les déplacements vers une <u>nouvelle</u> année.
         </p>
 
         {error && (
           <div
             role="alert"
-            className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+            className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 mb-4"
           >
             {error}
           </div>
         )}
 
-        <div className="flex justify-around gap-4 items-end">
-          <div className="min-w-0 flex-1">
+        <div className="grid grid-cols-2 gap-4 items-start">
+          <div className="min-w-0">
             <Select
               id="sourceDeplacementYear"
-              label="Année à copier"
+              label="Depuis"
               value={sourceYear}
               onChange={(event) => onSourceYearChange(event.target.value)}
               disabled={copying}
@@ -68,14 +114,11 @@ export default function DeplacementsCopyModal({
             </Select>
           </div>
 
-          <div className="mb-2 text-blue-700">
-            <FileOutput strokeWidth={1.5} style={{ transform: "scaleX(-1)" }} />
-          </div>
-
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0">
             <Input
               id="targetDeplacementYear"
-              label="Année destination"
+              icon={ArrowRight}
+              label="Vers"
               type="number"
               min="2000"
               max="2100"
@@ -87,18 +130,33 @@ export default function DeplacementsCopyModal({
           </div>
         </div>
 
-        <div className="h-2 text-right text-sm text-red-600">
-          {targetYearExists && (
-            <p role="alert">
+        <div className="min-h-8 mt-2 text-right text-xs">
+          {targetYearExists ? (
+            <p role="alert" className="text-red-600">
               L'année de destination contient déjà des déplacements.
             </p>
-          )}
-          {invalidTargetYear && targetYear !== "" && (
-            <p role="alert">L'année doit être comprise entre 2000 et 2100.</p>
+          ) : invalidTargetYear ? (
+            targetYear !== "" && (
+              <p role="alert" className="text-red-600">
+                L'année doit être comprise entre 2000 et 2100.
+              </p>
+            )
+          ) : (
+            <p className="text-green-700 font-medium">
+              ✓ Année disponible à la copie
+            </p>
           )}
         </div>
 
-        <div className="flex justify-end gap-3 pt-3">
+        <div className="w-full">
+          <DeplacementList
+            items={deplacements}
+            onRemoveDeplacement={onRemoveDeplacement}
+            disabled={copying}
+          />
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4">
           <Button
             type="button"
             variant="clear_blue"
@@ -110,7 +168,12 @@ export default function DeplacementsCopyModal({
 
           <Button
             type="submit"
-            disabled={copying || invalidTargetYear || targetYearExists}
+            disabled={
+              copying ||
+              invalidTargetYear ||
+              targetYearExists ||
+              deplacements.length === 0
+            }
           >
             {copying ? "Copie en cours..." : "Confirmer la copie"}
           </Button>

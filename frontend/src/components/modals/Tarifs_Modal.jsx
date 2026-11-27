@@ -2,7 +2,7 @@ import Button from "../ui/Button.jsx";
 import Input from "../ui/Input.jsx";
 import Alert from "../alerts/Alert.jsx";
 import Modal from "../ui/Modal.jsx";
-import { CalendarDays, CircleEuro, ClipboardPen } from "lucide-react";
+import { CalendarDays, CircleEuro, ClipboardPen, Info } from "lucide-react";
 
 export default function TarifsModal({
   open,
@@ -10,6 +10,8 @@ export default function TarifsModal({
   form,
   saving,
   error,
+  isAssociated = false,
+  consultationsCount = 0,
   onClose,
   onSubmit,
   onChange,
@@ -72,16 +74,25 @@ export default function TarifsModal({
 
         <div className="mt-6 flex items-center justify-between gap-3">
           <div>
-            {editingId && (
-              <Button
-                type="button"
-                variant="danger"
-                onClick={() => onDelete(editingId)}
-                disabled={saving}
-              >
-                Supprimer
-              </Button>
-            )}
+            {editingId &&
+              (isAssociated ? (
+                <div className="flex items-center gap-2 text-sm text-blue-700">
+                  <Info size={16} />
+                  <span>
+                    Tarif associé à {consultationsCount} consultation
+                    {consultationsCount > 1 ? "s" : ""}
+                  </span>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => onDelete(editingId)}
+                  disabled={saving}
+                >
+                  Supprimer
+                </Button>
+              ))}
           </div>
 
           <div className="flex gap-3">

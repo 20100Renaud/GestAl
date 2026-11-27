@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import TarifsModal from "../components/modals/Tarifs_Modal.jsx";
 import TarifsCopyModal from "../components/modals/TarifsCopyModal.jsx";
-import ErrorModal from "../components/alerts/ErrorModal.jsx"; // add
-import Alert from "../components/alerts/Alert.jsx";
+import ErrorModal from "../components/alerts/ErrorModal.jsx";
 import useConfirm from "../hooks/useConfirm.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
 import { Trash2 } from "lucide-react";
@@ -31,9 +31,11 @@ const emptyForm = {
 };
 
 export default function Tarifs() {
+  const { notify, clearNotification } = useOutletContext();
   const { confirm, ConfirmDialog } = useConfirm();
 
   const [tarifs, setTarifs] = useState([]);
+  const [tarifsToCopy, setTarifsToCopy] = useState([]);
 
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -53,26 +55,24 @@ export default function Tarifs() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [showErrorModal, setShowErrorModal] = useState(false); // add
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   async function loadTarifs() {
     try {
       setLoading(true);
-      setError("");
 
       const data = await getTarifs();
 
       setTarifs(data);
-    } catch (err) {
-      setError(err.message);
-      setShowErrorModal(true); // add
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    loadTarifs();
+    loadTarifs().catch((err) => {
+      notify(err.message, "error");
+    });
   }, []);
 
   function handleChange(event) {
@@ -82,6 +82,10 @@ export default function Tarifs() {
       ...current,
       [name]: value,
     }));
+  }
+
+  function isTarifAssociated(tarif) {
+    return (tarif?._count?.Consultations_Tarif ?? 0) > 0;
   }
 
   function openCreateForm() {
@@ -183,14 +187,18 @@ export default function Tarifs() {
 
     if (!tarif) {
       setError("Tarif introuvable.");
+      setShowErrorModal(true);
       return;
     }
 
     await confirm({
       title: "Supprimer ce tarif",
-      message: `Le tarif "${tarif.Denomination_Tarif}" de ${
-        tarif.Montant_Tarif
-      } € pour l'année ${tarif.Annee_Tarif} va être définitivement supprimé.`,
+      message: `Le tarif "${tarif.Denomination_Tarif}"
+
+    - Montant : ${tarif.Montant_Tarif} €
+    - Année : ${tarif.Annee_Tarif}
+
+    Va être définitivement supprimé.`,
 
       onConfirm: async () => {
         try {
@@ -208,12 +216,34 @@ export default function Tarifs() {
           await loadTarifs();
         } catch (err) {
           setError(err.message);
+          setShowErrorModal(true);
           throw err;
         } finally {
           setSaving(false);
         }
       },
     });
+  }
+
+  function openCopyModal() {
+    setError("");
+
+    const selectedTarifs = tarifs.filter(
+      (tarif) => Number(tarif.Annee_Tarif) === Number(sourceYear),
+    );
+
+    setTarifsToCopy(selectedTarifs);
+    setShowCopyModal(true);
+  }
+
+  function handleSourceYearChange(year) {
+    setSourceYear(year);
+
+    const selectedTarifs = tarifs.filter(
+      (tarif) => Number(tarif.Annee_Tarif) === Number(year),
+    );
+
+    setTarifsToCopy(selectedTarifs);
   }
 
   async function handleCopyTarifs(event) {
@@ -226,34 +256,61 @@ export default function Tarifs() {
       destinationYear < 2000 ||
       destinationYear > 2100
     ) {
-      setError("Année destination invalide");
+      notify("Année destination invalide.", "error");
       return;
     }
 
     if (availableYears.includes(destinationYear)) {
-      setError("Des tarifs existent déjà pour cette année");
+      notify("Des tarifs existent déjà pour cette année.", "error");
+      return;
+    }
+
+    if (tarifsToCopy.length === 0) {
+      notify("Veuillez sélectionner au moins un tarif.", "error");
       return;
     }
 
     try {
       setCopying(true);
-      setError("");
+      clearNotification();
 
-      const result = await copyTarifs(sourceYear, destinationYear);
+      const tarifIds = tarifsToCopy.map((tarif) => tarif.ID_Tarif);
+
+      const result = await copyTarifs(sourceYear, destinationYear, tarifIds);
 
       setShowCopyModal(false);
+      setTarifsToCopy([]);
+
       setSelectedYear(String(destinationYear));
       setSearch(String(destinationYear));
 
       await loadTarifs();
 
-      window.alert(result.message);
+      notify(result.message, "success");
     } catch (err) {
-      setError(err.message);
+      if (err.message) {
+        notify(err.message, "error");
+      }
     } finally {
       setCopying(false);
     }
   }
+
+  const handleRemoveTarif = (tarifId) => {
+    setTarifsToCopy((prev) =>
+      prev.filter((tarif) => tarif.ID_Tarif !== tarifId),
+    );
+  };
+
+  const editingTarif = tarifs.find(
+    (tarif) => String(tarif.ID_Tarif) === String(editingId),
+  );
+
+  const editingTarifAssociated = isTarifAssociated(editingTarif || {});
+
+  const editingTarifConsultations =
+    editingTarif?._count?.Consultations_Tarif ?? 0;
+
   //
   //
   //
@@ -266,8 +323,6 @@ export default function Tarifs() {
 
   return (
     <div className="w-full">
-      {error && <Alert variant="error">{error}</Alert>}
-
       <PageHeader
         title={
           <>
@@ -281,15 +336,12 @@ export default function Tarifs() {
         createLabel="Nouveau tarif"
         onAction={openCreateForm}
         secondaryActionLabel="Copier les tarifs"
-        onSecondaryAction={() => {
-          setError("");
-          setShowCopyModal(true);
-        }}
+        onSecondaryAction={openCopyModal}
         secondaryActionDisabled={availableYears.length === 0}
         className="mb-6"
       />
 
-      <div className="mb-6 flex flex-wrap gap-3 justify-center">
+      <div className="mb-4 flex flex-wrap gap-3 justify-center">
         {availableYears.map((year) => (
           <CardFilter
             key={year}
@@ -308,6 +360,16 @@ export default function Tarifs() {
         ))}
       </div>
 
+      {!loading && (
+        <div className="flex justify-center">
+          <span className="rounded-t-lg bg-blue-200 px-3 text-xs font-medium text-blue-700">
+            {filteredTarifs.length} tarif
+            {filteredTarifs.length > 1 ? "s" : ""} displonible
+            {filteredTarifs.length > 1 ? "s" : ""}
+          </span>
+        </div>
+      )}
+
       {loading ? (
         <p>Chargement...</p>
       ) : filteredTarifs.length === 0 ? (
@@ -319,9 +381,7 @@ export default function Tarifs() {
               <TableHeader>Année</TableHeader>
               <TableHeader>Désignation</TableHeader>
               <TableHeader>Montant</TableHeader>
-              <TableHeader className="text-right hidden sm:table-cell">
-                Action
-              </TableHeader>
+              <TableHeader></TableHeader>
             </TableRow>
           </TableHead>
 
@@ -337,20 +397,30 @@ export default function Tarifs() {
 
                 <TableCell>{Number(tarif.Montant_Tarif)} €</TableCell>
 
-                <TableCell className="text-right hidden sm:table-cell">
-                  <Button
-                    type="button"
-                    variant="danger_clear"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleDelete(tarif.ID_Tarif);
-                    }}
-                    className="px-3 py-2"
-                    aria-label={`Supprimer ${tarif.Denomination_Tarif}`}
-                    title="Supprimer ce tarif"
-                  >
-                    <Trash2 size={16} />
-                  </Button>
+                <TableCell>
+                  {isTarifAssociated(tarif) ? (
+                    <span
+                      className="inline-flex items-center justify-center rounded-full bg-blue-100 w-5 h-5 text-xs font-medium text-blue-700"
+                      title="Nombre de consultations associées"
+                    >
+                      {tarif._count.Consultations_Tarif}
+                    </span>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="danger_clear"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleDelete(tarif.ID_Tarif);
+                      }}
+                      disabled={saving}
+                      className="px-3 py-2 shadow-none"
+                      aria-label={`Supprimer ${tarif.Denomination_Tarif}`}
+                      title="Supprimer ce tarif"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -364,6 +434,8 @@ export default function Tarifs() {
         form={form}
         saving={saving}
         error={error}
+        isAssociated={editingTarifAssociated}
+        consultationsCount={editingTarifConsultations}
         onClose={closeForm}
         onSubmit={handleSubmit}
         onChange={handleChange}
@@ -372,23 +444,26 @@ export default function Tarifs() {
 
       <TarifsCopyModal
         open={showCopyModal}
+        tarifs={tarifsToCopy}
         availableYears={availableYears}
         sourceYear={sourceYear}
         targetYear={targetYear}
         copying={copying}
         error={error}
-        onSourceYearChange={setSourceYear}
+        onSourceYearChange={handleSourceYearChange}
         onTargetYearChange={setTargetYear}
+        onRemoveTarif={handleRemoveTarif}
         onClose={() => {
           if (!copying) {
             setShowCopyModal(false);
+            setTarifsToCopy([]);
             setError("");
           }
         }}
         onSubmit={handleCopyTarifs}
       />
 
-{ConfirmDialog}
+      {ConfirmDialog}
 
       <ErrorModal
         open={showErrorModal}

@@ -2,7 +2,7 @@ import Button from "../ui/Button.jsx";
 import Input from "../ui/Input.jsx";
 import Alert from "../alerts/Alert.jsx";
 import Modal from "../ui/Modal.jsx";
-import { CalendarDays, CircleEuro, ClipboardPen } from "lucide-react";
+import { CalendarDays, CircleEuro, ClipboardPen, Info } from "lucide-react";
 
 export default function DeplacementsModal({
   open,
@@ -10,6 +10,8 @@ export default function DeplacementsModal({
   form,
   saving,
   error,
+  isAssociated = false,
+  prestationsCount = 0,
   onClose,
   onSubmit,
   onChange,
@@ -37,6 +39,9 @@ export default function DeplacementsModal({
             name="Annee_Deplacement"
             value={form.Annee_Deplacement}
             onChange={onChange}
+            min="2000"
+            max="2100"
+            step="1"
             required
           />
 
@@ -69,16 +74,25 @@ export default function DeplacementsModal({
 
         <div className="mt-6 flex items-center justify-between gap-3">
           <div>
-            {editingId && (
-              <Button
-                type="button"
-                variant="danger"
-                onClick={() => onDelete(editingId)}
-                disabled={saving}
-              >
-                Supprimer
-              </Button>
-            )}
+            {editingId &&
+              (isAssociated ? (
+                <div className="flex items-center gap-2 text-sm text-blue-700">
+                  <Info size={16} />
+                  <span>
+                    Déplacement associé à {prestationsCount} prestation
+                    {prestationsCount > 1 ? "s" : ""}
+                  </span>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="danger"
+                  onClick={() => onDelete(editingId)}
+                  disabled={saving}
+                >
+                  Supprimer
+                </Button>
+              ))}
           </div>
 
           <div className="flex gap-3">

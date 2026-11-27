@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  useState,
+} from "react";
 
 import {
   getCurrentUser,
@@ -7,17 +15,64 @@ import {
 } from "../api/auth.js";
 
 const AuthContext = createContext(null);
+const SessionTimerContext = createContext(null);
+
+// --------------------------------------------------
+// SESSION TIMER PROVIDER
+// --------------------------------------------------
+
+function SessionClockProvider({
+  active,
+  sessionExpiresAt,
+  onExpire,
+  children,
+}) {
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    if (!active || !sessionExpiresAt) return;
+
+    setNow(Date.now());
+
+    const timer = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [active, sessionExpiresAt]);
+
+  const sessionTimeLeft = sessionExpiresAt
+    ? Math.max(0, Math.ceil((sessionExpiresAt - now) / 1000))
+    : null;
+
+  useEffect(() => {
+    if (active && sessionTimeLeft === 0) {
+      onExpire();
+    }
+  }, [active, sessionTimeLeft, onExpire]);
+
+  const timerValue = useMemo(() => ({ sessionTimeLeft }), [sessionTimeLeft]);
+
+  return (
+    <SessionTimerContext.Provider value={timerValue}>
+      {children}
+    </SessionTimerContext.Provider>
+  );
+}
+
+// --------------------------------------------------
+// AUTH PROVIDER
+// --------------------------------------------------
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
   const [sessionExpiresAt, setSessionExpiresAt] = useState(null);
-  const [now, setNow] = useState(Date.now());
   const [sessionExpired, setSessionExpired] = useState(false);
 
   const expirationHandled = useRef(false);
 
+  // Vérification de l'authentification
   useEffect(() => {
     async function checkAuthentication() {
       try {
@@ -37,51 +92,25 @@ export function AuthProvider({ children }) {
     checkAuthentication();
   }, []);
 
-  // Mise à jour du temps restant
-  useEffect(() => {
-    if (!user || !sessionExpiresAt) return;
-
-    const timer = setInterval(() => {
-      setNow(Date.now());
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [user, sessionExpiresAt]);
-
-  const sessionTimeLeft = sessionExpiresAt
-    ? Math.max(0, Math.ceil((sessionExpiresAt - now) / 1000))
-    : null;
-
-  // Déconnexion automatique à expiration
-  useEffect(() => {
-    if (
-      !user ||
-      !sessionExpiresAt ||
-      sessionTimeLeft === null ||
-      sessionTimeLeft > 0 ||
-      expirationHandled.current
-    ) {
-      return;
-    }
+  // Déconnexion automatique
+  const expireSession = useCallback(async () => {
+    if (expirationHandled.current) return;
 
     expirationHandled.current = true;
 
-    async function expireSession() {
-      try {
-        await logoutRequest();
-      } catch (error) {
-        console.error("Automatic logout failed:", error);
-      } finally {
-        setUser(null);
-        setSessionExpiresAt(null);
-        setSessionExpired(true);
-      }
+    try {
+      await logoutRequest();
+    } catch (error) {
+      console.error("Automatic logout failed:", error);
+    } finally {
+      setUser(null);
+      setSessionExpiresAt(null);
+      setSessionExpired(true);
     }
+  }, []);
 
-    expireSession();
-  }, [user, sessionExpiresAt, sessionTimeLeft]);
-
-  async function login(email, password) {
+  // Connexion
+  const login = useCallback(async (email, password) => {
     expirationHandled.current = false;
     setSessionExpired(false);
 
@@ -92,12 +121,12 @@ export function AuthProvider({ children }) {
 
     setUser(currentUser);
     setSessionExpiresAt(data?.expiresAt ?? null);
-    setNow(Date.now());
 
     return currentUser;
-  }
+  }, []);
 
-  async function logout() {
+  // Déconnexion manuelle
+  const logout = useCallback(async () => {
     try {
       await logoutRequest();
     } finally {
@@ -106,32 +135,59 @@ export function AuthProvider({ children }) {
       setSessionExpiresAt(null);
       setSessionExpired(false);
     }
-  }
+  }, []);
+
+  // Valeur stable du contexte d'authentification
+  const authValue = useMemo(
+    () => ({
+      user,
+      loading,
+      isAuthenticated: user !== null,
+      login,
+      logout,
+      sessionExpiresAt,
+      sessionExpired,
+      setSessionExpired,
+    }),
+    [user, loading, login, logout, sessionExpiresAt, sessionExpired],
+  );
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        isAuthenticated: user !== null,
-        login,
-        logout,
-        sessionExpiresAt,
-        sessionTimeLeft,
-        sessionExpired,
-        setSessionExpired,
-      }}
-    >
-      {children}
+    <AuthContext.Provider value={authValue}>
+      <SessionClockProvider
+        active={user !== null}
+        sessionExpiresAt={sessionExpiresAt}
+        onExpire={expireSession}
+      >
+        {children}
+      </SessionClockProvider>
     </AuthContext.Provider>
   );
 }
+
+// --------------------------------------------------
+// AUTH HOOK
+// --------------------------------------------------
 
 export function useAuth() {
   const context = useContext(AuthContext);
 
   if (!context) {
     throw new Error("useAuth must be used inside an AuthProvider");
+  }
+
+  return context;
+}
+
+// --------------------------------------------------
+// SESSION TIMER HOOK
+// --------------------------------------------------
+
+export function useSessionTimer() {
+  const context = useContext(SessionTimerContext);
+
+  if (!context) {
+    throw new Error("useSessionTimer must be used inside an AuthProvider");
   }
 
   return context;

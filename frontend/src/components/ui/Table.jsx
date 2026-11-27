@@ -47,7 +47,9 @@ export function TableRow({ children, className = "", ...props }) {
 
 export function TableHeader({ children, className = "" }) {
   return (
-    <th className={`px-4 py-3 text-xs font-semibold uppercase tracking-wide text-blue-900 text-center ${className}`}>
+    <th
+      className={`px-2 md:px-4 py-2 md:py-3 text-xs font-semibold uppercase tracking-wide text-blue-900 text-center ${className}`}
+    >
       {children}
     </th>
   );

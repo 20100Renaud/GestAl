@@ -1,5 +1,5 @@
 import { Clock } from "lucide-react";
-import { useAuth } from "../../context/AuthContext.jsx";
+import { useSessionTimer } from "../../context/AuthContext.jsx";
 
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
@@ -11,7 +11,7 @@ function formatTime(seconds) {
 }
 
 export default function SessionTimer() {
-  const { sessionTimeLeft } = useAuth();
+  const { sessionTimeLeft } = useSessionTimer();
 
   if (sessionTimeLeft === null) return null;
 
