@@ -631,17 +631,24 @@ export default function PrestationWorkflowPrestation({
             >
               <option value="">Sélectionner un déplacement</option>
 
-              {deplacements.map((deplacement) => (
-                <option
-                  key={deplacement.ID_Deplacement}
-                  value={deplacement.ID_Deplacement}
-                >
-                  {deplacement.Denomination_Deplacement}
-                  {" ("}
-                  {deplacement.Montant_Deplacement}
-                  {" €)"}
-                </option>
-              ))}
+              {deplacements
+                .filter(
+                  (deplacement) =>
+                    Number(deplacement.Annee_Deplacement) ===
+                    new Date().getFullYear(),
+                )
+                .map((deplacement) => (
+                  <option
+                    key={deplacement.ID_Deplacement}
+                    value={deplacement.ID_Deplacement}
+                  >
+                    {deplacement.Denomination_Deplacement}
+                    {" ("}
+                    {deplacement.Montant_Deplacement}
+                    {" €) - "}
+                    {deplacement.Annee_Deplacement}
+                  </option>
+                ))}
             </Select>
 
             <Button

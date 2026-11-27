@@ -1,0 +1,14 @@
+{
+  "name": "gestal",
+  "private": true,
+  "scripts": {
+    "dev": "exec node scripts/dev.js",
+    "docker": "docker compose up",
+    "backend": "npm --prefix backend run dev",
+    "frontend": "npm --prefix frontend run dev",
+    "stop": "docker compose down"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
