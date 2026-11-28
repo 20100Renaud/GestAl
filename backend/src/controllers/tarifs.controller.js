@@ -115,6 +115,7 @@ export async function createTarif(req, res) {
 // Update
 export async function updateTarif(req, res) {
   try {
+    const { id } = req.params;
     const { Annee_Tarif, Denomination_Tarif, Montant_Tarif } = req.body;
 
     if (
@@ -129,11 +130,6 @@ export async function updateTarif(req, res) {
       });
     }
 
-    const montant =
-      Montant_Tarif === undefined || Montant_Tarif === ""
-        ? 0
-        : Number(Montant_Tarif);
-
     const annee = Number(Annee_Tarif);
 
     if (!Number.isInteger(annee) || annee < 2000 || annee > 2100) {
@@ -142,38 +138,85 @@ export async function updateTarif(req, res) {
       });
     }
 
+    const montant =
+      Montant_Tarif === undefined || Montant_Tarif === ""
+        ? 0
+        : Number(Montant_Tarif);
+
     if (!Number.isFinite(montant) || montant < 0) {
       return res.status(400).json({
         error: "Invalid amount",
       });
     }
 
-    const existingTarif = await prisma.t_Tarifs.findUnique({
-      where: {
-        ID_Tarif: req.params.id,
-        ID_User: req.user.userId,
-      },
-    });
+    const result = await prisma.$transaction(
+      async (tx) => {
+        const existingTarif = await tx.t_Tarifs.findFirst({
+          where: {
+            ID_Tarif: id,
+            ID_User: req.user.userId,
+          },
+          include: {
+            _count: {
+              select: {
+                Consultations_Tarif: true,
+              },
+            },
+          },
+        });
 
-    if (!existingTarif) {
-      return res.status(404).json({
-        error: "Tarif not found",
+        if (!existingTarif) {
+          return {
+            status: 404,
+            error: "Tarif not found",
+          };
+        }
+
+        const isAssociated =
+          existingTarif._count.Consultations_Tarif > 0;
+
+        const yearChanged =
+          annee !== existingTarif.Annee_Tarif;
+
+        const amountChanged =
+          montant !== Number(existingTarif.Montant_Tarif);
+
+        if (isAssociated && (yearChanged || amountChanged)) {
+          return {
+            status: 409,
+            error:
+              "Impossible de modifier l'année ou le montant de ce tarif car il est associé à une ou plusieurs consultations.",
+          };
+        }
+
+        const tarif = await tx.t_Tarifs.update({
+          where: {
+            ID_Tarif: id,
+          },
+          data: {
+            Annee_Tarif: isAssociated ? existingTarif.Annee_Tarif : annee,
+            Denomination_Tarif: Denomination_Tarif.trim(),
+            Montant_Tarif: isAssociated ? existingTarif.Montant_Tarif : montant,
+          },
+        });
+
+        return {
+          status: 200,
+          tarif,
+        };
+      },
+      {
+        isolationLevel: "Serializable",
+      },
+    );
+
+    if (result.error) {
+      return res.status(result.status).json({
+        error: result.error,
       });
     }
 
-    const tarif = await prisma.t_Tarifs.update({
-      where: {
-        ID_Tarif: req.params.id,
-        ID_User: req.user.userId,
-      },
-      data: {
-        Annee_Tarif: annee,
-        Denomination_Tarif: Denomination_Tarif.trim(),
-        Montant_Tarif: montant,
-      },
-    });
-
-    return res.status(200).json(tarif);
+    return res.status(200).json(result.tarif);
   } catch (error) {
     console.error("Update tarif error:", error);
 

@@ -169,6 +169,13 @@ export default function Deplacements() {
       setSaving(true);
       setError("");
 
+      if (editingId && editingDeplacementAssociated) {
+        form.Annee_Deplacement = editingDeplacement.Annee_Deplacement;
+        form.Montant_Deplacement = String(
+          editingDeplacement.Montant_Deplacement,
+        );
+      }
+      
       if (editingId) {
         await updateDeplacement(editingId, form);
       } else {
@@ -371,6 +378,7 @@ export default function Deplacements() {
         ))}
       </div>
 
+      {/* Count */}
       {!loading && (
         <div className="flex justify-center">
           <span className="rounded-t-lg bg-blue-200 px-3 text-xs font-medium text-blue-700">

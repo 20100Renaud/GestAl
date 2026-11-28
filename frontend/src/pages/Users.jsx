@@ -250,11 +250,11 @@ export default function Users() {
         className="mb-6"
       />
 
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-sm text-blue-900">
+        <div className="flex justify-center">
+          <span className="rounded-t-lg bg-blue-200 px-3 text-xs font-medium text-blue-700">
           {filteredUsers.length} utilisateur
           {filteredUsers.length > 1 ? "s" : ""}
-        </p>
+        </span>
       </div>
 
       {loading ? (

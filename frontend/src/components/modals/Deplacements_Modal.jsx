@@ -43,6 +43,7 @@ export default function DeplacementsModal({
             max="2100"
             step="1"
             required
+            disabled={isAssociated}
           />
 
           <Input
@@ -69,6 +70,7 @@ export default function DeplacementsModal({
             step="1"
             suffix="€"
             required
+            disabled={isAssociated}
           />
         </div>
 

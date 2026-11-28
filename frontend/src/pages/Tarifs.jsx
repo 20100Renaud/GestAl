@@ -167,6 +167,11 @@ export default function Tarifs() {
       setSaving(true);
       setError("");
 
+      if (editingId && editingTarifAssociated) {
+        form.Annee_Tarif = editingTarif.Annee_Tarif;
+        form.Montant_Tarif = String(editingTarif.Montant_Tarif);
+      }
+      
       if (editingId) {
         await updateTarif(editingId, form);
       } else {

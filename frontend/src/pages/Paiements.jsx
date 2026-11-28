@@ -247,7 +247,7 @@ export default function Paiements() {
       "a-encaisser": "À encaisser",
       "e-reporting": "E-Reporting",
       "e-facture": "E-Facture",
-      "e-autre": "E-Autre",
+      "autre": "Autre",
       cheque: "Chèque",
       especes: "Espèces",
       virement: "Virement",
@@ -303,7 +303,7 @@ export default function Paiements() {
         return false;
       }
 
-      if (filterPaiement === "e-autre" && !paiement.E_Other_Paiement) {
+      if (filterPaiement === "autre" && !paiement.E_Other_Paiement) {
         return false;
       }
 
@@ -338,7 +338,7 @@ export default function Paiements() {
         : paiement.E_Facture_Paiement
           ? "e-facture"
           : paiement.E_Other_Paiement
-            ? "e-autre"
+            ? "autre"
             : "";
 
       const fields = [
@@ -489,8 +489,8 @@ export default function Paiements() {
         className="mb-6"
       />
 
-      <div className="mb-5 grid gap-1 xl:grid-cols-3">
-        {/* Year, Month and uncashed */}
+      <div className="grid gap-1 xl:grid-cols-3">
+        {/* Année, mois et à encaisser - toujours visibles */}
         <div className="flex flex-wrap justify-center gap-1">
           <CardFilter
             title={`${new Date().getFullYear()}`}
@@ -654,28 +654,21 @@ export default function Paiements() {
           />
 
           <CardFilter
-            title="E-Autre"
+            title="Autre"
             value={paiements.filter((p) => p.E_Other_Paiement).length}
-            color="blue"
-            active={filterPaiement === "e-autre"}
+            color="orange"
+            active={filterPaiement === "autre"}
             onClick={() => {
               setFilterCurrentMonth(false);
-              togglePaymentFilter("e-autre");
+              togglePaymentFilter("autre");
             }}
             className="min-w-24"
           />
         </div>
       </div>
 
-      {/* Infos bar */}
+      {/* More filters */}
       <div className="mb-4 flex items-center justify-between gap-2">
-        {/* Count */}
-        <p className="text-sm text-blue-900">
-          {filteredPaiements.length} paiement
-          {filteredPaiements.length > 1 ? "s" : ""}
-        </p>
-
-        {/* More filters */}
         <button
           type="button"
           onClick={() => setShowMoreFilters((prev) => !prev)}
@@ -696,16 +689,27 @@ export default function Paiements() {
             }`}
           />
         </button>
-
-        {/* Total */}
-        <p className="text-sm font-semibold text-blue-900 pr-2">
-          Total :{" "}
-          {totalMontant.toLocaleString("fr-FR", {
-            style: "currency",
-            currency: "EUR",
-          })}
-        </p>
       </div>
+
+      {/* Count */}
+      {!loading && (
+        <div className="flex justify-center">
+          <div className="flex gap-8">
+            <span className="rounded-t-lg bg-blue-200 px-3 text-xs font-medium text-blue-700">
+              {filteredPaiements.length} paiement
+              {filteredPaiements.length > 1 ? "s" : ""}
+            </span>
+
+            <span className="rounded-t-lg bg-blue-200 px-3 text-xs font-medium text-blue-700">
+              Total :{" "}
+              {totalMontant.toLocaleString("fr-FR", {
+                style: "currency",
+                currency: "EUR",
+              })}
+            </span>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <p>Chargement...</p>
@@ -753,7 +757,7 @@ export default function Paiements() {
                     : paiement.E_Facture_Paiement
                       ? "E-Facture"
                       : paiement.E_Other_Paiement
-                        ? "E-Other"
+                        ? "Autre"
                         : "-"}
                 </TableCell>
               </TableRow>

@@ -121,8 +121,11 @@ export async function updateDeplacement(req, res) {
   try {
     const { id } = req.params;
 
-    const { Annee_Deplacement, Denomination_Deplacement, Montant_Deplacement } =
-      req.body;
+    const {
+      Annee_Deplacement,
+      Denomination_Deplacement,
+      Montant_Deplacement,
+    } = req.body;
 
     if (
       Annee_Deplacement === undefined ||
@@ -136,11 +139,6 @@ export async function updateDeplacement(req, res) {
       });
     }
 
-    const montant =
-      Montant_Deplacement === undefined || Montant_Deplacement === ""
-        ? 0
-        : Number(Montant_Deplacement);
-
     const annee = Number(Annee_Deplacement);
 
     if (!Number.isInteger(annee) || annee < 2000 || annee > 2100) {
@@ -149,37 +147,89 @@ export async function updateDeplacement(req, res) {
       });
     }
 
+    const montant =
+      Montant_Deplacement === undefined || Montant_Deplacement === ""
+        ? 0
+        : Number(Montant_Deplacement);
+
     if (!Number.isFinite(montant) || montant < 0) {
       return res.status(400).json({
         error: "Invalid amount",
       });
     }
 
-    const existingDeplacement = await prisma.t_Deplacements.findFirst({
-      where: {
-        ID_Deplacement: id,
-        ID_User: req.user.userId,
-      },
-    });
+    const result = await prisma.$transaction(
+      async (tx) => {
+        const existingDeplacement = await tx.t_Deplacements.findFirst({
+          where: {
+            ID_Deplacement: id,
+            ID_User: req.user.userId,
+          },
+          include: {
+            _count: {
+              select: {
+                Prestations_Deplacement: true,
+              },
+            },
+          },
+        });
 
-    if (!existingDeplacement) {
-      return res.status(404).json({
-        error: "Deplacement not found",
+        if (!existingDeplacement) {
+          return {
+            status: 404,
+            error: "Deplacement not found",
+          };
+        }
+
+        const isAssociated =
+          existingDeplacement._count.Prestations_Deplacement > 0;
+
+        const yearChanged =
+          annee !== existingDeplacement.Annee_Deplacement;
+
+        const amountChanged =
+          montant !== Number(existingDeplacement.Montant_Deplacement);
+
+        if (isAssociated && (yearChanged || amountChanged)) {
+          return {
+            status: 409,
+            error:
+              "Impossible de modifier l'année ou le montant de ce déplacement car il est associé à une ou plusieurs prestations.",
+          };
+        }
+
+        const deplacement = await tx.t_Deplacements.update({
+          where: {
+            ID_Deplacement: id,
+          },
+          data: {
+            Annee_Deplacement: isAssociated
+              ? existingDeplacement.Annee_Deplacement
+              : annee,
+            Denomination_Deplacement: Denomination_Deplacement.trim(),
+            Montant_Deplacement: isAssociated
+              ? existingDeplacement.Montant_Deplacement
+              : montant,
+          },
+        });
+
+        return {
+          status: 200,
+          deplacement,
+        };
+      },
+      {
+        isolationLevel: "Serializable",
+      },
+    );
+
+    if (result.error) {
+      return res.status(result.status).json({
+        error: result.error,
       });
     }
 
-    const deplacement = await prisma.t_Deplacements.update({
-      where: {
-        ID_Deplacement: id,
-      },
-      data: {
-        Annee_Deplacement: annee,
-        Denomination_Deplacement: Denomination_Deplacement.trim(),
-        Montant_Deplacement: montant,
-      },
-    });
-
-    return res.status(200).json(deplacement);
+    return res.status(200).json(result.deplacement);
   } catch (error) {
     console.error("Update deplacement error:", error);
 

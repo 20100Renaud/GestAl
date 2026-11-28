@@ -21,6 +21,7 @@ import ErrorModal from "../components/alerts/ErrorModal.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
 import { House } from "lucide-react";
 import { formatDateShort } from "../utils/formatDate";
+import Select from "../components/ui/Select.jsx";
 import {
   getStatutPaiement,
   formatAmountShort,
@@ -141,6 +142,9 @@ export default function Prestations() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [selectedYear, setSelectedYear] = useState(
+    String(new Date().getFullYear()),
+  );
 
   async function loadData({ showLoading = true } = {}) {
     try {
@@ -551,6 +555,30 @@ export default function Prestations() {
       });
   }, [proprietaires, prestations, monthsWithoutPrestation, search]);
 
+  const availableYears = useMemo(() => {
+    const years = prestations
+      .map((prestation) => {
+        const year = Number(
+          String(prestation.Date_Prestation ?? "").slice(0, 4),
+        );
+
+        return Number.isInteger(year) && year > 0 ? year : null;
+      })
+      .filter(Boolean);
+
+    return [...new Set([...years, new Date().getFullYear()])].sort(
+      (a, b) => b - a,
+    );
+  }, [prestations]);
+
+  const prestationsCount = useMemo(() => {
+    return prestations.filter((prestation) => {
+      return (
+        String(prestation.Date_Prestation ?? "").slice(0, 4) === selectedYear
+      );
+    }).length;
+  }, [prestations, selectedYear]);
+
   const filteredPrestations = useMemo(() => {
     if (monthsWithoutPrestation !== null) {
       return [];
@@ -559,6 +587,12 @@ export default function Prestations() {
     const value = search.trim().toLowerCase();
 
     return prestations.filter((prestation) => {
+      const prestationYear = String(prestation.Date_Prestation ?? "").slice(0,4);
+
+      if (prestationYear !== selectedYear) {
+        return false;
+      }
+
       const statut = getStatutPaiement(prestation);
 
       if (filterCreances) {
@@ -569,7 +603,7 @@ export default function Prestations() {
         return false;
       }
 
-      if (!value || value === "créances") {
+      if (!value || value === "créances" || value === "soldée") {
         return true;
       }
 
@@ -598,6 +632,7 @@ export default function Prestations() {
     filterStatut,
     filterCreances,
     monthsWithoutPrestation,
+    selectedYear,
   ]);
 
   const totalsPrestations = useMemo(() => {
@@ -605,7 +640,9 @@ export default function Prestations() {
       (totals, prestation) => {
         const statut = getStatutPaiement(prestation);
 
-        if (statut.type === "reste") {
+        if (statut.type === "soldee") {
+          totals.soldee += Number(statut.montantPrestation) || 0;
+        } else if (statut.type === "reste") {
           totals.reste += Number(statut.montant) || 0;
         } else if (statut.type === "trop-percu") {
           totals.tropPercu += Number(statut.montant) || 0;
@@ -687,7 +724,44 @@ export default function Prestations() {
         className="mb-6"
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+        <div className="flex items-end gap-3">
+          <div className="flex-1">
+            <Select
+              label="Année"
+              value={selectedYear}
+              onChange={(event) => setSelectedYear(event.target.value)}
+            >
+              {availableYears.map((year) => {
+                const count = prestations.filter(
+                  (prestation) =>
+                    String(prestation.Date_Prestation ?? "").slice(0, 4) ===
+                    String(year),
+                ).length;
+
+                return (
+                  <option key={year} value={String(year)}>
+                    {year} ({count})
+                  </option>
+                );
+              })}
+            </Select>
+          </div>
+        </div>
+
+        <CardFilter
+          title="Soldée"
+          value={formatCurrency(totalsPrestations.soldee)}
+          color="green"
+          active={filterStatut === "soldee"}
+          onClick={() => {
+            const next = filterStatut === "soldee" ? null : "soldee";
+            setFilterCreances(false);
+            setFilterStatut(next);
+            setSearch(next ? "Soldée" : "");
+          }}
+        />
+
         <CardFilter
           title="Créances"
           value={formatCurrency(totalsPrestations.creances)}
@@ -698,20 +772,6 @@ export default function Prestations() {
             setFilterCreances(next);
             setFilterStatut(null);
             setSearch(next ? "Créances" : "");
-          }}
-        />
-
-        <CardFilter
-          title="Aucun paiement"
-          value={formatCurrency(totalsPrestations.aucunPaiement)}
-          color="blue"
-          active={filterStatut === "aucun-paiement"}
-          onClick={() => {
-            const next =
-              filterStatut === "aucun-paiement" ? null : "aucun-paiement";
-            setFilterCreances(false);
-            setFilterStatut(next);
-            setSearch(next === "aucun-paiement" ? "Aucun paiement" : "");
           }}
         />
 
@@ -731,7 +791,7 @@ export default function Prestations() {
         <CardFilter
           title="Trop-perçu"
           value={formatCurrency(totalsPrestations.tropPercu)}
-          color="blue"
+          color="orange"
           active={filterStatut === "trop-percu"}
           onClick={() => {
             const next = filterStatut === "trop-percu" ? null : "trop-percu";
@@ -743,8 +803,8 @@ export default function Prestations() {
       </div>
 
       {/* Count */}
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-sm text-blue-900">
+      <div className="flex justify-center">
+        <span className="rounded-t-lg bg-blue-200 px-3 text-xs font-medium text-blue-700">
           {monthsWithoutPrestation !== null
             ? `${proprietairesSansPrestation.length} propriétaire${
                 proprietairesSansPrestation.length > 1 ? "s" : ""
@@ -752,7 +812,7 @@ export default function Prestations() {
             : `${filteredPrestations.length} prestation${
                 filteredPrestations.length > 1 ? "s" : ""
               }`}
-        </p>
+        </span>
       </div>
 
       {loading ? (
