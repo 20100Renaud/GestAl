@@ -31,20 +31,12 @@ export default function PaiementsModal({
     if (type === "checkbox") {
       if (!checked) return;
 
-      const now = new Date();
-
-      const today = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-        .toISOString()
-        .slice(0, 10);
-
       setForm((current) => ({
         ...current,
 
         E_Reporting_Paiement: name === "E_Reporting_Paiement",
         E_Facture_Paiement: name === "E_Facture_Paiement",
         E_Other_Paiement: name === "E_Other_Paiement",
-
-        Date_Declaration: current.Date_Declaration || today,
       }));
 
       return;
@@ -67,6 +59,7 @@ export default function PaiementsModal({
   }
 
   const paiementComplete = isPaiementComplete(form);
+  const isDeclared = Boolean(editingId && form.Date_Declaration);
 
   function getToday() {
     const now = new Date();
@@ -116,23 +109,12 @@ export default function PaiementsModal({
               value={form.Montant_Paiement}
               onChange={handleChange}
               suffix="€"
+              disabled={isDeclared}
             />
           </div>
 
           {/* Ligne 2 */}
-          <div className="order-4 md:order-3">
-            <Input
-              id="Date_Encaissement"
-              label="Date d'encaissement"
-              icon={CalendarArrowUp}
-              type="date"
-              name="Date_Encaissement"
-              value={form.Date_Encaissement || ""}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="order-3 md:order-4">
+          <div className="order-3">
             <Select
               id="Moyen_Paiement"
               label="Moyen de paiement"
@@ -140,6 +122,7 @@ export default function PaiementsModal({
               name="Moyen_Paiement"
               value={form.Moyen_Paiement}
               onChange={handleChange}
+              disabled={isDeclared}
             >
               <option value="">Sélectionner</option>
               <option value="Espèces">Espèces</option>
@@ -148,21 +131,8 @@ export default function PaiementsModal({
             </Select>
           </div>
 
-          {/* Ligne 3 */}
-          <div className="order-6 md:order-5">
-            <Input
-              id="Date_Declaration"
-              label="Date de déclaration"
-              icon={CalendarCheck}
-              type="date"
-              name="Date_Declaration"
-              value={form.Date_Declaration || ""}
-              onChange={handleChange}
-            />
-          </div>
-
           {/* Type de déclaration */}
-          <div className="order-5 md:order-6">
+          <div className="order-4">
             <label className="flex gap-2 text-sm font-medium text-blue-700 mb-2">
               <ReceiptText size={18} />
               Type de déclaration
@@ -196,6 +166,7 @@ export default function PaiementsModal({
                       checked={checked}
                       onChange={handleChange}
                       className="sr-only"
+                      disabled={isDeclared}
                     />
 
                     {item.label}
@@ -203,6 +174,36 @@ export default function PaiementsModal({
                 );
               })}
             </div>
+          </div>
+
+          <div className="order-5">
+            <Input
+              id="Date_Encaissement"
+              label="Date d'encaissement"
+              icon={CalendarArrowUp}
+              type="date"
+              name="Date_Encaissement"
+              value={form.Date_Encaissement || ""}
+              onChange={handleChange}
+              disabled={!paiementComplete}
+            />
+          </div>
+
+          {/* Ligne 3 */}
+          <div className="order-6">
+            <Input
+              id="Date_Declaration"
+              label="Date de déclaration"
+              icon={CalendarCheck}
+              type="date"
+              name="Date_Declaration"
+              value={form.Date_Declaration || ""}
+              onChange={handleChange}
+              disabled={
+                (!form.Date_Encaissement && !form.Date_Declaration) ||
+                isDeclared
+              }
+            />
           </div>
         </div>
 
@@ -218,6 +219,13 @@ export default function PaiementsModal({
               </Button>
             )}
           </div>
+
+          {isDeclared && (
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 flex items-center gap-2 font-semibold">
+              <ReceiptText size={18} />
+              Paiement déclaré
+            </div>
+          )}
 
           <div className="flex gap-3">
             <Button onClick={onClose} variant="secondary" disabled={saving}>

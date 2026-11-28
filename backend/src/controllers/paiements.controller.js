@@ -110,6 +110,31 @@ function parseAmount(value) {
   return amount;
 }
 
+function validateEncaissement({
+  dateEncaissement,
+  montant,
+  moyenPaiement,
+  hasType,
+}) {
+  if (!dateEncaissement) {
+    return null;
+  }
+
+  if (!(montant > 0)) {
+    return "Un montant supérieur à zéro est nécessaire pour encaisser.";
+  }
+
+  if (!moyenPaiement) {
+    return "Un moyen de paiement est nécessaire pour encaisser.";
+  }
+
+  if (!hasType) {
+    return "Un type de paiement est nécessaire pour encaisser.";
+  }
+
+  return null;
+}
+
 export async function getPaiements(req, res) {
   try {
     const paiements = await prisma.t_Paiements.findMany({
@@ -158,6 +183,7 @@ export async function getPaiement(req, res) {
   }
 }
 
+
 export async function createPaiement(req, res) {
   try {
     const {
@@ -166,9 +192,6 @@ export async function createPaiement(req, res) {
       Date_Declaration,
       Montant_Paiement,
       Moyen_Paiement,
-      E_Reporting_Paiement,
-      E_Facture_Paiement,
-      E_Other_Paiement,
     } = req.body;
 
     if (typeof ID_Prestation !== "string" || !ID_Prestation.trim()) {
@@ -216,59 +239,54 @@ export async function createPaiement(req, res) {
     const hasType =
       paymentTypes.eReporting || paymentTypes.eFacture || paymentTypes.eOther;
 
-    if (Date_Encaissement && (!hasMoyen || !hasType)) {
-      return res.status(400).json({
-        error:
-          "Moyen_Paiement and payment type are required for Date_Encaissement",
-      });
-    }
-
-    const data = {
-      ID_Prestation: ID_Prestation.trim(),
-
-      Montant_Paiement: montant,
-
-      Moyen_Paiement:
-        typeof Moyen_Paiement === "string" && Moyen_Paiement.trim()
-          ? Moyen_Paiement.trim()
-          : null,
-
-      E_Reporting_Paiement: paymentTypes.eReporting,
-      E_Facture_Paiement: paymentTypes.eFacture,
-      E_Other_Paiement: paymentTypes.eOther,
-    };
-
     const encaissementDate = parseDate(Date_Encaissement, "Date_Encaissement", {
       nullable: true,
     });
 
-    if (
-      encaissementDate &&
-      typeof encaissementDate === "object" &&
-      encaissementDate.error
-    ) {
+    if (encaissementDate?.error) {
       return res.status(400).json(encaissementDate);
-    }
-
-    if (encaissementDate !== undefined) {
-      data.Date_Encaissement = encaissementDate;
     }
 
     const declarationDate = parseDate(Date_Declaration, "Date_Declaration", {
       nullable: true,
     });
 
-    if (
-      declarationDate &&
-      typeof declarationDate === "object" &&
-      declarationDate.error
-    ) {
+    if (declarationDate?.error) {
       return res.status(400).json(declarationDate);
     }
 
-    if (declarationDate !== undefined) {
-      data.Date_Declaration = declarationDate;
+    const validationError = validateEncaissement({
+      dateEncaissement: encaissementDate,
+      montant,
+      moyenPaiement: hasMoyen,
+      hasType,
+    });
+
+    if (validationError) {
+      return res.status(400).json({
+        error: validationError,
+      });
     }
+
+    if (declarationDate && !encaissementDate) {
+      return res.status(400).json({
+        error: "Un paiement doit être encaissé avant d'être déclaré.",
+      });
+    }
+
+    const data = {
+      ID_Prestation: ID_Prestation.trim(),
+      Montant_Paiement: montant,
+
+      Moyen_Paiement: hasMoyen ? Moyen_Paiement.trim() : null,
+
+      E_Reporting_Paiement: paymentTypes.eReporting,
+      E_Facture_Paiement: paymentTypes.eFacture,
+      E_Other_Paiement: paymentTypes.eOther,
+
+      Date_Encaissement: encaissementDate,
+      Date_Declaration: declarationDate,
+    };
 
     const paiement = await prisma.t_Paiements.create({
       data,
@@ -284,6 +302,7 @@ export async function createPaiement(req, res) {
     });
   }
 }
+
 
 export async function updatePaiement(req, res) {
   try {
@@ -314,15 +333,78 @@ export async function updatePaiement(req, res) {
       E_Other_Paiement,
     } = req.body;
 
-    if (typeof ID_Prestation !== "string" || !ID_Prestation.trim()) {
+    const prestationId =
+      ID_Prestation !== undefined
+        ? ID_Prestation
+        : existingPaiement.ID_Prestation;
+
+    if (typeof prestationId !== "string" || !prestationId.trim()) {
       return res.status(400).json({
         error: "ID_Prestation is required",
       });
     }
 
+    const montant = parseAmount(
+      Montant_Paiement !== undefined
+        ? Montant_Paiement
+        : existingPaiement.Montant_Paiement,
+    );
+
+    if (montant === null) {
+      return res.status(400).json({
+        error: "Montant invalide",
+      });
+    }
+
+    const moyenPaiementFinal =
+      Moyen_Paiement !== undefined
+        ? Moyen_Paiement
+        : existingPaiement.Moyen_Paiement;
+
+    if (
+      moyenPaiementFinal !== null &&
+      moyenPaiementFinal !== undefined &&
+      typeof moyenPaiementFinal !== "string"
+    ) {
+      return res.status(400).json({
+        error: "Moyen_Paiement is invalid",
+      });
+    }
+
+    const hasMoyen =
+      typeof moyenPaiementFinal === "string" &&
+      moyenPaiementFinal.trim() !== "";
+
+    const paymentTypes = validatePaymentTypes({
+      E_Reporting_Paiement:
+        E_Reporting_Paiement !== undefined
+          ? E_Reporting_Paiement
+          : existingPaiement.E_Reporting_Paiement,
+
+      E_Facture_Paiement:
+        E_Facture_Paiement !== undefined
+          ? E_Facture_Paiement
+          : existingPaiement.E_Facture_Paiement,
+
+      E_Other_Paiement:
+        E_Other_Paiement !== undefined
+          ? E_Other_Paiement
+          : existingPaiement.E_Other_Paiement,
+    });
+
+    if (paymentTypes.error) {
+      return res.status(400).json({
+        error: paymentTypes.error,
+      });
+    }
+
+    const hasType =
+      paymentTypes.eReporting || paymentTypes.eFacture || paymentTypes.eOther;
+
+
     const prestation = await prisma.t_Prestations.findFirst({
       where: {
-        ID_Prestation,
+        ID_Prestation: prestationId.trim(),
         Proprietaire_Prestation: {
           is: {
             ID_User: req.user.userId,
@@ -337,98 +419,174 @@ export async function updatePaiement(req, res) {
       });
     }
 
-    const paymentTypes = validatePaymentTypes(req.body);
+    if (existingPaiement.Date_Declaration) {
+      const forbiddenChanges = [];
 
-    if (paymentTypes.error) {
+      if (prestationId !== existingPaiement.ID_Prestation) {
+        forbiddenChanges.push("Prestation");
+      }
+
+      if (
+        Montant_Paiement !== undefined &&
+        montant !== Number(existingPaiement.Montant_Paiement)
+      ) {
+        forbiddenChanges.push("Montant");
+      }
+
+      if (
+        Moyen_Paiement !== undefined &&
+        (moyenPaiementFinal?.trim() || null) !==
+          (existingPaiement.Moyen_Paiement || null)
+      ) {
+        forbiddenChanges.push("Moyen de paiement");
+      }
+
+      if (
+        E_Reporting_Paiement !== undefined &&
+        paymentTypes.eReporting !== existingPaiement.E_Reporting_Paiement
+      ) {
+        forbiddenChanges.push("Type de paiement");
+      }
+
+      if (
+        E_Facture_Paiement !== undefined &&
+        paymentTypes.eFacture !== existingPaiement.E_Facture_Paiement
+      ) {
+        forbiddenChanges.push("Type de paiement");
+      }
+
+      if (
+        E_Other_Paiement !== undefined &&
+        paymentTypes.eOther !== existingPaiement.E_Other_Paiement
+      ) {
+        forbiddenChanges.push("Type de paiement");
+      }
+
+      if (Date_Declaration !== undefined) {
+        const newDeclarationDate = parseDate(
+          Date_Declaration,
+          "Date_Declaration",
+          { nullable: true },
+        );
+
+        if (newDeclarationDate?.error) {
+          return res.status(400).json(newDeclarationDate);
+        }
+
+        if (
+          !newDeclarationDate ||
+          newDeclarationDate.getTime() !==
+            existingPaiement.Date_Declaration.getTime()
+        ) {
+          forbiddenChanges.push("Date de déclaration");
+        }
+      }
+
+      if (forbiddenChanges.length > 0) {
+        return res.status(403).json({
+          error:
+            "Ce paiement est déjà déclaré. Seules la date de réception et la date d'encaissement peuvent être modifiées.",
+        });
+      }
+
+      const data = {};
+
+      if (Date_Paiement !== undefined) {
+        const paiementDate = parseDate(Date_Paiement, "Date_Paiement");
+
+        if (paiementDate?.error) {
+          return res.status(400).json(paiementDate);
+        }
+
+        data.Date_Paiement = paiementDate;
+      }
+
+      if (Date_Encaissement !== undefined) {
+        const encaissementDate = parseDate(
+          Date_Encaissement,
+          "Date_Encaissement",
+          { nullable: true },
+        );
+
+        if (encaissementDate?.error) {
+          return res.status(400).json(encaissementDate);
+        }
+
+        data.Date_Encaissement = encaissementDate;
+      }
+
+      const paiement = await prisma.t_Paiements.update({
+        where: {
+          ID_Paiement: id,
+        },
+        data,
+        include: paiementInclude,
+      });
+
+      return res.json(paiement);
+    }
+
+    const encaissementDate =
+      Date_Encaissement !== undefined
+        ? parseDate(Date_Encaissement, "Date_Encaissement", { nullable: true })
+        : existingPaiement.Date_Encaissement;
+
+    if (encaissementDate?.error) {
+      return res.status(400).json(encaissementDate);
+    }
+
+    const declarationDate =
+      Date_Declaration !== undefined
+        ? parseDate(Date_Declaration, "Date_Declaration", { nullable: true })
+        : existingPaiement.Date_Declaration;
+
+    if (declarationDate?.error) {
+      return res.status(400).json(declarationDate);
+    }
+
+    const validationError = validateEncaissement({
+      dateEncaissement: encaissementDate,
+      montant,
+      moyenPaiement: hasMoyen,
+      hasType,
+    });
+
+    if (validationError) {
       return res.status(400).json({
-        error: paymentTypes.error,
+        error: validationError,
       });
     }
 
-    const montant = parseAmount(Montant_Paiement);
-
-    if (montant === null) {
+    if (declarationDate && !encaissementDate) {
       return res.status(400).json({
-        error: "Montant invalide",
-      });
-    }
-
-    const hasMoyen =
-      typeof Moyen_Paiement === "string" && Moyen_Paiement.trim() !== "";
-
-    const hasType =
-      paymentTypes.eReporting || paymentTypes.eFacture || paymentTypes.eOther;
-
-    if (Date_Encaissement && (!hasMoyen || !hasType)) {
-      return res.status(400).json({
-        error:
-          "Moyen_Paiement and payment type are required for Date_Encaissement",
+        error: "Un paiement doit être encaissé avant d'être déclaré.",
       });
     }
 
     const data = {
-      ID_Prestation: ID_Prestation.trim(),
-
+      ID_Prestation: prestationId.trim(),
       Montant_Paiement: montant,
 
-      Moyen_Paiement:
-        typeof Moyen_Paiement === "string" && Moyen_Paiement.trim()
-          ? Moyen_Paiement.trim()
-          : null,
+      Moyen_Paiement: hasMoyen ? moyenPaiementFinal.trim() : null,
 
       E_Reporting_Paiement: paymentTypes.eReporting,
       E_Facture_Paiement: paymentTypes.eFacture,
       E_Other_Paiement: paymentTypes.eOther,
+
+      Date_Encaissement: encaissementDate,
+      Date_Declaration: declarationDate,
     };
 
     if (Date_Paiement !== undefined) {
       const paiementDate = parseDate(Date_Paiement, "Date_Paiement");
 
-      if (
-        paiementDate &&
-        typeof paiementDate === "object" &&
-        paiementDate.error
-      ) {
+      if (paiementDate?.error) {
         return res.status(400).json(paiementDate);
       }
 
       data.Date_Paiement = paiementDate;
     }
 
-    if (Date_Encaissement !== undefined) {
-      const encaissementDate = parseDate(
-        Date_Encaissement,
-        "Date_Encaissement",
-        { nullable: true },
-      );
-
-      if (
-        encaissementDate &&
-        typeof encaissementDate === "object" &&
-        encaissementDate.error
-      ) {
-        return res.status(400).json(encaissementDate);
-      }
-
-      data.Date_Encaissement = encaissementDate;
-    }
-
-    if (Date_Declaration !== undefined) {
-      const declarationDate = parseDate(Date_Declaration, "Date_Declaration", {
-        nullable: true,
-      });
-
-      if (
-        declarationDate &&
-        typeof declarationDate === "object" &&
-        declarationDate.error
-      ) {
-        return res.status(400).json(declarationDate);
-      }
-
-      data.Date_Declaration = declarationDate;
-    }
-    
     const paiement = await prisma.t_Paiements.update({
       where: {
         ID_Paiement: id,
@@ -446,6 +604,7 @@ export async function updatePaiement(req, res) {
     });
   }
 }
+
 
 export async function deletePaiement(req, res) {
   try {

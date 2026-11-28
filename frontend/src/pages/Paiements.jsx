@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import PageHeader from "../components/ui/PageHeader.jsx";
 import { CardFilter } from "../components/ui/Card.jsx";
@@ -8,6 +7,13 @@ import useConfirm from "../hooks/useConfirm.jsx";
 import PaiementsModal from "../components/modals/Paiements_Modal.jsx";
 import Alert from "../components/alerts/Alert.jsx";
 import ErrorModal from "../components/alerts/ErrorModal.jsx";
+import {
+  ChevronDown,
+  BanknoteArrowDown,
+  FileClock,
+  FileCheck,
+} from "lucide-react";
+
 import Table, {
   Vide,
   TableHead,
@@ -148,6 +154,7 @@ export default function Paiements() {
   }
 
   function isPaiementComplete(form) {
+    const hasMontant = Number(form.Montant_Paiement) > 0;
     const hasMoyen = Boolean(form.Moyen_Paiement?.trim());
 
     const hasType =
@@ -155,7 +162,7 @@ export default function Paiements() {
       form.E_Facture_Paiement ||
       form.E_Other_Paiement;
 
-    return hasMoyen && hasType;
+    return hasMontant && hasMoyen && hasType;
   }
 
   function openEditForm(paiement) {
@@ -245,9 +252,10 @@ export default function Paiements() {
   function togglePaymentFilter(filter) {
     const labels = {
       "a-encaisser": "À encaisser",
+      "a-declarer": "À déclarer",
       "e-reporting": "E-Reporting",
       "e-facture": "E-Facture",
-      "autre": "Autre",
+      autre: "Autre",
       cheque: "Chèque",
       especes: "Espèces",
       virement: "Virement",
@@ -295,11 +303,27 @@ export default function Paiements() {
         return false;
       }
 
-      if (filterPaiement === "e-reporting" && !paiement.E_Reporting_Paiement) {
+      if (filterPaiement === "a-declarer") {
+        if (!paiement.Date_Encaissement || paiement.Date_Declaration) {
+          return false;
+        }
+      }
+
+      if (
+        filterPaiement === "e-reporting" &&
+        (!paiement.E_Reporting_Paiement ||
+          !paiement.Date_Encaissement ||
+          paiement.Date_Declaration)
+      ) {
         return false;
       }
 
-      if (filterPaiement === "e-facture" && !paiement.E_Facture_Paiement) {
+      if (
+        filterPaiement === "e-facture" &&
+        (!paiement.E_Facture_Paiement ||
+          !paiement.Date_Encaissement ||
+          paiement.Date_Declaration)
+      ) {
         return false;
       }
 
@@ -345,6 +369,10 @@ export default function Paiements() {
         paiement.Date_Encaissement
           ? new Date(paiement.Date_Encaissement).toLocaleDateString("fr-FR")
           : "À encaisser",
+
+        paiement.Date_Encaissement && !paiement.Date_Declaration
+          ? "À déclarer"
+          : "",
 
         paiement.Date_Encaissement
           ? new Date(paiement.Date_Encaissement).getFullYear()
@@ -392,9 +420,13 @@ export default function Paiements() {
 
     if (form.Date_Encaissement && !paiementComplete) {
       setError(
-        "Un moyen de paiement et un type de paiement sont nécessaires pour renseigner la date d'encaissement.",
+        "Un montant, un moyen de paiement et un type de paiement sont nécessaires pour renseigner la date d'encaissement.",
       );
+      return;
+    }
 
+    if (form.Date_Declaration && !form.Date_Encaissement) {
+      setError("Un paiement doit être encaissé avant de pouvoir être déclaré.");
       return;
     }
 
@@ -631,7 +663,14 @@ export default function Paiements() {
         >
           <CardFilter
             title="E-Reporting"
-            value={paiements.filter((p) => p.E_Reporting_Paiement).length}
+            value={
+              paiements.filter(
+                (p) =>
+                  p.E_Reporting_Paiement &&
+                  p.Date_Encaissement &&
+                  !p.Date_Declaration,
+              ).length
+            }
             color="blue"
             active={filterPaiement === "e-reporting"}
             onClick={() => {
@@ -642,8 +681,15 @@ export default function Paiements() {
           />
 
           <CardFilter
-            title="E-Facture"
-            value={paiements.filter((p) => p.E_Facture_Paiement).length}
+            title="E-Facturing"
+            value={
+              paiements.filter(
+                (p) =>
+                  p.E_Facture_Paiement &&
+                  p.Date_Encaissement &&
+                  !p.Date_Declaration,
+              ).length
+            }
             color="blue"
             active={filterPaiement === "e-facture"}
             onClick={() => {
@@ -734,9 +780,27 @@ export default function Paiements() {
                 onClick={() => openEditForm(paiement)}
               >
                 <TableCell>
-                  {paiement.Date_Encaissement
-                    ? formatDateShort(paiement.Date_Encaissement)
-                    : "À encaisser"}
+                  <div className="flex items-center justify-center">
+                    {paiement.Date_Declaration ? (
+                      <FileCheck
+                        size={20}
+                        className="text-green-600"
+                        title="Déclaré"
+                      />
+                    ) : paiement.Date_Encaissement ? (
+                      <FileClock
+                        size={20}
+                        className="text-orange-500"
+                        title="À déclarer"
+                      />
+                    ) : (
+                      <BanknoteArrowDown
+                        size={20}
+                        className="text-orange-500"
+                        title="À encaisser"
+                      />
+                    )}
+                  </div>
                 </TableCell>
 
                 <TableCell>
