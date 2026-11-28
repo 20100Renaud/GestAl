@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getConsultations } from "../api/consultations.js";
 import { PawPrint, ClipboardList, AlertCircle } from "lucide-react";
 import { getAnimaux } from "../api/animaux.js";
@@ -50,6 +50,8 @@ export default function Proprietaires() {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [scrollToComment, setScrollToComment] = useState(false);
+  const [activeTooltip, setActiveTooltip] = useState(null);
+  const tooltipRef = useRef(null);
 
   async function loadProprietaires() {
     try {
@@ -76,6 +78,22 @@ export default function Proprietaires() {
 
   useEffect(() => {
     loadProprietaires();
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (tooltipRef.current && !tooltipRef.current.contains(event.target)) {
+        setActiveTooltip(null);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, []);
 
   function handleChange(event) {
@@ -253,8 +271,8 @@ export default function Proprietaires() {
         className="mb-6"
       />
 
-        <div className="flex justify-center">
-          <span className="rounded-t-lg bg-blue-200 px-3 text-xs font-medium text-blue-700">
+      <div className="flex justify-center">
+        <span className="rounded-t-lg bg-blue-200 px-3 text-xs font-medium text-blue-700">
           {filteredProprietaires.length} propriétaire
           {filteredProprietaires.length > 1 ? "s" : ""}
         </span>
@@ -303,7 +321,7 @@ export default function Proprietaires() {
                 </TableCell>
 
                 <TableCell>
-                  <div className="relative pr-5">
+                  <div className="relative flex items-center pr-5">
                     {[
                       proprietaire.Civilite_Proprietaire,
                       proprietaire.Prenom_Proprietaire,
@@ -313,17 +331,58 @@ export default function Proprietaires() {
                       .join(" ") || "-"}
 
                     {proprietaire.Commentaire_Proprietaire?.trim() && (
-                      <button
-                        type="button"
-                        title="Voir le commentaire"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          openEditForm(proprietaire, true);
-                        }}
-                        className="absolute -top-1 -right-1 z-10 text-red-600 hover:text-red-800 cursor-pointer hover:bg-red-100 p-1 rounded-full"
+                      <div
+                        ref={
+                          activeTooltip === proprietaire.ID_Proprietaire
+                            ? tooltipRef
+                            : null
+                        }
+                        className="absolute -left-6 sm:-left-8 top-1/2 -translate-y-1/2 z-30"
                       >
-                        <AlertCircle size={16} />
-                      </button>
+                        <button
+                          type="button"
+                          title="Voir le commentaire"
+                          onClick={(event) => {
+                            event.stopPropagation();
+
+                            setActiveTooltip((current) =>
+                              current === proprietaire.ID_Proprietaire
+                                ? null
+                                : proprietaire.ID_Proprietaire,
+                            );
+                          }}
+                          className="h-8 w-8 flex justify-center items-center text-red-600 text-center hover:text-red-800 cursor-pointer hover:bg-red-500/10 p-1 rounded-lg"
+                        >
+                          <AlertCircle size={16} />
+                        </button>
+
+                        {activeTooltip === proprietaire.ID_Proprietaire && (
+                          <div
+                            className="
+                              absolute left-1/2 -translate-x-1/2
+                              top-1/2 -translate-y-1/2 mr-2
+                              z-50 w-64 sm:w-80 h-12
+                              rounded-lg border border-red-200
+                              bg-white px-3 py-1
+                              text-sm text-red-700
+                              shadow-lg
+                              overflow-y-auto
+                              whitespace-normal
+                              break-words
+                              animate-in fade-in duration-200
+                              select-none
+                            "
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setActiveTooltip(null);
+                            }}
+                          >
+                            <p className="whitespace-pre-wrap break-words">
+                              {proprietaire.Commentaire_Proprietaire}
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 </TableCell>
