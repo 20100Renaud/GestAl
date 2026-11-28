@@ -5,6 +5,13 @@ import prisma from "../lib/prisma.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
+export const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  path: "/",
+};
+
 if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is not defined");
 }
@@ -63,11 +70,8 @@ export async function login(req, res) {
     );
 
     res.cookie("access_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      ...COOKIE_OPTIONS,
       maxAge: 60 * 60 * 1000,
-      path: "/",
     });
 
     const decodedToken = jwt.decode(token);

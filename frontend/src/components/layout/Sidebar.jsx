@@ -63,8 +63,8 @@ const navigation = [
   },
 ];
 
-export default function Sidebar({ onNavigate, onOpenProfile }) {
-  const { user, logout } = useAuth();
+export default function Sidebar({ onNavigate, onOpenProfile, onLogout }) {
+  const { user } = useAuth();
 
   const visibleNavigation = navigation.filter((item) => {
     if (item.adminOnly) {
@@ -77,14 +77,6 @@ export default function Sidebar({ onNavigate, onOpenProfile }) {
 
     return true;
   });
-
-  async function handleLogout() {
-    try {
-      await logout();
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  }
 
   return (
     <aside className="sticky top-0 flex h-screen min-h-full w-[240px] flex-col bg-blue-950 text-white">
@@ -138,10 +130,7 @@ export default function Sidebar({ onNavigate, onOpenProfile }) {
 
         <Button
           variant="ghost"
-          onClick={async () => {
-            await handleLogout();
-            onNavigate?.();
-          }}
+          onClick={onLogout}
           className="w-full gap-2 transition-colors hover:bg-white/10"
           aria-label="Déconnexion"
           title="Déconnexion"

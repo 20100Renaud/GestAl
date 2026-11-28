@@ -4,6 +4,7 @@ import {
   login,
   getMyProfile,
   updateMyProfile,
+  COOKIE_OPTIONS,
 } from "../controllers/auth.controller.js";
 import { authenticate } from "../middleware/auth.middleware.js";
 
@@ -67,14 +68,9 @@ router.get("/me", authenticate, async (req, res) => {
 });
 
 router.post("/logout", (req, res) => {
-  res.clearCookie("access_token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-  });
+  res.clearCookie("access_token", COOKIE_OPTIONS);
 
-  res.json({
+  return res.status(200).json({
     message: "Logout successful",
   });
 });

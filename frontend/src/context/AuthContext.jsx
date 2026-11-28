@@ -75,8 +75,14 @@ export function AuthProvider({ children }) {
   // Vérification de l'authentification
   useEffect(() => {
     async function checkAuthentication() {
+      // Temporaire
       try {
         const data = await getCurrentUser();
+        console.log("Expiration session :", {
+          expiresAt: data?.expiresAt,
+          type: typeof data?.expiresAt,
+          dateInterpreted: new Date(data?.expiresAt),
+        });
 
         setUser(data?.user ?? null);
         setSessionExpiresAt(data?.user ? (data.expiresAt ?? null) : null);

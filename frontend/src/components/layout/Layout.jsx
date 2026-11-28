@@ -1,13 +1,14 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext.jsx";
 import Sidebar from "./Sidebar.jsx";
 import Topbar from "./Topbar.jsx";
 import UsersModal from "../modals/Users_Modal.jsx";
-import { useAuth } from "../../context/AuthContext.jsx";
 import { getMyProfile, updateMyProfile } from "../../api/users.js";
 import { normalizeUpper, normalizeCamel } from "../../utils/normalizeField.js";
-import SessionExpirationBanner from "../alerts/SessionExpirationBanner.jsx";
+import SessionExpirationNotice from "../alerts/SessionExpirationNotice.jsx";
 import Alert from "../alerts/Alert.jsx";
+import ConfirmModal from "../alerts/ConfirmModal.jsx";
 
 const emptyProfile = {
   ID_User: "",
@@ -24,16 +25,16 @@ const emptyProfile = {
 };
 
 export default function Layout() {
-  const { user, logout, sessionTimeLeft, sessionExpired } = useAuth();
+  const { user, logout, sessionExpired } = useAuth();
   const navigate = useNavigate();
-  const [warningDismissed, setWarningDismissed] = useState(false);
 
   const [showProfile, setShowProfile] = useState(false);
   const [form, setForm] = useState(emptyProfile);
   const [saving, setSaving] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [profileError, setProfileError] = useState("");
-
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notification, setNotification] = useState(null);
 
@@ -55,21 +56,6 @@ export default function Layout() {
     return () => clearTimeout(timer);
   }, [notification]);
 
-  const SESSION_WARNING_TIME = 120;
-  const SESSION_URGENT_TIME = 30;
-
-  const showSessionWarning =
-    sessionTimeLeft !== null &&
-    sessionTimeLeft > 0 &&
-    ((!warningDismissed && sessionTimeLeft <= SESSION_WARNING_TIME) ||
-      sessionTimeLeft <= SESSION_URGENT_TIME);
-
-  useEffect(() => {
-    if (sessionTimeLeft === null || sessionTimeLeft > 120) {
-      setWarningDismissed(false);
-    }
-  }, [sessionTimeLeft]);
-
   useEffect(() => {
     if (sessionExpired) {
       navigate("/login", {
@@ -88,6 +74,26 @@ export default function Layout() {
       console.error("Logout failed:", error);
     } finally {
       navigate("/login", { replace: true });
+    }
+  }
+
+  async function handleLogout() {
+    if (logoutLoading) return;
+
+    setLogoutLoading(true);
+
+    try {
+      await logout();
+
+      setShowLogoutModal(false);
+      setSidebarOpen(false);
+
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Logout failed:", error);
+      notify("La déconnexion a échoué. Veuillez réessayer.", "error");
+    } finally {
+      setLogoutLoading(false);
     }
   }
 
@@ -207,16 +213,13 @@ export default function Layout() {
   return (
     <div className="relative flex h-screen">
       {/* Bannière de fin de session */}
-      {showSessionWarning && (
-        <SessionExpirationBanner
-          timeLeft={sessionTimeLeft}
-          onLogout={handleSessionLogout}
-          onClose={() => setWarningDismissed(true)}
-        />
-      )}
+      <SessionExpirationNotice onLogout={handleSessionLogout} />
       {/* Desktop sidebar */}
       <div className="hidden md:block">
-        <Sidebar onOpenProfile={openProfile} />
+        <Sidebar
+          onOpenProfile={openProfile}
+          onLogout={() => setShowLogoutModal(true)}
+        />
       </div>
 
       {/* Mobile sidebar */}
@@ -242,6 +245,7 @@ export default function Layout() {
           <Sidebar
             onNavigate={() => setSidebarOpen(false)}
             onOpenProfile={openProfile}
+            onLogout={() => setShowLogoutModal(true)}
           />
         </div>
       </div>
@@ -287,6 +291,20 @@ export default function Layout() {
           )}
         </>
       )}
+
+      <ConfirmModal
+        open={showLogoutModal}
+        title="Confirmation de déconnexion"
+        message="La déconnexion entraine la fermeture définitive de cette session."
+        cancelLabel="Annuler"
+        onClose={() => {
+          if (!logoutLoading) {
+            setShowLogoutModal(false);
+          }
+        }}
+        onConfirm={handleLogout}
+        loading={logoutLoading}
+      />
     </div>
   );
 }

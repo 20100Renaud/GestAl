@@ -15,17 +15,8 @@ import {
   MapPinned,
   Hash,
   Building2,
-  ArrowLeft,
   ArrowLeftRight,
 } from "lucide-react";
-
-const formatSiret = (value) => {
-  const digits = value.replace(/\D/g, "").slice(0, 14);
-
-  return digits.replace(/^(\d{3})(\d{3})(\d{3})(\d{0,5})$/, (_, a, b, c, d) =>
-    [a, b, c, d].filter(Boolean).join(" "),
-  );
-};
 
 export default function UsersModal({
   open,
